@@ -188,7 +188,11 @@ async def create_paste(
     }
 
 
-@router.get("/raw/{paste_id}", response_class=PlainTextResponse)
+@router.get(
+    "/raw/{paste_id}",
+    response_class=PlainTextResponse,
+    response_model=None,
+)
 async def get_raw_paste(
     paste_id: str,
     password: str | None = None,
@@ -218,7 +222,7 @@ async def delete_paste(
     return {"deleted": True}
 
 
-@router.get("/{paste_id}")
+@router.get("/{paste_id}", response_model=None)
 async def get_paste(
     paste_id: str,
     password: str | None = None,
