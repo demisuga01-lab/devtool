@@ -111,16 +111,13 @@ export function Header() {
       <div className="relative mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6">
         <div className="absolute left-4 flex items-center sm:left-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex-shrink-0 rounded-xl
-                  overflow-hidden
-                  dark:ring-1 dark:ring-zinc-700">
+            <div className="flex-shrink-0">
               <Image
                 src="/logo.png"
                 alt="WellFriend DevTools"
                 width={40}
                 height={40}
-                className="h-10 w-10 block"
-                style={{ display: 'block' }}
+                className="h-10 w-10 rounded-xl object-contain"
               />
             </div>
             <span className="leading-tight">
