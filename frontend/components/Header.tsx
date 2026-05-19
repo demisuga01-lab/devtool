@@ -7,7 +7,7 @@ import { ChevronDown, Github, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { toolGroups } from "@/lib/tools";
 
-const GITHUB_URL = "https://github.com/wellfriend/devtools";
+const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
 
 export function Header() {
   const [open, setOpen] = useState(false);

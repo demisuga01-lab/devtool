@@ -10,7 +10,7 @@ export function Footer() {
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           <a
-            href="https://github.com/wellfriend/devtools"
+            href="https://github.com/demisuga01-lab/devtool"
             target="_blank"
             rel="noreferrer"
             className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -18,7 +18,7 @@ export function Footer() {
             GitHub
           </a>
           <a
-            href="https://pdftools.wellfriend.online"
+            href="https://tools.wellfriend.online"
             target="_blank"
             rel="noreferrer"
             className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
