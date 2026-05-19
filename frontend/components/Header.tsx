@@ -2,101 +2,96 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Github, Menu, X } from "lucide-react";
+import { ChevronDown, Code2, Github, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { toolGroups } from "@/lib/tools";
 
 const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
 
-type PasteMenuItem =
-  | { name: string; href: string; description?: never }
-  | { name: string; description: string; href?: never };
-
-type PasteMenuGroup = {
-  name: string;
-  items: PasteMenuItem[];
-};
-
-const pasteGroups: PasteMenuGroup[] = [
-  {
-    name: "Create",
-    items: [
-      { name: "New Paste", href: "/paste" },
-      { name: "Code Snippet", href: "/paste?lang=javascript" },
-      { name: "Markdown Note", href: "/paste?lang=markdown" },
-      { name: "Plain Text", href: "/paste?lang=plaintext" },
-    ],
-  },
-  {
-    name: "Features",
-    items: [
-      { name: "Password Protected", href: "/paste?mode=password" },
-      { name: "Burn After Read", href: "/paste?mode=burn" },
-      { name: "One-Time Secret", href: "/paste?mode=secret" },
-      { name: "With Expiry", href: "/paste?mode=expiry" },
-    ],
-  },
-  {
-    name: "View & Manage",
-    items: [
-      { name: "View a Paste", href: "/paste/view" },
-      { name: "Recent Pastes", href: "/paste#recent" },
-      { name: "Raw View", description: "Open a paste as plain text from its view page." },
-    ],
-  },
+const mainLinks = [
+  { name: "Status", href: "/status" },
+  { name: "Pricing", href: "/pricing" },
+  { name: "About", href: "/about" },
+  { name: "Docs", href: "/docs" },
+  { name: "Contact", href: "/contact" },
 ];
 
+const pasteLinks = [
+  { name: "New Paste", href: "/paste" },
+  { name: "View a Paste", href: "/paste/view" },
+  { name: "Recent Pastes", href: "/paste#recent" },
+];
+
+const navClass =
+  "inline-flex h-11 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-zinc-600 transition-colors hover:border-emerald-300 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:border-emerald-800 dark:hover:text-white";
+const activeNavClass =
+  "border-emerald-600 text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
+const menuLinkClass =
+  "block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
+
+function isActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Header() {
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toolsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pasteCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    document.body.style.overflow = mobile ? "hidden" : "";
     return () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current);
+      document.body.style.overflow = "";
+    };
+  }, [mobile]);
+
+  useEffect(() => {
+    return () => {
+      if (toolsCloseTimer.current) clearTimeout(toolsCloseTimer.current);
       if (pasteCloseTimer.current) clearTimeout(pasteCloseTimer.current);
     };
   }, []);
 
-  const handleEnter = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
+  const openToolsMenu = () => {
+    if (toolsCloseTimer.current) clearTimeout(toolsCloseTimer.current);
+    setToolsOpen(true);
   };
 
-  const handleLeave = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setOpen(false), 180);
+  const closeToolsMenu = () => {
+    if (toolsCloseTimer.current) clearTimeout(toolsCloseTimer.current);
+    toolsCloseTimer.current = setTimeout(() => setToolsOpen(false), 180);
   };
 
-  const handlePasteEnter = () => {
+  const openPasteMenu = () => {
     if (pasteCloseTimer.current) clearTimeout(pasteCloseTimer.current);
     setPasteOpen(true);
   };
 
-  const handlePasteLeave = () => {
+  const closePasteMenu = () => {
     if (pasteCloseTimer.current) clearTimeout(pasteCloseTimer.current);
     pasteCloseTimer.current = setTimeout(() => setPasteOpen(false), 180);
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95">
+    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white dark:bg-zinc-800">
-              <Image
-                src="/logo.png"
-                alt="WellFriend DevTools"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-xl object-contain dark:brightness-90"
-                priority
-              />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="WellFriend DevTools"
+              width={40}
+              height={40}
+              className="rounded-xl object-contain"
+              priority
+            />
             <span className="leading-tight">
               <span className="block">
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">Dev</span>
@@ -109,29 +104,29 @@ export function Header() {
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            <div
-              className="relative"
-              onMouseEnter={handleEnter}
-              onMouseLeave={handleLeave}
-            >
+            <div className="relative" onMouseEnter={openToolsMenu} onMouseLeave={closeToolsMenu}>
               <button
                 type="button"
-                onFocus={handleEnter}
-                onBlur={handleLeave}
-                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
-                aria-expanded={open}
+                onFocus={openToolsMenu}
+                onBlur={closeToolsMenu}
+                className={`${navClass} ${pathname.startsWith("/tools") ? activeNavClass : ""}`}
+                aria-expanded={toolsOpen}
               >
                 Dev Tools
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="ml-1 h-4 w-4" />
               </button>
 
-              {open && (
-                <div className="absolute left-0 top-full z-50 w-[920px] max-w-[calc(100vw-48px)] pt-2">
-                  <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              {toolsOpen && (
+                <div
+                  className="absolute left-0 top-full z-[110] w-[920px] max-w-[calc(100vw-24px)] pt-4"
+                  onMouseEnter={openToolsMenu}
+                  onMouseLeave={closeToolsMenu}
+                >
+                  <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
                     <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
                       {toolGroups.map((group) => (
                         <div key={group.slug}>
-                          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                             {group.name}
                           </div>
                           <ul className="space-y-1">
@@ -139,15 +134,10 @@ export function Header() {
                               <li key={tool.slug}>
                                 <Link
                                   href={tool.href}
-                                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                                  onClick={() => setOpen(false)}
+                                  className={menuLinkClass}
+                                  onClick={() => setToolsOpen(false)}
                                 >
-                                  <span>{tool.name}</span>
-                                  {!tool.implemented && (
-                                    <span className="text-[10px] uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-                                      Soon
-                                    </span>
-                                  )}
+                                  {tool.name}
                                 </Link>
                               </li>
                             ))}
@@ -160,103 +150,69 @@ export function Header() {
               )}
             </div>
 
-            <div
-              className="relative"
-              onMouseEnter={handlePasteEnter}
-              onMouseLeave={handlePasteLeave}
-            >
+            <div className="relative" onMouseEnter={openPasteMenu} onMouseLeave={closePasteMenu}>
               <button
                 type="button"
-                onFocus={handlePasteEnter}
-                onBlur={handlePasteLeave}
-                className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+                onFocus={openPasteMenu}
+                onBlur={closePasteMenu}
+                className={`${navClass} ${pathname.startsWith("/paste") ? activeNavClass : ""}`}
                 aria-expanded={pasteOpen}
               >
                 Paste
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="ml-1 h-4 w-4" />
               </button>
 
               {pasteOpen && (
-                <div className="absolute left-0 top-full z-50 w-[480px] max-w-[calc(100vw-48px)] pt-2">
-                  <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-                      {pasteGroups.slice(0, 2).map((group) => (
-                        <div key={group.name}>
-                          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                            {group.name}
-                          </div>
-                          <ul className="space-y-1">
-                            {group.items.map((item) => (
-                              <li key={item.name}>
-                                {item.href ? (
-                                  <Link
-                                    href={item.href}
-                                    className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                                    onClick={() => setPasteOpen(false)}
-                                  >
-                                    <span>{item.name}</span>
-                                  </Link>
-                                ) : (
-                                  <div className="rounded-lg px-2 py-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-                                    <span>{item.name}</span>
-                                    <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-                                      {item.description}
-                                    </p>
-                                  </div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                <div
+                  className="absolute left-0 top-full z-[110] w-[260px] max-w-[calc(100vw-24px)] pt-4"
+                  onMouseEnter={openPasteMenu}
+                  onMouseLeave={closePasteMenu}
+                >
+                  <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                    <ul className="space-y-1">
+                      {pasteLinks.map((item) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className={menuLinkClass}
+                            onClick={() => setPasteOpen(false)}
+                          >
+                            {item.name}
+                          </Link>
+                        </li>
                       ))}
-                      <div className="col-span-2">
-                        <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                          {pasteGroups[2].name}
-                        </div>
-                        <ul className="grid grid-cols-1 gap-1 sm:grid-cols-3">
-                          {pasteGroups[2].items.map((item) => (
-                            <li key={item.name}>
-                              {item.href ? (
-                                <Link
-                                  href={item.href}
-                                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                                  onClick={() => setPasteOpen(false)}
-                                >
-                                  <span>{item.name}</span>
-                                </Link>
-                              ) : (
-                                <div className="rounded-lg px-2 py-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-                                  <span>{item.name}</span>
-                                  <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-                                    {item.description}
-                                  </p>
-                                </div>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                    </ul>
+                    <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+                    <div className="flex items-start gap-2 px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500">
+                      <Code2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                      <span>Add /raw to any paste URL for plain text</span>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-            <Link
-              href="/status"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
-            >
-              Status
-            </Link>
+
+            {mainLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`${navClass} ${isActive(pathname, link.href) ? activeNavClass : ""}`}
+              >
+                {link.name}
+              </Link>
+            ))}
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer"
-            className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800 md:inline-flex"
+            className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex"
           >
             <Github className="h-4 w-4" />
             GitHub
@@ -264,8 +220,9 @@ export function Header() {
           <button
             type="button"
             onClick={() => setMobile((v) => !v)}
-            className="rounded-xl border border-zinc-200 p-2 dark:border-zinc-800 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 md:hidden"
             aria-label="Toggle menu"
+            aria-expanded={mobile}
           >
             {mobile ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
@@ -273,104 +230,110 @@ export function Header() {
       </div>
 
       {mobile && (
-        <div className="border-t border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+        <div className="fixed inset-x-0 top-16 z-[100] max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
           <div className="space-y-2">
-            {toolGroups.map((group) => {
-              const isOpen = openMobileGroup === group.slug;
-              return (
-                <div key={group.slug} className="rounded-xl border border-zinc-200 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    onClick={() => setOpenMobileGroup(isOpen ? null : group.slug)}
-                    className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100"
-                  >
+            <MobileAccordion
+              title="Dev Tools"
+              open={openMobileGroup === "tools"}
+              onToggle={() => setOpenMobileGroup(openMobileGroup === "tools" ? null : "tools")}
+            >
+              {toolGroups.map((group) => (
+                <div key={group.slug} className="py-1">
+                  <div className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                     {group.name}
-                    <ChevronDown
-                      className={"h-4 w-4 transition " + (isOpen ? "rotate-180" : "")}
-                    />
-                  </button>
-                  {isOpen && (
-                    <ul className="border-t border-zinc-200 px-2 py-2 dark:border-zinc-800">
-                      {group.tools.map((tool) => (
-                        <li key={tool.slug}>
-                          <Link
-                            href={tool.href}
-                            className="block rounded-lg px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                            onClick={() => setMobile(false)}
-                          >
-                            {tool.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              );
-            })}
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setOpenMobileGroup(openMobileGroup === "paste" ? null : "paste")}
-                className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium text-zinc-900 dark:text-zinc-100"
-              >
-                Paste
-                <ChevronDown
-                  className={"h-4 w-4 transition " + (openMobileGroup === "paste" ? "rotate-180" : "")}
-                />
-              </button>
-              {openMobileGroup === "paste" && (
-                <div className="border-t border-zinc-200 px-2 py-2 dark:border-zinc-800">
-                  {pasteGroups.map((group) => (
-                    <div key={group.name} className="py-1">
-                      <div className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                        {group.name}
-                      </div>
-                      <ul className="space-y-1">
-                        {group.items.map((item) => (
-                          <li key={item.name}>
-                            {item.href ? (
-                              <Link
-                                href={item.href}
-                                className="block rounded-lg px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                                onClick={() => setMobile(false)}
-                              >
-                                {item.name}
-                              </Link>
-                            ) : (
-                              <div className="rounded-lg px-2 py-2 text-sm text-zinc-500 dark:text-zinc-400">
-                                {item.name}
-                                <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-                                  {item.description}
-                                </p>
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  </div>
+                  {group.tools.map((tool) => (
+                    <Link
+                      key={tool.slug}
+                      href={tool.href}
+                      className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                      onClick={() => setMobile(false)}
+                    >
+                      {tool.name}
+                    </Link>
                   ))}
                 </div>
-              )}
-            </div>
-            <Link
-              href="/status"
-              className="block rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-medium text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
-              onClick={() => setMobile(false)}
+              ))}
+            </MobileAccordion>
+
+            <MobileAccordion
+              title="Paste"
+              open={openMobileGroup === "paste"}
+              onToggle={() => setOpenMobileGroup(openMobileGroup === "paste" ? null : "paste")}
             >
-              Status
-            </Link>
+              {pasteLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                  onClick={() => setMobile(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+              <div className="flex items-start gap-2 px-3 py-2 text-xs text-zinc-400 dark:text-zinc-500">
+                <Code2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                <span>Add /raw to any paste URL for plain text</span>
+              </div>
+            </MobileAccordion>
+
+            {mainLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="block rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+                onClick={() => setMobile(false)}
+              >
+                {link.name}
+              </Link>
+            ))}
+
             <a
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-medium text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
             >
               <Github className="h-4 w-4" />
               GitHub
             </a>
+
+            <div className="flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800">
+              <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                Theme
+              </span>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       )}
     </header>
+  );
+}
+
+function MobileAccordion({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+      >
+        {title}
+        <ChevronDown className={"h-4 w-4 transition " + (open ? "rotate-180" : "")} />
+      </button>
+      {open && <div className="border-t border-zinc-200 px-2 py-2 dark:border-zinc-800">{children}</div>}
+    </div>
   );
 }
