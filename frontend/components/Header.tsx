@@ -29,7 +29,7 @@ const navClass =
 const activeNavClass =
   "border-b-2 border-emerald-600 font-semibold text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
 const menuLinkClass =
-  "block rounded-lg px-2.5 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
+  "block rounded-lg px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -88,6 +88,9 @@ export function Header() {
   const escapeGroup = toolGroups.find((group) => group.slug === "escape");
   const referenceGroup = toolGroups.find((group) => group.slug === "reference");
   const textTools = textGroup?.tools ?? [];
+  const xmlDataTools = xmlDataGroup?.tools ?? [];
+  const referenceTools = referenceGroup?.tools ?? [];
+  const remainingTools = [...xmlDataTools.slice(7), ...referenceTools.slice(6)];
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -132,19 +135,19 @@ export function Header() {
 
               {toolsOpen && (
                 <div
-                  className="absolute left-0 top-full z-[110] w-[800px] max-w-[calc(100vw-48px)] pt-4"
+                  className="fixed left-1/2 top-16 z-[110] w-[900px] max-w-[calc(100vw-32px)] -translate-x-1/2 pt-2"
                   onMouseEnter={openToolsMenu}
                   onMouseLeave={closeToolsMenu}
                 >
                   <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="grid grid-cols-4 gap-6">
+                    <div className="grid grid-cols-4 gap-x-4 gap-y-0">
                       <ToolMenuGroup
                         name="Text & Format"
                         tools={textTools.slice(0, 6)}
                         onClick={() => setToolsOpen(false)}
                       />
                       <ToolMenuGroup
-                        name="Text & Format"
+                        name="More Formatters"
                         tools={textTools.slice(6, 12)}
                         onClick={() => setToolsOpen(false)}
                       />
@@ -161,7 +164,7 @@ export function Header() {
                             name={dateGroup.name}
                             tools={dateGroup.tools}
                             onClick={() => setToolsOpen(false)}
-                            className="mt-4"
+                            className="mt-3"
                           />
                         )}
                       </div>
@@ -178,17 +181,18 @@ export function Header() {
                             name={webGroup.name}
                             tools={webGroup.tools}
                             onClick={() => setToolsOpen(false)}
-                            className="mt-4"
+                            className="mt-3"
                           />
                         )}
                       </div>
-                      {xmlDataGroup && (
-                        <ToolMenuGroup
-                          name={xmlDataGroup.name}
-                          tools={xmlDataGroup.tools}
-                          onClick={() => setToolsOpen(false)}
-                        />
-                      )}
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-4 gap-x-4 gap-y-0 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                      <ToolMenuGroup
+                        name="XML & Data"
+                        tools={xmlDataTools.slice(0, 7)}
+                        onClick={() => setToolsOpen(false)}
+                      />
                       {escapeGroup && (
                         <ToolMenuGroup
                           name={escapeGroup.name}
@@ -196,10 +200,15 @@ export function Header() {
                           onClick={() => setToolsOpen(false)}
                         />
                       )}
-                      {referenceGroup && (
+                      <ToolMenuGroup
+                        name="Reference & Utils"
+                        tools={referenceTools.slice(0, 6)}
+                        onClick={() => setToolsOpen(false)}
+                      />
+                      {remainingTools.length > 0 && (
                         <ToolMenuGroup
-                          name={referenceGroup.name}
-                          tools={referenceGroup.tools}
+                          name="More Tools"
+                          tools={remainingTools}
                           onClick={() => setToolsOpen(false)}
                         />
                       )}
@@ -410,7 +419,7 @@ function ToolMenuGroup({
 }) {
   return (
     <div className={className}>
-      <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
         {name}
       </div>
       <ul className="space-y-1">
