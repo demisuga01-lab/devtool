@@ -116,7 +116,7 @@ export function Header() {
               alt="WellFriend DevTools"
               width={40}
               height={40}
-              className="h-10 w-10 flex-shrink-0"
+              className="h-10 w-10 flex-shrink-0 rounded-xl"
             />
             <span className="leading-tight">
               <span className="block">
