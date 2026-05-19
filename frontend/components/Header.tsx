@@ -84,6 +84,9 @@ export function Header() {
   const dateGroup = toolGroups.find((group) => group.slug === "datetime");
   const encodeGroup = toolGroups.find((group) => group.slug === "encode");
   const webGroup = toolGroups.find((group) => group.slug === "web");
+  const xmlDataGroup = toolGroups.find((group) => group.slug === "xml-data");
+  const escapeGroup = toolGroups.find((group) => group.slug === "escape");
+  const referenceGroup = toolGroups.find((group) => group.slug === "reference");
   const textTools = textGroup?.tools ?? [];
 
   return (
@@ -179,6 +182,27 @@ export function Header() {
                           />
                         )}
                       </div>
+                      {xmlDataGroup && (
+                        <ToolMenuGroup
+                          name={xmlDataGroup.name}
+                          tools={xmlDataGroup.tools}
+                          onClick={() => setToolsOpen(false)}
+                        />
+                      )}
+                      {escapeGroup && (
+                        <ToolMenuGroup
+                          name={escapeGroup.name}
+                          tools={escapeGroup.tools}
+                          onClick={() => setToolsOpen(false)}
+                        />
+                      )}
+                      {referenceGroup && (
+                        <ToolMenuGroup
+                          name={referenceGroup.name}
+                          tools={referenceGroup.tools}
+                          onClick={() => setToolsOpen(false)}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

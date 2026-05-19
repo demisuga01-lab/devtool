@@ -3,16 +3,22 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import re
+import shutil
 import socket
 import ssl
+import tempfile
 import time
+import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 
 router = APIRouter(prefix="/tools", tags=["tools"])
+
+_JAVA_REGEX_RATE_LIMIT: dict[str, tuple[int, float]] = {}
+_JAVA_REGEX_FLAGS = {"CASE_INSENSITIVE", "MULTILINE", "DOTALL", "UNICODE_CASE", "COMMENTS"}
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +102,150 @@ def _validate_domain(domain: str, allow_chars_only: bool = False) -> str:
     if _resolve_blocked(cleaned):
         raise HTTPException(status_code=400, detail="Invalid or unsafe domain.")
     return cleaned.lower()
+
+
+def _rate_limit_java_regex(request: Request) -> None:
+    ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    count, started = _JAVA_REGEX_RATE_LIMIT.get(ip, (0, now))
+    if now - started >= 60:
+        _JAVA_REGEX_RATE_LIMIT[ip] = (1, now)
+        return
+    if count >= 5:
+        raise HTTPException(status_code=429, detail="Too many Java regex requests. Try again later.")
+    _JAVA_REGEX_RATE_LIMIT[ip] = (count + 1, started)
+
+
+def _parse_java_regex_output(text: str) -> dict:
+    matches: list[dict] = []
+    current: dict | None = None
+    total = 0
+    truncated = False
+    for raw_line in text.splitlines():
+        if raw_line.startswith("MATCH:"):
+            _, start, end, value = raw_line.split(":", 3)
+            current = {"start": int(start), "end": int(end), "value": value, "groups": []}
+            matches.append(current)
+        elif raw_line.startswith("GROUP:") and current is not None:
+            parts = raw_line.split(":", 2)
+            if len(parts) == 3:
+                current["groups"].append(None if parts[2] == "null" else parts[2])
+        elif raw_line.startswith("TOTAL:"):
+            total = int(raw_line.split(":", 1)[1])
+        elif raw_line.startswith("TRUNCATED:"):
+            truncated = raw_line.split(":", 1)[1].strip().lower() == "true"
+    return {"total_matches": total, "matches": matches, "truncated": truncated}
+
+
+@router.get("/java-regex")
+async def java_regex(
+    request: Request,
+    pattern: str = Query(..., max_length=500),
+    input: str = Query(..., max_length=10000),
+    flags: str = Query("", max_length=200),
+) -> dict:
+    _rate_limit_java_regex(request)
+    if "\x00" in pattern or "\x00" in input or "\x00" in flags:
+        raise HTTPException(status_code=400, detail="Invalid Java regex input.")
+
+    requested_flags = [flag.strip() for flag in flags.split(",") if flag.strip()]
+    invalid_flags = [flag for flag in requested_flags if flag not in _JAVA_REGEX_FLAGS]
+    if invalid_flags:
+        raise HTTPException(status_code=400, detail="Unsupported Java regex flag.")
+
+    suffix = uuid.uuid4().hex
+    class_name = f"RegexRunner_{suffix}"
+    tmpdir = tempfile.mkdtemp(prefix="java_regex_")
+    java_file = f"{tmpdir}/{class_name}.java"
+    source = f"""
+import java.util.regex.*;
+
+public class {class_name} {{
+  public static void main(String[] args) throws Exception {{
+    String pattern = args[0];
+    String input = args[1];
+    int flags = 0;
+    if (args.length > 2 && !args[2].isEmpty()) {{
+      for (String f : args[2].split(",")) {{
+        switch(f.trim()) {{
+          case "CASE_INSENSITIVE": flags |= Pattern.CASE_INSENSITIVE; break;
+          case "MULTILINE": flags |= Pattern.MULTILINE; break;
+          case "DOTALL": flags |= Pattern.DOTALL; break;
+          case "UNICODE_CASE": flags |= Pattern.UNICODE_CASE; break;
+          case "COMMENTS": flags |= Pattern.COMMENTS; break;
+          default: break;
+        }}
+      }}
+    }}
+    Pattern p = Pattern.compile(pattern, flags);
+    Matcher m = p.matcher(input);
+    int count = 0;
+    while (m.find()) {{
+      count++;
+      if (count <= 1000) {{
+        System.out.println("MATCH:" + m.start() + ":" + m.end() + ":" + m.group());
+        for (int i = 1; i <= m.groupCount(); i++) {{
+          System.out.println("GROUP:" + i + ":" + (m.group(i) == null ? "null" : m.group(i)));
+        }}
+      }}
+    }}
+    System.out.println("TOTAL:" + count);
+    System.out.println("TRUNCATED:" + (count > 1000));
+  }}
+}}
+"""
+
+    try:
+        with open(java_file, "w", encoding="utf-8") as fh:
+            fh.write(source)
+
+        compile_proc = await asyncio.create_subprocess_exec(
+            "javac",
+            java_file,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            _, compile_stderr = await asyncio.wait_for(compile_proc.communicate(), timeout=10.0)
+        except asyncio.TimeoutError:
+            compile_proc.kill()
+            await compile_proc.wait()
+            raise HTTPException(status_code=504, detail="Regex execution timed out.")
+
+        if compile_proc.returncode != 0:
+            detail = compile_stderr.decode("utf-8", errors="replace").strip() or "Java regex runner failed to compile."
+            raise HTTPException(status_code=500, detail=detail)
+
+        run_proc = await asyncio.create_subprocess_exec(
+            "java",
+            "-cp",
+            tmpdir,
+            class_name,
+            pattern,
+            input,
+            ",".join(requested_flags),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(run_proc.communicate(), timeout=10.0)
+        except asyncio.TimeoutError:
+            run_proc.kill()
+            await run_proc.wait()
+            raise HTTPException(status_code=504, detail="Regex execution timed out.")
+
+        if run_proc.returncode != 0:
+            detail = stderr.decode("utf-8", errors="replace").strip()
+            if "PatternSyntaxException" in detail:
+                first_line = detail.splitlines()[0] if detail else "invalid pattern"
+                raise HTTPException(status_code=400, detail=f"Invalid Java regex pattern: {first_line}")
+            raise HTTPException(status_code=500, detail="Java regex execution failed.")
+
+        return _parse_java_regex_output(stdout.decode("utf-8", errors="replace"))
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="Java runtime is not available on this server.")
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
