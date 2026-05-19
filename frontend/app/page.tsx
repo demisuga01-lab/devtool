@@ -70,9 +70,10 @@ export default function HomePage() {
       <section className="flex min-h-[calc(100vh-4rem)] items-center border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 px-4 py-16 sm:px-6 lg:grid-cols-2">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
-              29 tools &middot; Open source &middot; Free forever
-            </span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-1.5 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+              <span className="h-2 w-2 flex-shrink-0 rounded-full bg-emerald-500" />
+              <span>Open-source developer toolbox</span>
+            </div>
             <h1 className="mt-5 text-5xl font-bold leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-6xl lg:text-7xl">
               A clean developer toolbox.
             </h1>

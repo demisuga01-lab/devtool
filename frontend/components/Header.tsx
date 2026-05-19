@@ -29,7 +29,7 @@ const navClass =
 const activeNavClass =
   "border-b-2 border-emerald-600 font-semibold text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
 const menuLinkClass =
-  "block rounded-lg px-2.5 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
+  "block rounded-lg px-2 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -91,6 +91,20 @@ export function Header() {
   const xmlDataTools = xmlDataGroup?.tools ?? [];
   const referenceTools = referenceGroup?.tools ?? [];
   const remainingTools = [...xmlDataTools.slice(7), ...referenceTools.slice(6)];
+  const topToolGroups = [
+    { name: "Text & Format", tools: textTools.slice(0, 6) },
+    { name: "More Formatters", tools: textTools.slice(6, 12) },
+    cryptoGroup ? { name: cryptoGroup.name, tools: cryptoGroup.tools } : null,
+    dateGroup ? { name: dateGroup.name, tools: dateGroup.tools } : null,
+    encodeGroup ? { name: encodeGroup.name, tools: encodeGroup.tools } : null,
+    webGroup ? { name: webGroup.name, tools: webGroup.tools } : null,
+  ].filter((group): group is { name: string; tools: Tool[] } => Boolean(group && group.tools.length));
+  const bottomToolGroups = [
+    { name: "XML & Data", tools: xmlDataTools.slice(0, 7) },
+    escapeGroup ? { name: escapeGroup.name, tools: escapeGroup.tools } : null,
+    { name: "Reference & Utils", tools: referenceTools.slice(0, 6) },
+    remainingTools.length > 0 ? { name: "More Tools", tools: remainingTools } : null,
+  ].filter((group): group is { name: string; tools: Tool[] } => Boolean(group && group.tools.length));
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -140,79 +154,17 @@ export function Header() {
                   onMouseLeave={closeToolsMenu}
                 >
                   <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="grid grid-cols-4 gap-x-4 gap-y-0">
-                      <ToolMenuGroup
-                        name="Text & Format"
-                        tools={textTools.slice(0, 6)}
-                        onClick={() => setToolsOpen(false)}
-                      />
-                      <ToolMenuGroup
-                        name="More Formatters"
-                        tools={textTools.slice(6, 12)}
-                        onClick={() => setToolsOpen(false)}
-                      />
-                      <div>
-                        {cryptoGroup && (
-                          <ToolMenuGroup
-                            name={cryptoGroup.name}
-                            tools={cryptoGroup.tools}
-                            onClick={() => setToolsOpen(false)}
-                          />
-                        )}
-                        {dateGroup && (
-                          <ToolMenuGroup
-                            name={dateGroup.name}
-                            tools={dateGroup.tools}
-                            onClick={() => setToolsOpen(false)}
-                            className="mt-3"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        {encodeGroup && (
-                          <ToolMenuGroup
-                            name={encodeGroup.name}
-                            tools={encodeGroup.tools}
-                            onClick={() => setToolsOpen(false)}
-                          />
-                        )}
-                        {webGroup && (
-                          <ToolMenuGroup
-                            name={webGroup.name}
-                            tools={webGroup.tools}
-                            onClick={() => setToolsOpen(false)}
-                            className="mt-3"
-                          />
-                        )}
-                      </div>
-                    </div>
+                    <ToolMenuColumns
+                      groups={topToolGroups}
+                      onClick={() => setToolsOpen(false)}
+                    />
 
-                    <div className="mt-5 grid grid-cols-4 gap-x-4 gap-y-0 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-                      <ToolMenuGroup
-                        name="XML & Data"
-                        tools={xmlDataTools.slice(0, 7)}
-                        onClick={() => setToolsOpen(false)}
-                      />
-                      {escapeGroup && (
-                        <ToolMenuGroup
-                          name={escapeGroup.name}
-                          tools={escapeGroup.tools}
-                          onClick={() => setToolsOpen(false)}
-                        />
-                      )}
-                      <ToolMenuGroup
-                        name="Reference & Utils"
-                        tools={referenceTools.slice(0, 6)}
-                        onClick={() => setToolsOpen(false)}
-                      />
-                      {remainingTools.length > 0 && (
-                        <ToolMenuGroup
-                          name="More Tools"
-                          tools={remainingTools}
-                          onClick={() => setToolsOpen(false)}
-                        />
-                      )}
-                    </div>
+                    <div className="my-3 border-t border-zinc-100 dark:border-zinc-800" />
+
+                    <ToolMenuColumns
+                      groups={bottomToolGroups}
+                      onClick={() => setToolsOpen(false)}
+                    />
                   </div>
                 </div>
               )}
@@ -411,14 +363,16 @@ function ToolMenuGroup({
   tools,
   onClick,
   className = "",
+  isLast = false,
 }: {
   name: string;
   tools: Tool[];
   onClick: () => void;
   className?: string;
+  isLast?: boolean;
 }) {
   return (
-    <div className={className}>
+    <div className={className} style={{ breakInside: "avoid", marginBottom: isLast ? 0 : "1rem" }}>
       <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
         {name}
       </div>
@@ -431,6 +385,28 @@ function ToolMenuGroup({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function ToolMenuColumns({
+  groups,
+  onClick,
+}: {
+  groups: { name: string; tools: Tool[] }[];
+  onClick: () => void;
+}) {
+  return (
+    <div style={{ columns: 4, columnGap: "1.5rem" }}>
+      {groups.map((group, index) => (
+        <ToolMenuGroup
+          key={group.name}
+          name={group.name}
+          tools={group.tools}
+          onClick={onClick}
+          isLast={index === groups.length - 1}
+        />
+      ))}
     </div>
   );
 }
