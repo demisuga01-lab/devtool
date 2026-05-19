@@ -111,17 +111,13 @@ export function Header() {
       <div className="relative mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6">
         <div className="absolute left-4 flex items-center sm:left-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex-shrink-0 h-10 w-10
-                  rounded-xl overflow-hidden
-                  bg-white dark:bg-[#0d3d2e]">
-              <Image
-                src="/logo.png"
-                alt="WellFriend DevTools"
-                width={40}
-                height={40}
-                className="h-10 w-10 object-cover scale-105"
-              />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="WellFriend DevTools"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-xl flex-shrink-0"
+            />
             <span className="leading-tight">
               <span className="block">
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">Dev</span>
