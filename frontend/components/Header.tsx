@@ -73,9 +73,9 @@ export function Header() {
               </button>
 
               {open && (
-                <div className="absolute left-0 top-full z-50 w-[760px] max-w-[calc(100vw-48px)] pt-2">
-                  <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                <div className="absolute left-0 top-full z-50 w-[920px] max-w-[calc(100vw-48px)] pt-2">
+                  <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
                       {toolGroups.map((group) => (
                         <div key={group.slug}>
                           <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">

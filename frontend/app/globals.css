@@ -19,6 +19,28 @@ pre, code {
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(212 212 216) transparent;
+}
+.dark .scrollbar-thin {
+  scrollbar-color: rgb(63 63 70) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(212 212 216);
+  border-radius: 9999px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(63 63 70);
+}
+
 .markdown-preview h1 { font-size: 1.5rem; font-weight: 600; margin: 0.5rem 0; }
 .markdown-preview h2 { font-size: 1.25rem; font-weight: 600; margin: 0.5rem 0; }
 .markdown-preview h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0; }
