@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Code2, Github, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
-import { toolGroups } from "@/lib/tools";
+import { Tool, toolGroups } from "@/lib/tools";
 
 const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
 
@@ -27,9 +27,9 @@ const pasteLinks = [
 const navClass =
   "inline-flex h-11 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-zinc-600 transition-colors hover:border-emerald-300 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:border-emerald-800 dark:hover:text-white";
 const activeNavClass =
-  "border-emerald-600 text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
+  "border-b-2 border-emerald-600 font-semibold text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
 const menuLinkClass =
-  "block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
+  "block rounded-lg px-2.5 py-1.5 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -79,19 +79,28 @@ export function Header() {
     pasteCloseTimer.current = setTimeout(() => setPasteOpen(false), 180);
   };
 
+  const textGroup = toolGroups.find((group) => group.slug === "text");
+  const cryptoGroup = toolGroups.find((group) => group.slug === "crypto");
+  const dateGroup = toolGroups.find((group) => group.slug === "datetime");
+  const encodeGroup = toolGroups.find((group) => group.slug === "encode");
+  const webGroup = toolGroups.find((group) => group.slug === "web");
+  const textTools = textGroup?.tools ?? [];
+
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-8">
+      <div className="relative mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6">
+        <div className="absolute left-4 flex items-center sm:left-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="WellFriend DevTools"
-              width={40}
-              height={40}
-              className="rounded-xl object-contain"
-              priority
-            />
+            <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+              <Image
+                src="/logo.png"
+                alt="WellFriend DevTools"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
+            </div>
             <span className="leading-tight">
               <span className="block">
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">Dev</span>
@@ -102,7 +111,9 @@ export function Header() {
               </span>
             </span>
           </Link>
+        </div>
 
+        <div className="flex flex-1 items-center justify-center">
           <nav className="hidden items-center gap-1 md:flex">
             <div className="relative" onMouseEnter={openToolsMenu} onMouseLeave={closeToolsMenu}>
               <button
@@ -118,32 +129,56 @@ export function Header() {
 
               {toolsOpen && (
                 <div
-                  className="absolute left-0 top-full z-[110] w-[920px] max-w-[calc(100vw-24px)] pt-4"
+                  className="absolute left-0 top-full z-[110] w-[800px] max-w-[calc(100vw-48px)] pt-4"
                   onMouseEnter={openToolsMenu}
                   onMouseLeave={closeToolsMenu}
                 >
                   <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-                      {toolGroups.map((group) => (
-                        <div key={group.slug}>
-                          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                            {group.name}
-                          </div>
-                          <ul className="space-y-1">
-                            {group.tools.map((tool) => (
-                              <li key={tool.slug}>
-                                <Link
-                                  href={tool.href}
-                                  className={menuLinkClass}
-                                  onClick={() => setToolsOpen(false)}
-                                >
-                                  {tool.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-4 gap-6">
+                      <ToolMenuGroup
+                        name="Text & Format"
+                        tools={textTools.slice(0, 6)}
+                        onClick={() => setToolsOpen(false)}
+                      />
+                      <ToolMenuGroup
+                        name="Text & Format"
+                        tools={textTools.slice(6, 12)}
+                        onClick={() => setToolsOpen(false)}
+                      />
+                      <div>
+                        {cryptoGroup && (
+                          <ToolMenuGroup
+                            name={cryptoGroup.name}
+                            tools={cryptoGroup.tools}
+                            onClick={() => setToolsOpen(false)}
+                          />
+                        )}
+                        {dateGroup && (
+                          <ToolMenuGroup
+                            name={dateGroup.name}
+                            tools={dateGroup.tools}
+                            onClick={() => setToolsOpen(false)}
+                            className="mt-4"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        {encodeGroup && (
+                          <ToolMenuGroup
+                            name={encodeGroup.name}
+                            tools={encodeGroup.tools}
+                            onClick={() => setToolsOpen(false)}
+                          />
+                        )}
+                        {webGroup && (
+                          <ToolMenuGroup
+                            name={webGroup.name}
+                            tools={webGroup.tools}
+                            onClick={() => setToolsOpen(false)}
+                            className="mt-4"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -204,7 +239,7 @@ export function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="absolute right-4 flex items-center gap-2 sm:right-6">
           <div className="hidden md:block">
             <ThemeToggle />
           </div>
@@ -334,6 +369,35 @@ function MobileAccordion({
         <ChevronDown className={"h-4 w-4 transition " + (open ? "rotate-180" : "")} />
       </button>
       {open && <div className="border-t border-zinc-200 px-2 py-2 dark:border-zinc-800">{children}</div>}
+    </div>
+  );
+}
+
+function ToolMenuGroup({
+  name,
+  tools,
+  onClick,
+  className = "",
+}: {
+  name: string;
+  tools: Tool[];
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+        {name}
+      </div>
+      <ul className="space-y-1">
+        {tools.map((tool) => (
+          <li key={tool.slug}>
+            <Link href={tool.href} className={menuLinkClass} onClick={onClick}>
+              {tool.name}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
