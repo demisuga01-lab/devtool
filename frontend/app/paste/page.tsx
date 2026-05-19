@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Copy, Eye, EyeOff, ExternalLink, Trash2 } from "lucide-react";
 import { Button, Checkbox, CopyButton, ErrorCard, Input, Label, Select, Textarea } from "@/components/ui";
 import { createPaste, ExpiresIn, PasteCreateResult } from "@/lib/paste-api";
@@ -68,6 +69,23 @@ function timeAgo(value: string): string {
 }
 
 export default function PasteHome() {
+  return (
+    <Suspense fallback={<PastePageFallback />}>
+      <PasteHomeContent />
+    </Suspense>
+  );
+}
+
+function PastePageFallback() {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="h-48 rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900" />
+    </div>
+  );
+}
+
+function PasteHomeContent() {
+  const searchParams = useSearchParams();
   const [content, setContent] = useState("");
   const [language, setLanguage] = useState("plaintext");
   const [title, setTitle] = useState("");
@@ -85,6 +103,29 @@ export default function PasteHome() {
   useEffect(() => {
     setRecent(loadRecent());
   }, []);
+
+  useEffect(() => {
+    const lang = searchParams.get("lang");
+    const mode = searchParams.get("mode");
+
+    if (lang && LANGUAGES.some(([value]) => value === lang)) {
+      setLanguage(lang);
+    }
+    if (mode === "burn") {
+      setBurnAfterRead(true);
+    }
+    if (mode === "password") {
+      window.setTimeout(() => document.getElementById("paste-password")?.focus(), 0);
+    }
+    if (mode === "secret") {
+      setBurnAfterRead(true);
+      setViewLimit("1");
+    }
+    if (mode === "expiry") {
+      setExpiresIn("24h");
+      window.setTimeout(() => document.getElementById("paste-expiry")?.focus(), 0);
+    }
+  }, [searchParams]);
 
   const lineNumbers = useMemo(() => {
     const count = Math.max(1, content.split("\n").length);
@@ -200,7 +241,12 @@ export default function PasteHome() {
               </div>
               <div>
                 <Label>Expiry</Label>
-                <Select value={expiresIn} onChange={(e) => setExpiresIn(e.target.value as ExpiresIn)} className="w-full">
+                <Select
+                  id="paste-expiry"
+                  value={expiresIn}
+                  onChange={(e) => setExpiresIn(e.target.value as ExpiresIn)}
+                  className="w-full"
+                >
                   {EXPIRIES.map((item) => (
                     <option key={item.value} value={item.value}>{item.label}</option>
                   ))}
@@ -210,6 +256,7 @@ export default function PasteHome() {
                 <Label>Password</Label>
                 <div className="flex gap-2">
                   <Input
+                    id="paste-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -293,7 +340,7 @@ export default function PasteHome() {
       </div>
 
       {recent.length > 0 && (
-        <section className="mt-10">
+        <section id="recent" className="mt-10 scroll-mt-24">
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Recent Pastes</h2>
             <span className="text-xs text-zinc-500">Stored in this browser</span>
