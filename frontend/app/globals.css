@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.markdown-preview h1 { font-size: 1.5rem; font-weight: 600; margin: 0.5rem 0; }
+.markdown-preview h2 { font-size: 1.25rem; font-weight: 600; margin: 0.5rem 0; }
+.markdown-preview h3 { font-size: 1.1rem; font-weight: 600; margin: 0.5rem 0; }
+.markdown-preview p { margin: 0.5rem 0; line-height: 1.6; }
+.markdown-preview ul, .markdown-preview ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+.markdown-preview ul { list-style: disc; }
+.markdown-preview ol { list-style: decimal; }
+.markdown-preview a { color: #059669; text-decoration: underline; }
+.dark .markdown-preview a { color: #34d399; }
+.markdown-preview code {
+  background: rgb(244 244 245);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+.dark .markdown-preview code { background: rgb(39 39 42); }
+.markdown-preview pre {
+  background: rgb(244 244 245);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.dark .markdown-preview pre { background: rgb(24 24 27); }
+.markdown-preview pre code { background: transparent; padding: 0; }
+.markdown-preview blockquote {
+  border-left: 3px solid rgb(212 212 216);
+  padding-left: 0.75rem;
+  color: rgb(82 82 91);
+  margin: 0.5rem 0;
+}
+.dark .markdown-preview blockquote {
+  border-color: rgb(63 63 70);
+  color: rgb(161 161 170);
+}
+.markdown-preview table { border-collapse: collapse; margin: 0.5rem 0; }
+.markdown-preview th, .markdown-preview td {
+  border: 1px solid rgb(228 228 231);
+  padding: 0.25rem 0.5rem;
+}
+.dark .markdown-preview th, .dark .markdown-preview td {
+  border-color: rgb(63 63 70);
+}

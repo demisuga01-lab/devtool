@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic
+pydantic-settings
+httpx
+psycopg2-binary
+sqlalchemy
+alembic
+bcrypt
+cryptography
+apscheduler
