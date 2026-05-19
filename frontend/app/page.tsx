@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo, useState } from "react";
 import {
   Activity,
   AlignLeft,
@@ -18,6 +15,7 @@ import {
   type LucideIcon,
   Wrench,
 } from "lucide-react";
+import { ToolOutputDemo } from "@/components/ToolOutputDemo";
 import { toolGroups } from "@/lib/tools";
 
 const categoryData = [
@@ -66,47 +64,44 @@ const categoryData = [
   },
 ];
 
-const sampleJson =
-  '{"name":"WellFriend DevTools","version":"1.0.0","tools":29,"free":true,"features":["format","decode","hash"]}';
-
 export default function HomePage() {
   return (
     <div>
-      <section className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 py-16 sm:px-6 sm:py-24 lg:grid-cols-2 lg:items-center">
+      <section className="flex min-h-[calc(100vh-4rem)] items-center border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 px-4 py-16 sm:px-6 lg:grid-cols-2">
           <div>
-            <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
               29 tools &middot; Open source &middot; Free forever
             </span>
-            <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 text-5xl font-bold leading-[1.05] tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-6xl lg:text-7xl">
               A clean developer toolbox.
             </h1>
-            <p className="mt-4 max-w-lg text-lg text-zinc-600 dark:text-zinc-400">
+            <p className="mt-5 max-w-lg text-xl leading-relaxed text-zinc-500 dark:text-zinc-400">
               Format, decode, hash, and inspect. Everything runs in your browser. No signup, no tracking.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-10 flex flex-wrap gap-3">
               <Link
                 href="/tools"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
               >
                 Browse all tools
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/paste"
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
                 Create a paste
               </Link>
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2">
               <TrustBadge icon={CheckCircle2} label="No account required" />
               <TrustBadge icon={Shield} label="Runs in your browser" />
-              <TrustBadge icon={Github} label="Open source" />
+              <TrustBadge icon={Github} label="Open source on GitHub" />
             </div>
           </div>
 
-          <JsonFormatterDemo />
+          <ToolOutputDemo />
         </div>
       </section>
 
@@ -178,86 +173,10 @@ export default function HomePage() {
 
 function TrustBadge({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-500">
-      <Icon className="h-3.5 w-3.5 text-emerald-500" />
+    <span className="inline-flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-500">
+      <Icon className="h-4 w-4 text-emerald-500" />
       {label}
     </span>
-  );
-}
-
-function JsonFormatterDemo() {
-  const [input, setInput] = useState(sampleJson);
-
-  const result = useMemo(() => {
-    try {
-      return {
-        valid: true,
-        output: JSON.stringify(JSON.parse(input), null, 2),
-      };
-    } catch {
-      return {
-        valid: false,
-        output: "Invalid JSON - fix the input",
-      };
-    }
-  }, [input]);
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-800">
-        <div className="flex gap-1.5">
-          <div className="h-3 w-3 rounded-full bg-red-400" />
-          <div className="h-3 w-3 rounded-full bg-yellow-400" />
-          <div className="h-3 w-3 rounded-full bg-green-400" />
-        </div>
-        <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">JSON Formatter</div>
-        <Link
-          href="/tools/json-formatter"
-          className="text-xs font-medium text-emerald-600 hover:underline dark:text-emerald-400"
-        >
-          Try it -&gt;
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 divide-y divide-zinc-200 dark:divide-zinc-800 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-        <div>
-          <div className="px-3 pb-1 pt-3 text-xs font-medium text-zinc-400">Input</div>
-          <textarea
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            className="h-[220px] w-full resize-none bg-transparent px-3 pb-3 pt-1 font-mono text-xs text-zinc-700 placeholder:text-zinc-700 focus:outline-none dark:text-zinc-300 dark:placeholder:text-zinc-300"
-          />
-        </div>
-        <div>
-          <div className="px-3 pb-1 pt-3 text-xs font-medium text-zinc-400">Formatted</div>
-          <pre
-            className={
-              "h-[220px] w-full overflow-auto whitespace-pre bg-transparent px-3 pb-3 pt-1 font-mono text-xs " +
-              (result.valid ? "text-zinc-700 dark:text-zinc-300" : "text-red-500 dark:text-red-400")
-            }
-          >
-            {result.output}
-          </pre>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-800/50">
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
-          <span
-            className={
-              "h-1.5 w-1.5 rounded-full " + (result.valid ? "bg-emerald-500" : "bg-red-500")
-            }
-          />
-          {result.valid ? "Valid JSON" : "Invalid JSON"}
-        </div>
-        <Link
-          href="/tools/json-formatter"
-          className="text-xs text-emerald-600 hover:underline dark:text-emerald-400"
-        >
-          Edit in full tool -&gt;
-        </Link>
-      </div>
-    </div>
   );
 }
 
