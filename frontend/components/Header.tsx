@@ -111,13 +111,13 @@ export function Header() {
       <div className="relative mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6">
         <div className="absolute left-4 flex items-center sm:left-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white dark:bg-transparent dark:p-0">
+            <div className="flex-shrink-0 overflow-hidden rounded-xl">
               <Image
                 src="/logo.png"
                 alt="WellFriend DevTools"
                 width={40}
                 height={40}
-                className="h-10 w-10 rounded-xl object-cover dark:rounded-xl dark:[filter:invert(1)_hue-rotate(140deg)_saturate(0.8)]"
+                className="h-10 w-10 rounded-xl object-cover"
                 priority
               />
             </div>
