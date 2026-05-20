@@ -1,16 +1,29 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.core.database import init_db
-from app.core.scheduler import scheduler
 from app.api.routes import auth, paste, status, tools
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.core.database import init_db
+    from app.core.scheduler import start_scheduler, stop_scheduler
+
+    init_db()
+    start_scheduler()
+    yield
+    stop_scheduler()
+
+
 app = FastAPI(
     title="WellFriend DevTools API",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -25,13 +38,6 @@ app.add_middleware(
 @app.get("/api/health")
 async def health() -> dict:
     return {"status": "ok"}
-
-
-@app.on_event("startup")
-def startup() -> None:
-    init_db()
-    if not scheduler.running:
-        scheduler.start()
 
 
 app.include_router(tools.router, prefix="/api")
