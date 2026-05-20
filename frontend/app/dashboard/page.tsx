@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -290,8 +290,8 @@ function severityPillClass(severity: Severity) {
 
 function responseClass(ms: number | null) {
   if (ms === null) return "text-zinc-400";
-  if (ms < 30) return "text-emerald-600 dark:text-emerald-400";
-  if (ms <= 100) return "text-yellow-600 dark:text-yellow-400";
+  if (ms < 200) return "text-emerald-600 dark:text-emerald-400";
+  if (ms <= 500) return "text-yellow-600 dark:text-yellow-400";
   return "text-red-600 dark:text-red-400";
 }
 
@@ -1230,7 +1230,7 @@ function MonitorsTable({
               {monitors.map((monitor) => {
                 const checks = checksByMonitor[monitor.id] ?? [];
                 return (
-                  <>
+                  <Fragment key={monitor.id}>
                     <tr key={monitor.id} className="align-top">
                       <td className="px-5 py-4">
                         <span className={`block h-2.5 w-2.5 rounded-full ${statusDotClass(monitor.last_status)}`} />
@@ -1283,7 +1283,7 @@ function MonitorsTable({
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>

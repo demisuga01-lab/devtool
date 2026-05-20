@@ -152,7 +152,7 @@ function MonitorTimeline({ checks }: { checks: MonitorCheck[] }) {
     while (padded.length < 90) {
       padded.unshift({
         checked_at: "",
-        status: "unknown",
+        status: "unknown" as MonitorStatus,
         response_ms: null,
         status_code: null,
       });
@@ -160,20 +160,35 @@ function MonitorTimeline({ checks }: { checks: MonitorCheck[] }) {
     return padded.slice(-90);
   }, [checks]);
 
+  const maxMs = useMemo(() => {
+    const values = bars.map((b) => b.response_ms ?? 0);
+    return Math.max(1, ...values);
+  }, [bars]);
+
   return (
     <div className="min-w-0">
-      <div className="flex w-full items-center gap-px overflow-hidden md:gap-0.5">
+      <div className="flex w-full items-end gap-px overflow-hidden md:gap-0.5" style={{ height: "32px" }}>
         {bars.map((check, index) => (
           <span
             key={`${check.checked_at || "empty"}-${index}`}
-            title={check.checked_at ? `${check.status} at ${formatDateTime(check.checked_at)}` : "No data"}
-            className={`h-6 w-1 flex-shrink-0 rounded-sm md:h-8 md:w-1.5 ${historyColor(check.status)}`}
+            title={
+              check.checked_at
+                ? `${check.status} · ${check.response_ms == null ? "timeout" : `${check.response_ms}ms`} · ${formatDateTime(check.checked_at)}`
+                : "No data"
+            }
+            className={`flex-shrink-0 rounded-sm w-1 md:w-1.5 ${historyColor(check.status)}`}
+            style={{
+              height: check.response_ms == null
+                ? check.checked_at ? "100%" : "20%"
+                : `${Math.max(15, Math.round((check.response_ms / maxMs) * 100))}%`,
+              opacity: check.checked_at ? 1 : 0.25,
+            }}
           />
         ))}
       </div>
       <div className="mt-1 flex justify-between text-[11px] text-zinc-400 dark:text-zinc-600 md:text-xs">
-        <span>90 days</span>
-        <span>Today</span>
+        <span>90 checks ago</span>
+        <span>Latest</span>
       </div>
     </div>
   );
@@ -280,18 +295,27 @@ export default function StatusPage() {
                   <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{incident.message}</p>
                 )}
                 {incident.updates.length > 0 && (
-                  <div className="mt-4 space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-                    {incident.updates.map((update) => (
-                      <div key={update.id} className="flex gap-3">
-                        <span className="mt-1 h-2.5 w-2.5 rounded-full bg-yellow-500" />
-                        <div>
-                          <div className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
-                            {update.status} - {formatDateTime(update.created_at)}
+                  <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                    <div className="relative space-y-4 pl-5">
+                      <div className="absolute left-[7px] top-1 h-[calc(100%-8px)] w-px bg-zinc-200 dark:bg-zinc-800" />
+                      {incident.updates.map((update, index) => (
+                        <div key={update.id} className="relative flex gap-3">
+                          <span className={`absolute -left-5 mt-1 h-3 w-3 rounded-full border-2 border-white dark:border-zinc-900 ${
+                            update.status === "resolved" ? "bg-emerald-500"
+                            : update.status === "monitoring" ? "bg-blue-500"
+                            : update.status === "identified" ? "bg-orange-500"
+                            : "bg-yellow-500"
+                          }`} />
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-semibold capitalize text-zinc-700 dark:text-zinc-300">{update.status}</span>
+                              <span className="text-xs text-zinc-400 dark:text-zinc-600">{formatDateTime(update.created_at)}</span>
+                            </div>
+                            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{update.message}</p>
                           </div>
-                          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{update.message}</p>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
               </article>
@@ -365,23 +389,25 @@ export default function StatusPage() {
                           <h4 className="min-w-0 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                             {monitor.name}
                           </h4>
-                          <span className={`flex-shrink-0 rounded-xl px-1.5 py-0.5 text-xs font-medium ${uptimePillClass(monitor.uptime_30d)}`}>
-                            {monitor.uptime_30d.toFixed(2)}% uptime
+                          <span className={`flex-shrink-0 rounded-lg px-1.5 py-0.5 text-[11px] font-semibold ${uptimePillClass(monitor.uptime_30d)}`}>
+                            {monitor.uptime_30d.toFixed(2)}%
                           </span>
                         </div>
-                        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-600 md:mt-2 md:gap-3">
+                        <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-600 md:mt-2 md:gap-3">
                           <span>
-                            <span className="hidden md:inline">Last response </span>
+                            <span className="hidden md:inline">Response </span>
                             {monitor.last_response_ms == null ? "-" : `${monitor.last_response_ms}ms`}
                           </span>
-                          <span className="md:hidden">&middot;</span>
+                          <span className="text-zinc-300 dark:text-zinc-700">·</span>
                           <span>
-                            <span className="hidden md:inline">Last check </span>
+                            <span className="hidden md:inline">Checked </span>
                             <span className="md:hidden">{formatRelativeTime(monitor.last_checked_at, now)}</span>
                             <span className="hidden md:inline">
-                              {monitor.last_checked_at ? formatDateTime(monitor.last_checked_at) : "not yet"}
+                              {monitor.last_checked_at ? formatRelativeTime(monitor.last_checked_at, now) : "not yet"}
                             </span>
                           </span>
+                          <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                          <span>{monitor.uptime_30d.toFixed(2)}% uptime</span>
                         </div>
                       </div>
                       <MonitorTimeline checks={histories[monitor.id] ?? []} />
