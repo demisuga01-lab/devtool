@@ -24,7 +24,7 @@ const pasteLinks = [
 ];
 
 const navClass =
-  "inline-flex h-full items-center border-b-2 border-transparent px-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35";
+  "inline-flex h-full items-center border-b-2 border-transparent px-2 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35";
 const inactiveNavClass =
   "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100";
 const activeNavClass =
@@ -146,12 +146,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3">
-          <span className="flex flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 p-2">
-            <Code2 className="h-9 w-9 text-white" aria-hidden="true" />
-          </span>
+        <Link href="/" className="flex items-center gap-2">
+          <Code2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
           <span className="flex flex-col justify-center leading-tight">
-            <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">
               DevTools
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
