@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64 as _base64
 import ipaddress
 import re
 import shutil
@@ -629,23 +628,18 @@ async def run_code(payload: RunCodeRequest) -> dict:
     if language_id is None:
         raise HTTPException(status_code=400, detail=f"Language '{language}' is not supported.")
 
-    # Judge0 expects base64-encoded source code and stdin
-    source_b64 = _base64.b64encode(code.encode()).decode()
-    stdin_b64 = _base64.b64encode(stdin.encode()).decode() if stdin else None
-
     request_body: dict = {
-        "source_code": source_b64,
+        "source_code": code,
         "language_id": language_id,
-        "encoding": "base64",
     }
-    if stdin_b64:
-        request_body["stdin"] = stdin_b64
+    if stdin:
+        request_body["stdin"] = stdin
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             # Submit and wait for result
             resp = await client.post(
-                f"{JUDGE0_URL}?wait=true",
+                f"{JUDGE0_URL}?wait=true&base64_encoded=false",
                 json=request_body,
             )
             if not resp.is_success:
@@ -660,18 +654,9 @@ async def run_code(payload: RunCodeRequest) -> dict:
     except Exception:
         raise HTTPException(status_code=502, detail="Code execution failed.")
 
-    # Decode base64 outputs from Judge0
-    def decode_b64(value: str | None) -> str:
-        if not value:
-            return ""
-        try:
-            return _base64.b64decode(value).decode("utf-8", errors="replace")
-        except Exception:
-            return value
-
-    stdout = decode_b64(data.get("stdout"))
-    stderr = decode_b64(data.get("stderr"))
-    compile_output = decode_b64(data.get("compile_output"))
+    stdout = data.get("stdout") or ""
+    stderr = data.get("stderr") or ""
+    compile_output = data.get("compile_output") or ""
     message = data.get("message") or ""
 
     status = data.get("status", {})
