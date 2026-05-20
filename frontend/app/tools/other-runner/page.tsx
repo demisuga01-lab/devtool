@@ -129,7 +129,7 @@ void main() {
 ];
 
 const editorClass =
-  "w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100";
+  "w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -316,7 +316,7 @@ export default function OtherRunnerPage() {
           ))}
         </section>
 
-        <div className="flex flex-1 gap-5 min-h-0">
+        <div className="flex h-[calc(100vh-8rem)] min-h-[560px] gap-5">
           <section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{active.label} Editor</h2>
@@ -327,7 +327,7 @@ export default function OtherRunnerPage() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className={`${editorClass} flex-1 resize-none rounded-none border-x-0`}
+              className={`${editorClass} min-h-[480px] flex-1 resize-none rounded-none border-x-0 lg:min-h-0`}
             />
 
             <label className="mb-1.5 mt-4 block px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>

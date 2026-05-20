@@ -98,7 +98,7 @@ END MODULE`,
 ];
 
 const editorClass =
-  "min-h-[360px] w-full flex-1 resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 lg:min-h-0";
+  "min-h-[480px] w-full flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 lg:min-h-0";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -207,7 +207,7 @@ export default function JvmRunnerPage() {
           </p>
         </header>
 
-        <div className="mt-6 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
+        <div className="mt-6 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col">
             <div className="flex flex-wrap items-end gap-1">
               {languages.map((language, index) => (
@@ -262,7 +262,7 @@ export default function JvmRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-[320px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />

@@ -5,7 +5,7 @@ import { KeyboardEvent, useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
-type Mode = "sqlite" | "julia";
+type Mode = "sqlite" | "julia" | "mysql" | "postgresql" | "mongodb";
 type OutputTab = "output" | "errors";
 
 type RunResult = {
@@ -65,8 +65,109 @@ println("Median: ", median_val)
 println("Min: ", minimum(data))
 println("Max: ", maximum(data))`;
 
+const mysqlCode = `-- MySQL Query
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');
+INSERT INTO users (name, email) VALUES ('Bob', 'bob@example.com');
+SELECT * FROM users;
+DROP TABLE IF EXISTS users;`;
+
+const postgresqlCode = `-- PostgreSQL Query
+CREATE TABLE IF NOT EXISTS products (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    price NUMERIC(10,2),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO products (name, price) VALUES ('Widget', 9.99);
+INSERT INTO products (name, price) VALUES ('Gadget', 24.99);
+SELECT * FROM products;
+DROP TABLE IF EXISTS products;`;
+
+const mongodbCode = `// MongoDB Shell
+db.users.drop();
+db.users.insertMany([
+  { name: "Alice", age: 30, role: "admin" },
+  { name: "Bob", age: 25, role: "user" },
+  { name: "Carol", age: 35, role: "user" }
+]);
+db.users.find({}).forEach(doc => print(JSON.stringify(doc)));
+print("Total users: " + db.users.countDocuments({}));`;
+
+const defaultCodeByMode: Record<Mode, string> = {
+  sqlite: sqliteCode,
+  julia: juliaCode,
+  mysql: mysqlCode,
+  postgresql: postgresqlCode,
+  mongodb: mongodbCode,
+};
+
+const modeMeta: Record<
+  Mode,
+  {
+    label: string;
+    editorLabel: string;
+    runLabel: string;
+    icon: JSX.Element;
+    activeClass: string;
+    runButtonClass: string;
+    isDatabase: boolean;
+  }
+> = {
+  sqlite: {
+    label: "SQLite",
+    editorLabel: "SQL Query",
+    runLabel: "Execute Query",
+    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><path d="M36 4c-6 0-12 8-12 20s6 20 12 20c2 0 4-1 4-3V7c0-2-2-3-4-3z" fill="#0F80CC"/><path d="M24 24c0-12-6-20-12-20C8 4 6 5 6 7v34c0 2 2 3 4 3 6 0 14-8 14-20z" fill="#003B57"/></svg>,
+    activeClass: "bg-emerald-600 text-white",
+    runButtonClass: "bg-emerald-600 hover:bg-emerald-700",
+    isDatabase: true,
+  },
+  julia: {
+    label: "Julia",
+    editorLabel: "Julia Script",
+    runLabel: "Run Julia",
+    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><circle cx="16" cy="32" r="8" fill="#CB3C33"/><circle cx="32" cy="32" r="8" fill="#389826"/><circle cx="24" cy="18" r="8" fill="#9558B2"/></svg>,
+    activeClass: "bg-purple-600 text-white",
+    runButtonClass: "bg-purple-600 hover:bg-purple-700",
+    isDatabase: false,
+  },
+  mysql: {
+    label: "MySQL",
+    editorLabel: "MySQL Query",
+    runLabel: "▶ Execute MySQL",
+    icon: <svg viewBox="0 0 24 24" className="h-4 w-4"><path d="M16.405 5.501c-.115 0-.193.014-.274.033v.013h.014c.054.104.146.18.214.273.054.107.1.214.154.32l.014-.015c.094-.066.14-.172.14-.333-.04-.047-.046-.094-.08-.14-.04-.067-.126-.1-.18-.153zM5.77 18.695h-.927a50.854 50.854 0 00-.27-4.41h-.008l-1.41 4.41H2.45l-1.4-4.41h-.01a72.892 72.892 0 00-.195 4.41H0c.055-1.966.192-3.81.41-5.53h1.15l1.335 4.064h.008l1.347-4.064h1.095c.242 2.015.384 3.86.428 5.53zm4.017-1.08c0 .57-.162 1.02-.486 1.35-.324.33-.762.495-1.308.495-.54 0-.968-.163-1.29-.489-.32-.325-.484-.76-.484-1.307 0-.573.164-1.024.49-1.352.324-.33.765-.494 1.314-.494.54 0 .966.164 1.285.49.32.327.48.762.48 1.307zm-1.818-.72c-.174.205-.262.508-.262.912 0 .395.087.692.26.89.174.2.4.3.68.3.282 0 .508-.1.68-.302.172-.2.258-.495.258-.88 0-.4-.085-.702-.256-.905-.172-.204-.4-.307-.682-.307-.282 0-.507.104-.678.292zm7.21.576h-2.57c.015.548.163.956.444 1.224.28.27.668.403 1.165.403.49 0 .94-.11 1.35-.33v.77c-.41.2-.89.3-1.44.3-.576 0-1.03-.17-1.36-.51-.33-.34-.493-.83-.493-1.45 0-.59.174-1.058.52-1.41.35-.35.79-.53 1.32-.53.55 0 .97.172 1.266.514.296.344.444.827.444 1.452v.166zm-.844-.56c-.02-.348-.1-.61-.243-.785-.145-.178-.352-.266-.625-.266-.27 0-.484.09-.64.27-.16.18-.252.44-.275.78h1.783zm7.447 1.084c0 .57-.162 1.02-.486 1.35-.324.33-.762.495-1.308.495-.54 0-.968-.163-1.29-.489-.32-.325-.484-.76-.484-1.307 0-.573.164-1.024.49-1.352.324-.33.765-.494 1.314-.494.54 0 .966.164 1.285.49.32.327.48.762.48 1.307zm-1.818-.72c-.174.205-.262.508-.262.912 0 .395.087.692.26.89.174.2.4.3.68.3.282 0 .508-.1.68-.302.172-.2.258-.495.258-.88 0-.4-.085-.702-.256-.905-.172-.204-.4-.307-.682-.307-.282 0-.507.104-.678.292z" fill="#4479A1"/></svg>,
+    activeClass: "bg-orange-500 text-white",
+    runButtonClass: "bg-orange-500 hover:bg-orange-600",
+    isDatabase: true,
+  },
+  postgresql: {
+    label: "PostgreSQL",
+    editorLabel: "PostgreSQL Query",
+    runLabel: "▶ Execute PostgreSQL",
+    icon: <svg viewBox="0 0 24 24" className="h-4 w-4"><path d="M23.5 12c0 6.351-5.149 11.5-11.5 11.5S.5 18.351.5 12 5.649.5 12 .5 23.5 5.649 23.5 12z" fill="#336791"/><path d="M12 6a6 6 0 100 12A6 6 0 0012 6z" fill="white"/><circle cx="12" cy="12" r="3" fill="#336791"/></svg>,
+    activeClass: "bg-blue-600 text-white",
+    runButtonClass: "bg-blue-600 hover:bg-blue-700",
+    isDatabase: true,
+  },
+  mongodb: {
+    label: "MongoDB",
+    editorLabel: "MongoDB Shell",
+    runLabel: "▶ Execute MongoDB",
+    icon: <svg viewBox="0 0 24 24" className="h-4 w-4"><path d="M12 2C12 2 7 8 7 13c0 2.76 2.24 5 5 5s5-2.24 5-5C17 8 12 2 12 2z" fill="#13AA52"/><path d="M12 19v3" stroke="#B8C4BA" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+    activeClass: "bg-green-600 text-white",
+    runButtonClass: "bg-green-600 hover:bg-green-700",
+    isDatabase: true,
+  },
+};
+
 const editorClass =
-  "w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100";
+  "w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -174,25 +275,25 @@ function OutputPanel({
   );
 }
 
-function SqlResultsPanel({
+function DatabaseResultsPanel({
   hasRun,
   result,
   table,
   stdout,
-  sqlErrors,
+  queryErrors,
 }: {
   hasRun: boolean;
   result: RunResult | null;
   table: TableData | null;
   stdout: string;
-  sqlErrors: string;
+  queryErrors: string;
 }) {
   return (
     <section className="flex min-h-[320px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
       <h2 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">Results</h2>
       {!hasRun ? (
         <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-200 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
-          Run a query to see results.
+          Run a query to see results
         </div>
       ) : (
         <>
@@ -244,9 +345,9 @@ function SqlResultsPanel({
             </pre>
           )}
 
-          {sqlErrors && (
+          {queryErrors && (
             <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-red-200 bg-red-50 px-3 py-2 font-mono text-sm text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
-              {sqlErrors}
+              {queryErrors}
             </pre>
           )}
           {table && <div className="mt-2 text-xs text-zinc-500">{table.rows.length} rows returned</div>}
@@ -265,9 +366,11 @@ export default function DataRunnerPage() {
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [outputTab, setOutputTab] = useState<OutputTab>("output");
+  const currentMode = modeMeta[mode];
+  const isDatabaseMode = currentMode.isDatabase;
 
   useEffect(() => {
-    setCode(mode === "sqlite" ? sqliteCode : juliaCode);
+    setCode(defaultCodeByMode[mode]);
     setStdin("");
     setResult(null);
     setError("");
@@ -284,15 +387,55 @@ export default function DataRunnerPage() {
     setOutputTab("output");
 
     try {
-      const res = await fetch(`${API_BASE}/tools/run-code`, {
+      const request =
+        mode === "sqlite"
+          ? {
+              url: `${API_BASE}/tools/run-code`,
+              body: {
+                language: "sqlite3",
+                version: "3.36.0",
+                code,
+                stdin: "",
+              },
+            }
+          : mode === "julia"
+            ? {
+                url: `${API_BASE}/tools/run-code`,
+                body: {
+                  language: "julia",
+                  version: "1.8.5",
+                  code,
+                  stdin,
+                },
+              }
+            : mode === "mysql"
+              ? {
+                  url: `${API_BASE}/tools/run-mysql`,
+                  body: {
+                    query: code,
+                    database: "coderunner_scratch",
+                  },
+                }
+              : mode === "postgresql"
+                ? {
+                    url: `${API_BASE}/tools/run-postgresql`,
+                    body: {
+                      query: code,
+                      database: "coderunner_scratch",
+                    },
+                  }
+                : {
+                    url: `${API_BASE}/tools/run-mongodb`,
+                    body: {
+                      code,
+                      database: "coderunner_scratch",
+                    },
+                  };
+
+      const res = await fetch(request.url, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({
-          language: mode === "sqlite" ? "sqlite3" : "julia",
-          version: mode === "sqlite" ? "3.36.0" : "1.8.5",
-          code,
-          stdin: mode === "sqlite" ? "" : stdin,
-        }),
+        body: JSON.stringify(request.body),
       });
       const data: unknown = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(parseError(data, `Request failed with status ${res.status}`));
@@ -321,8 +464,8 @@ export default function DataRunnerPage() {
   }
 
   const stdout = result?.stdout || result?.output || "";
-  const table = mode === "sqlite" ? parseTable(stdout) : null;
-  const sqlErrors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
+  const table = isDatabaseMode && stdout.includes("|") ? parseTable(stdout) : null;
+  const queryErrors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
@@ -339,61 +482,65 @@ export default function DataRunnerPage() {
 
         <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Data Runner</h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite queries and Julia scripts for data analysis.</p>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, MongoDB, and Julia workflows for data analysis.</p>
         </header>
 
         <div className="mt-6 flex flex-wrap gap-2">
           {([
-            ["sqlite", "SQLite"],
-            ["julia", "Julia"],
-          ] as const).map(([value, label]) => (
+            "sqlite",
+            "mysql",
+            "postgresql",
+            "mongodb",
+            "julia",
+          ] as const).map((value) => (
             <button
               key={value}
               type="button"
               onClick={() => setMode(value)}
               className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors ${
                 mode === value
-                  ? value === "julia"
-                    ? "bg-purple-600 text-white"
-                    : "bg-emerald-600 text-white"
+                  ? modeMeta[value].activeClass
                   : "border border-zinc-200 text-zinc-600 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
               }`}
             >
-              {label}
+              <span className="flex items-center gap-1.5">
+                {modeMeta[value].icon}
+                {modeMeta[value].label}
+              </span>
             </button>
           ))}
         </div>
 
-        {mode === "sqlite" ? (
-          <div className="mt-5 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
+        {isDatabaseMode ? (
+          <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
-                <svg viewBox="0 0 48 48" className="h-5 w-5"><path d="M36 4c-6 0-12 8-12 20s6 20 12 20c2 0 4-1 4-3V7c0-2-2-3-4-3z" fill="#0F80CC"/><path d="M24 24c0-12-6-20-12-20C8 4 6 5 6 7v34c0 2 2 3 4 3 6 0 14-8 14-20z" fill="#003B57"/></svg>
-                SQL Query
+                {currentMode.icon}
+                {currentMode.editorLabel}
               </div>
               <textarea
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
                 onKeyDown={handleCodeKeyDown}
                 spellCheck={false}
-                className={`${editorClass} min-h-[260px] flex-1 resize-none rounded-none border-0 focus:ring-0 lg:min-h-0`}
+                className={`${editorClass} min-h-[400px] flex-1 resize-none rounded-none border-0 focus:ring-0 lg:min-h-0`}
               />
               <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={runCode}
                   disabled={running}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${currentMode.runButtonClass}`}
                 >
-                  {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  {running ? "Running..." : "Execute Query"}
+                  {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                  {running ? "Running..." : currentMode.runLabel}
                 </button>
               </div>
             </section>
-            <SqlResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} sqlErrors={sqlErrors} />
+            <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
           </div>
         ) : (
-          <div className="mt-5 grid min-h-0 flex-1 gap-5 lg:grid-cols-2">
+          <div className="mt-5 grid h-[calc(100vh-8rem)] min-h-[560px] gap-5 lg:grid-cols-2">
             <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-purple-700 dark:border-zinc-800 dark:text-purple-400">
                 <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="16" cy="32" r="8" fill="#CB3C33"/><circle cx="32" cy="32" r="8" fill="#389826"/><circle cx="24" cy="18" r="8" fill="#9558B2"/></svg>
@@ -405,7 +552,7 @@ export default function DataRunnerPage() {
                   onChange={(event) => setCode(event.target.value)}
                   onKeyDown={handleCodeKeyDown}
                   spellCheck={false}
-                  className={`${editorClass} min-h-[360px] flex-1 resize-none lg:min-h-0`}
+                  className={`${editorClass} min-h-[400px] flex-1 resize-none lg:min-h-0`}
                 />
                 <label className="mb-1.5 mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
                 <textarea

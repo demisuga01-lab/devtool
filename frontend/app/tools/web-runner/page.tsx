@@ -554,7 +554,7 @@ function CodeEditor({
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={onKeyDown}
         spellCheck={false}
-        className="min-h-0 w-full flex-1 resize-none bg-zinc-950 p-3 font-mono text-sm text-zinc-100 outline-none"
+        className="min-h-[200px] w-full flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none"
       />
     </section>
   );
@@ -1171,7 +1171,7 @@ export default function WebRunnerPage() {
         </div>
       )}
 
-      <div className="h-[calc(100vh-3.5rem)] overflow-hidden">
+      <div className="h-[calc(100vh-8rem)] min-h-[560px] overflow-hidden">
         {layout === "horizontal" && (
           <div className="flex h-full">
             <div className="flex w-1/2 min-w-0 flex-col overflow-hidden border-r border-zinc-200 dark:border-zinc-800">{editorPane}</div>
@@ -1188,7 +1188,7 @@ export default function WebRunnerPage() {
 
         {layout === "bottom" && (
           <div className="flex h-full flex-col overflow-auto">
-            <div className="min-h-[400px]">{editorPane}</div>
+            <div className="min-h-[480px]">{editorPane}</div>
             {hasRun && <div className="min-h-[500px] border-t border-zinc-200 dark:border-zinc-800">{outputPane}</div>}
           </div>
         )}

@@ -199,13 +199,13 @@ export default function SystemsRunnerPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
+        <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="border-b border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
               {active.label} · {active.compiler} {active.version}
             </div>
             <div className="flex min-h-0 flex-1 overflow-hidden bg-zinc-950">
-              <div ref={lineRef} className="h-full min-w-[2.5rem] overflow-hidden px-2 py-4 text-right font-mono text-sm leading-5 text-zinc-600 select-none">
+              <div ref={lineRef} className="h-full min-w-[2.5rem] overflow-hidden px-2 py-4 text-right font-mono text-sm leading-relaxed text-zinc-600 select-none">
                 {Array.from({ length: lines }).map((_, index) => <div key={index}>{index + 1}</div>)}
               </div>
               <textarea
@@ -215,7 +215,7 @@ export default function SystemsRunnerPage() {
                 onKeyDown={insertTab}
                 onScroll={syncLines}
                 spellCheck={false}
-                className="min-h-0 flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-5 text-zinc-100 outline-none"
+                className="min-h-[480px] flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:min-h-0"
               />
             </div>
             <div className="space-y-3 p-4">
