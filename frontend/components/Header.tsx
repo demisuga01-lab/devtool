@@ -153,7 +153,15 @@ export function Header() {
             alt="DevTools logo"
             width={48}
             height={48}
-            className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 dark:mix-blend-lighten"
+            className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 dark:hidden"
+            priority
+          />
+          <Image
+            src="/logo-dark.png"
+            alt="DevTools logo"
+            width={48}
+            height={48}
+            className="hidden h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 dark:block"
             priority
           />
           <span className="flex flex-col justify-center leading-tight">
