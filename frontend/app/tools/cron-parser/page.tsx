@@ -1,9 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import cronstrue from "cronstrue";
 import { ToolShell } from "@/components/ToolShell";
-import { Input, ErrorCard, Label } from "@/components/ui";
+import { InlineError } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
+import { Input, Label } from "@/components/ui";
 
 function parseField(field: string, min: number, max: number): number[] {
   const out = new Set<number>();
@@ -83,13 +85,21 @@ export default function CronParserPage() {
   const [expr, setExpr] = useState("*/15 9-17 * * 1-5");
 
   const { description, parsed, error } = useMemo(() => {
-    if (!expr.trim()) return { description: "", parsed: null as Parsed | null, error: "" };
+    if (!expr.trim()) return { description: "", parsed: null as Parsed | null, error: null as ToolError | null };
     try {
       const d = cronstrue.toString(expr);
       const p = parseCron(expr);
-      return { description: d, parsed: p, error: "" };
+      return { description: d, parsed: p, error: null as ToolError | null };
     } catch (e) {
-      return { description: "", parsed: null, error: e instanceof Error ? e.message : "Invalid expression" };
+      const message = e instanceof Error ? e.message : "Invalid expression";
+      const parts = expr.trim().split(/\s+/).filter(Boolean);
+      const suggestion =
+        parts.length < 5
+          ? `A standard cron needs 5 fields: minute(0-59) hour(0-23) day(1-31) month(1-12) weekday(0-7). You have only ${parts.length}.`
+          : parts.length > 6
+            ? "Standard cron has 5 fields, or 6 with seconds. You have too many fields."
+            : "Check each field is within its valid range and uses valid syntax (* , - /).";
+      return { description: "", parsed: null, error: { title: "Invalid cron expression", detail: message, suggestion } };
     }
   }, [expr]);
 
@@ -102,7 +112,7 @@ export default function CronParserPage() {
           <Label>Cron expression</Label>
           <Input value={expr} onChange={(e) => setExpr(e.target.value)} className="font-mono" />
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {error && <InlineError error={error} />}
         {description && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
             {description}
@@ -161,3 +171,4 @@ export default function CronParserPage() {
     </ToolShell>
   );
 }
+

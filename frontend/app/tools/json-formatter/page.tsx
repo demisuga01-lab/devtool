@@ -1,65 +1,64 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, CodeBlock, CopyButton, Label } from "@/components/ui";
+import { Button, Textarea, CodeBlock, CopyButton, Label } from "@/components/ui";
+import { InlineError, SuccessBanner, explainJsonError } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
 
-function findLineColumn(text: string, position: number): { line: number; col: number } {
-  const before = text.slice(0, position);
-  const lines = before.split("\n");
-  return { line: lines.length, col: lines[lines.length - 1].length + 1 };
-}
-
-function parseError(text: string, err: unknown): string {
-  if (!(err instanceof Error)) return "Invalid JSON";
-  const m = err.message.match(/position (\d+)/);
-  if (m) {
-    const { line, col } = findLineColumn(text, parseInt(m[1], 10));
-    return `${err.message} (line ${line}, column ${col})`;
-  }
-  return err.message;
-}
+type JsonToolError = ToolError & { line?: number; column?: number };
 
 export default function JsonFormatterPage() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<JsonToolError | null>(null);
+  const [success, setSuccess] = useState("");
+
+  const parse = (): unknown | null => {
+    if (!input.trim()) {
+      setError(null);
+      setOutput("");
+      setSuccess("");
+      return null;
+    }
+    try {
+      const value = JSON.parse(input);
+      setError(null);
+      return value;
+    } catch (e) {
+      setOutput("");
+      setSuccess("");
+      setError(explainJsonError(input, e));
+      return null;
+    }
+  };
 
   const format = () => {
-    try {
-      setError("");
-      setOutput(JSON.stringify(JSON.parse(input), null, 2));
-    } catch (e) {
-      setError(parseError(input, e));
-      setOutput("");
-    }
+    const value = parse();
+    if (value === null) return;
+    setSuccess("");
+    setOutput(JSON.stringify(value, null, 2));
   };
 
   const minify = () => {
-    try {
-      setError("");
-      setOutput(JSON.stringify(JSON.parse(input)));
-    } catch (e) {
-      setError(parseError(input, e));
-      setOutput("");
-    }
+    const value = parse();
+    if (value === null) return;
+    setSuccess("");
+    setOutput(JSON.stringify(value));
   };
 
   const validate = () => {
-    try {
-      JSON.parse(input);
-      setError("");
-      setOutput("Valid JSON.");
-    } catch (e) {
-      setError(parseError(input, e));
-      setOutput("");
-    }
+    const value = parse();
+    if (value === null) return;
+    setOutput("");
+    setSuccess("Valid JSON.");
   };
 
   const clear = () => {
     setInput("");
     setOutput("");
-    setError("");
+    setError(null);
+    setSuccess("");
   };
 
   return (
@@ -69,10 +68,19 @@ export default function JsonFormatterPage() {
           <Label>Input</Label>
           <Textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (!e.target.value.trim()) {
+                setOutput("");
+                setError(null);
+                setSuccess("");
+              }
+            }}
             rows={12}
             placeholder='{"hello": "world"}'
           />
+          {error && <InlineError error={error} />}
+          {error?.line && <p className="mt-1 text-xs text-red-500">Error near line {error.line}</p>}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={format} disabled={!input}>Format</Button>
@@ -80,7 +88,7 @@ export default function JsonFormatterPage() {
           <Button onClick={validate} disabled={!input}>Validate</Button>
           <Button variant="ghost" onClick={clear}>Clear</Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {success && <SuccessBanner>{success}</SuccessBanner>}
         {output && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">

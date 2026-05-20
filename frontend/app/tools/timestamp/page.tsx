@@ -1,8 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, ErrorCard, CopyButton, Label, Select } from "@/components/ui";
+import { ERROR_MESSAGES, InlineError, WarningBanner } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
+import { Button, Input, CopyButton, Label, Select } from "@/components/ui";
 
 function relativeTime(date: Date): string {
   const diffMs = date.getTime() - Date.now();
@@ -33,7 +35,8 @@ function getTimezones(): string[] {
 export default function TimestampPage() {
   const [input, setInput] = useState("");
   const [parsed, setParsed] = useState<Date | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
+  const [scaleWarning, setScaleWarning] = useState<{ seconds: string; milliseconds: string } | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [tz, setTz] = useState<string>(() => {
     try {
@@ -50,24 +53,33 @@ export default function TimestampPage() {
   }, []);
 
   const convert = () => {
-    setError("");
+    setError(null);
+    setScaleWarning(null);
     setParsed(null);
     const trimmed = input.trim();
     if (!trimmed) return;
     if (/^\d+$/.test(trimmed)) {
       const n = Number(trimmed);
-      const ms = trimmed.length <= 10 ? n * 1000 : n;
-      const d = new Date(ms);
-      if (Number.isNaN(d.getTime())) {
-        setError("Invalid timestamp.");
+      if (Number.isNaN(n)) {
+        setError(ERROR_MESSAGES.invalid_date);
         return;
+      }
+      const asSeconds = new Date(n * 1000);
+      const asMilliseconds = new Date(n);
+      const d = trimmed.length <= 10 ? asSeconds : asMilliseconds;
+      if (Number.isNaN(d.getTime())) {
+        setError(ERROR_MESSAGES.invalid_date);
+        return;
+      }
+      if (trimmed.length > 10) {
+        setScaleWarning({ seconds: Number.isNaN(asSeconds.getTime()) ? "Invalid" : asSeconds.toISOString(), milliseconds: asMilliseconds.toISOString() });
       }
       setParsed(d);
       return;
     }
     const d = new Date(trimmed);
     if (Number.isNaN(d.getTime())) {
-      setError("Could not parse date string.");
+      setError(ERROR_MESSAGES.invalid_date);
       return;
     }
     setParsed(d);
@@ -76,7 +88,8 @@ export default function TimestampPage() {
   const useNow = () => {
     setParsed(new Date());
     setInput(String(Math.floor(Date.now() / 1000)));
-    setError("");
+    setError(null);
+    setScaleWarning(null);
   };
 
   const fmtTz = (d: Date) => {
@@ -120,7 +133,7 @@ export default function TimestampPage() {
           <Label>Timestamp or date string</Label>
           <Input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setParsed(null); setError(null); setScaleWarning(null); } }}
             placeholder="1700000000 or 2023-11-14T22:13:20Z"
           />
         </div>
@@ -134,7 +147,16 @@ export default function TimestampPage() {
             ))}
           </Select>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {error && <InlineError error={error} />}
+        {scaleWarning && (
+          <WarningBanner title="Millisecond timestamp detected">
+            <div className="space-y-1">
+              <p>This looks like a millisecond timestamp. Showing both interpretations:</p>
+              <p>As seconds: {scaleWarning.seconds}</p>
+              <p>As milliseconds: {scaleWarning.milliseconds}</p>
+            </div>
+          </WarningBanner>
+        )}
         {parsed && (
           <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <table className="w-full text-sm">
@@ -170,3 +192,4 @@ function Row({ label, value }: { label: string; value: string }) {
     </tr>
   );
 }
+

@@ -1,36 +1,32 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, SuccessCard, Label } from "@/components/ui";
+import { Button, Textarea, Label } from "@/components/ui";
+import { InlineError, SuccessBanner, explainJsonError, jsonTypeInfo } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
 
-function findLineColumn(text: string, position: number): { line: number; col: number } {
-  const before = text.slice(0, position);
-  const lines = before.split("\n");
-  return { line: lines.length, col: lines[lines.length - 1].length + 1 };
-}
+type JsonToolError = ToolError & { line?: number; column?: number };
 
 export default function JsonValidatorPage() {
   const [input, setInput] = useState("");
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [error, setError] = useState<JsonToolError | null>(null);
+  const [validInfo, setValidInfo] = useState("");
 
   const validate = () => {
+    if (!input.trim()) {
+      setError(null);
+      setValidInfo("");
+      return;
+    }
     try {
-      JSON.parse(input);
-      setResult({ ok: true, message: "Valid JSON." });
+      const parsed = JSON.parse(input);
+      setError(null);
+      setValidInfo(jsonTypeInfo(parsed));
     } catch (e) {
-      let msg = "Invalid JSON.";
-      if (e instanceof Error) {
-        const m = e.message.match(/position (\d+)/);
-        if (m) {
-          const { line, col } = findLineColumn(input, parseInt(m[1], 10));
-          msg = `${e.message} (line ${line}, column ${col})`;
-        } else {
-          msg = e.message;
-        }
-      }
-      setResult({ ok: false, message: msg });
+      setValidInfo("");
+      setError(explainJsonError(input, e));
     }
   };
 
@@ -41,24 +37,31 @@ export default function JsonValidatorPage() {
           <Label>JSON to validate</Label>
           <Textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (!e.target.value.trim()) {
+                setError(null);
+                setValidInfo("");
+              }
+            }}
             rows={14}
             placeholder='{"hello": "world"}'
           />
+          {error && <InlineError error={error} />}
+          {error?.line && <p className="mt-1 text-xs text-red-500">Error near line {error.line}</p>}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={validate} disabled={!input}>Validate</Button>
-          <Button variant="ghost" onClick={() => { setInput(""); setResult(null); }}>Clear</Button>
+          <Button variant="ghost" onClick={() => { setInput(""); setError(null); setValidInfo(""); }}>Clear</Button>
         </div>
-        {result?.ok && (
-          <SuccessCard>
+        {validInfo && (
+          <SuccessBanner>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
-              {result.message}
+              <span>Valid JSON. {validInfo}.</span>
             </div>
-          </SuccessCard>
+          </SuccessBanner>
         )}
-        {result && !result.ok && <ErrorCard>{result.message}</ErrorCard>}
       </div>
     </ToolShell>
   );

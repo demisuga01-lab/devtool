@@ -1,8 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { ToolShell } from "@/components/ToolShell";
-import { Input, Textarea, ErrorCard, Label, Checkbox } from "@/components/ui";
+import { InlineError, SuccessBanner, WarningBanner, regexSuggestion } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
+import { Input, Textarea, Label, Checkbox } from "@/components/ui";
 
 type Flag = "g" | "i" | "m" | "s" | "u";
 const ALL_FLAGS: Flag[] = ["g", "i", "m", "s", "u"];
@@ -21,11 +23,12 @@ export default function RegexTesterPage() {
   const flagString = ALL_FLAGS.filter((f) => flags[f]).join("");
 
   const { regex, error } = useMemo(() => {
-    if (!pattern) return { regex: null as RegExp | null, error: "" };
+    if (!pattern) return { regex: null as RegExp | null, error: null as ToolError | null };
     try {
-      return { regex: new RegExp(pattern, flagString), error: "" };
+      return { regex: new RegExp(pattern, flagString), error: null as ToolError | null };
     } catch (e) {
-      return { regex: null, error: e instanceof Error ? e.message : "Invalid regex" };
+      const message = e instanceof Error ? e.message : "Invalid regex";
+      return { regex: null, error: { title: "Invalid regular expression", detail: message, suggestion: regexSuggestion(message) } };
     }
   }, [pattern, flagString]);
 
@@ -88,13 +91,19 @@ export default function RegexTesterPage() {
           ))}
         </div>
 
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {error && <InlineError error={error} />}
 
         <div>
           <Label>Test string</Label>
           <Textarea value={test} onChange={(e) => setTest(e.target.value)} rows={8} />
         </div>
 
+        {pattern && test && !error && matches.length === 0 && (
+          <WarningBanner title="No matches found">The pattern does not match anything in the test string.</WarningBanner>
+        )}
+        {pattern && test && !error && matches.length > 0 && (
+          <SuccessBanner>Found {matches.length} match{matches.length === 1 ? "" : "es"}.</SuccessBanner>
+        )}
         <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs uppercase tracking-wide text-zinc-500">Matches</span>
@@ -142,7 +151,7 @@ export default function RegexTesterPage() {
                       <td className="px-4 py-2 font-mono text-xs">{m.match}</td>
                       <td className="px-4 py-2 font-mono text-xs text-zinc-500">{m.index}</td>
                       <td className="px-4 py-2 font-mono text-xs">
-                        {m.groups.length ? m.groups.map((g, j) => <div key={j}>${j + 1}: {g}</div>) : "—"}
+                        {m.groups.length ? m.groups.map((g, j) => <div key={j}>${j + 1}: {g}</div>) : "-"}
                       </td>
                     </tr>
                   ))}
@@ -155,3 +164,4 @@ export default function RegexTesterPage() {
     </ToolShell>
   );
 }
+

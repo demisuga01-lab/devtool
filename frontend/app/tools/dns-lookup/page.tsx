@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import type { ToolError } from "@/lib/toolErrors";
+import { RefreshCw } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, ErrorCard, Label, Select } from "@/components/ui";
+import { Button, Input, Label, Select } from "@/components/ui";
 import { apiGet } from "@/lib/api";
+import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
 type DnsType = "A" | "AAAA" | "MX" | "NS" | "TXT" | "CNAME" | "SOA";
 
@@ -48,11 +51,34 @@ export default function DnsLookupPage() {
   const [domain, setDomain] = useState("");
   const [type, setType] = useState<DnsType | "All">("All");
   const [results, setResults] = useState<Result[] | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fixApplied, setFixApplied] = useState<{ fix: string; original: string; corrected: string } | null>(null);
 
   const run = async () => {
-    setError("");
+    const original = domain;
+    if (!original.trim()) {
+      setError(null);
+      setResults(null);
+      setFixApplied(null);
+      return;
+    }
+
+    const normalized = normalizeDomain(original);
+    if (normalized.wasFixed && normalized.fixDescription) {
+      setDomain(normalized.domain);
+      setFixApplied({ fix: normalized.fixDescription, original, corrected: normalized.domain });
+    } else {
+      setFixApplied(null);
+    }
+
+    if (!isValidDomain(normalized.domain)) {
+      setResults(null);
+      setError(ERROR_MESSAGES.invalid_domain);
+      return;
+    }
+
+    setError(null);
     setResults(null);
     setLoading(true);
     try {
@@ -60,10 +86,10 @@ export default function DnsLookupPage() {
       const data = await Promise.all(
         requestedTypes.map(async (recordType) => {
           try {
-            return await apiGet<Result>("/tools/dns-lookup", { domain, type: recordType });
+            return await apiGet<Result>("/tools/dns-lookup", { domain: normalized.domain, type: recordType });
           } catch {
             return {
-              domain,
+              domain: normalized.domain,
               type: recordType,
               records: [],
               query_time_ms: 0,
@@ -73,8 +99,13 @@ export default function DnsLookupPage() {
         })
       );
       setResults(data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Request failed.");
+      const everyEmpty = data.every((item) => item.records.length === 0 && !item.error);
+      if (everyEmpty && type === "All") {
+        setError({
+          ...ERROR_MESSAGES.dns_error,
+          detail: `No DNS records found for ${normalized.domain}. The domain may not exist or have no public DNS records.`,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -92,6 +123,9 @@ export default function DnsLookupPage() {
   );
 
   const queryTime = results?.length ? Math.max(...results.map((item) => item.query_time_ms || 0)) : 0;
+  const failedSections = results?.filter((item) => item.error) ?? [];
+  const selectedTypeEmpty =
+    Boolean(results && type !== "All" && visibleSections.length === 0 && !results[0]?.error);
 
   return (
     <ToolShell slug="dns-lookup">
@@ -101,10 +135,13 @@ export default function DnsLookupPage() {
             <Label>Domain</Label>
             <Input
               value={domain}
-              onChange={(e) => setDomain(e.target.value)}
+              onChange={(e) => { setDomain(e.target.value); if (!e.target.value.trim()) { setResults(null); setError(null); setFixApplied(null); } }}
               placeholder="example.com"
-              onKeyDown={(e) => e.key === "Enter" && domain && run()}
+              onKeyDown={(e) => e.key === "Enter" && run()}
+              disabled={loading}
             />
+            {fixApplied && <AutoFixBanner fix={fixApplied.fix} original={fixApplied.original} corrected={fixApplied.corrected} />}
+            {error && <InlineError error={error} />}
           </div>
           <div>
             <Label>Record type</Label>
@@ -112,6 +149,7 @@ export default function DnsLookupPage() {
               value={type}
               onChange={(e) => setType(e.target.value as DnsType | "All")}
               className="w-full sm:w-36"
+              disabled={loading}
             >
               <option>All</option>
               {TYPES.map((recordType) => (
@@ -122,7 +160,7 @@ export default function DnsLookupPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!domain || loading}>
-            {loading ? "Looking up..." : "Lookup"}
+            {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Looking up...</> : "Lookup"}
           </Button>
           <Button
             variant="ghost"
@@ -130,20 +168,27 @@ export default function DnsLookupPage() {
               setDomain("");
               setType("All");
               setResults(null);
-              setError("");
+              setError(null);
+              setFixApplied(null);
             }}
           >
             Clear
           </Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {loading && <LoadingSkeleton />}
         {results && (
           <div className="space-y-4">
             {visibleSections.length === 0 && (
               <div className={`${cardClass} px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400`}>
-                No DNS records found for the selected lookup.
+                {selectedTypeEmpty ? `No ${type} records found for this domain.` : "No DNS records found for the selected lookup."}
               </div>
             )}
+
+            {failedSections.map((item) => (
+              <RecordSection key={`${item.type}-error`} title={`${item.type} Records`}>
+                <p className="text-xs text-red-500">Failed to fetch {item.type} records.</p>
+              </RecordSection>
+            ))}
 
             {resultMap.get("A")?.records.length ? (
               <RecordSection title="A Records (IPv4)">
@@ -264,3 +309,4 @@ function PillList({ records }: { records: string[] }) {
     </div>
   );
 }
+

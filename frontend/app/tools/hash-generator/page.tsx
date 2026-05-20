@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { ToolShell } from "@/components/ToolShell";
@@ -77,7 +77,7 @@ export default function HashGeneratorPage() {
                 <tr key={a}>
                   <td className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">{a}</td>
                   <td className="break-all px-4 py-3 font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                    {enabled[a] ? hashes[a] ?? "—" : <span className="text-zinc-400">disabled</span>}
+                    {enabled[a] ? hashes[a] ?? "-" : <span className="text-zinc-400">disabled</span>}
                   </td>
                   <td className="px-4 py-3">
                     {enabled[a] && hashes[a] && <CopyButton value={hashes[a]!} />}
@@ -94,3 +94,4 @@ export default function HashGeneratorPage() {
     </ToolShell>
   );
 }
+

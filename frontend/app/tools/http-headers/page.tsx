@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import type { ToolError } from "@/lib/toolErrors";
+import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, ErrorCard, Label, CopyButton } from "@/components/ui";
+import { Button, Input, Label, CopyButton } from "@/components/ui";
 import { apiGet } from "@/lib/api";
+import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidUrl, normalizeUrl } from "@/lib/toolErrors";
 
 type Result = {
   url: string;
@@ -80,20 +82,43 @@ function truncate(value: string, max = 60) {
 export default function HttpHeadersPage() {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
   const [headerFilter, setHeaderFilter] = useState("");
+  const [fixApplied, setFixApplied] = useState<{ fix: string; original: string; corrected: string } | null>(null);
 
   const run = async () => {
-    setError("");
+    const original = url;
+    if (!original.trim()) {
+      setError(null);
+      setResult(null);
+      setFixApplied(null);
+      return;
+    }
+
+    const normalized = normalizeUrl(original);
+    if (normalized.wasFixed && normalized.fixDescription) {
+      setUrl(normalized.url);
+      setFixApplied({ fix: normalized.fixDescription, original, corrected: normalized.url });
+    } else {
+      setFixApplied(null);
+    }
+
+    if (!isValidUrl(normalized.url)) {
+      setResult(null);
+      setError(ERROR_MESSAGES.invalid_url);
+      return;
+    }
+
+    setError(null);
     setResult(null);
     setHeaderFilter("");
     setLoading(true);
     try {
-      const data = await apiGet<Result>("/tools/http-headers", { url });
+      const data = await apiGet<Result>("/tools/http-headers", { url: normalized.url });
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Request failed.");
+      setError(errorFromUnknown(e, "network_error"));
     } finally {
       setLoading(false);
     }
@@ -129,28 +154,32 @@ export default function HttpHeadersPage() {
           <Input
             type="url"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => { setUrl(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
             placeholder="https://example.com"
-            onKeyDown={(e) => e.key === "Enter" && url && run()}
+            onKeyDown={(e) => e.key === "Enter" && run()}
+            disabled={loading}
           />
+          {fixApplied && <AutoFixBanner fix={fixApplied.fix} original={fixApplied.original} corrected={fixApplied.corrected} />}
+          {error && <InlineError error={error} />}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!url || loading}>
-            {loading ? "Checking..." : "Check headers"}
+            {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Checking...</> : "Check headers"}
           </Button>
           <Button
             variant="ghost"
             onClick={() => {
               setUrl("");
               setResult(null);
-              setError("");
+              setError(null);
               setHeaderFilter("");
+              setFixApplied(null);
             }}
           >
             Clear
           </Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {loading && <LoadingSkeleton />}
         {result && status && (
           <div className="space-y-5">
             <section>
@@ -288,3 +317,4 @@ function SummaryCard({ label, children }: { label: string; children: ReactNode }
     </div>
   );
 }
+

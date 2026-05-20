@@ -1,11 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Search, XCircle } from "lucide-react";
+import type { ToolError } from "@/lib/toolErrors";
+import { AlertTriangle, CheckCircle2, RefreshCw, Search, XCircle } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, ErrorCard, Label } from "@/components/ui";
+import { Button, Input, Label } from "@/components/ui";
 import { apiGet } from "@/lib/api";
+import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
 type Result = {
   domain: string;
@@ -74,9 +76,10 @@ function AssessmentRow({ passed, neutral = false, label }: { passed: boolean; ne
 export default function SslCheckerPage() {
   const [domain, setDomain] = useState("");
   const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
   const [sanFilter, setSanFilter] = useState("");
+  const [fixApplied, setFixApplied] = useState<{ fix: string; original: string; corrected: string } | null>(null);
 
   const filteredSan = useMemo(() => {
     if (!result) return [];
@@ -86,15 +89,38 @@ export default function SslCheckerPage() {
   }, [result, sanFilter]);
 
   const run = async () => {
-    setError("");
+    const original = domain;
+    if (!original.trim()) {
+      setError(null);
+      setResult(null);
+      setFixApplied(null);
+      return;
+    }
+
+    const normalized = normalizeDomain(original);
+    if (normalized.wasFixed && normalized.fixDescription) {
+      setDomain(normalized.domain);
+      setFixApplied({ fix: normalized.fixDescription, original, corrected: normalized.domain });
+    } else {
+      setFixApplied(null);
+    }
+
+    if (!isValidDomain(normalized.domain)) {
+      setResult(null);
+      setError(ERROR_MESSAGES.invalid_domain);
+      return;
+    }
+
+    setError(null);
     setResult(null);
     setSanFilter("");
     setLoading(true);
     try {
-      const data = await apiGet<Result>("/tools/ssl-checker", { domain });
+      const data = await apiGet<Result>("/tools/ssl-checker", { domain: normalized.domain });
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Request failed.");
+      const message = e instanceof Error ? e.message.toLowerCase() : "";
+      setError(message.includes("not found") || message.includes("resolve") ? ERROR_MESSAGES.dns_error : errorFromUnknown(e, "ssl_error"));
     } finally {
       setLoading(false);
     }
@@ -107,20 +133,23 @@ export default function SslCheckerPage() {
           <Label>Domain</Label>
           <Input
             value={domain}
-            onChange={(e) => setDomain(e.target.value)}
+            onChange={(e) => { setDomain(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
             placeholder="example.com"
-            onKeyDown={(e) => e.key === "Enter" && domain && run()}
+            onKeyDown={(e) => e.key === "Enter" && run()}
+            disabled={loading}
           />
+          {fixApplied && <AutoFixBanner fix={fixApplied.fix} original={fixApplied.original} corrected={fixApplied.corrected} />}
+          {error && <InlineError error={error} />}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!domain || loading}>
-            {loading ? "Checking..." : "Check SSL"}
+            {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Checking...</> : "Check SSL"}
           </Button>
-          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(""); setSanFilter(""); }}>
+          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(null); setSanFilter(""); setFixApplied(null); }}>
             Clear
           </Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {loading && <LoadingSkeleton />}
         {result && (
           <div className="space-y-5">
             <section className={`${cardClass} p-5`}>
@@ -205,3 +234,4 @@ export default function SslCheckerPage() {
     </ToolShell>
   );
 }
+

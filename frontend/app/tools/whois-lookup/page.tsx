@@ -1,11 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import type { ToolError } from "@/lib/toolErrors";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
-import { Button, Input, ErrorCard, Label, CopyButton } from "@/components/ui";
+import { ChevronRight, RefreshCw } from "lucide-react";
+import { Button, Input, Label, CopyButton } from "@/components/ui";
 import { apiGet } from "@/lib/api";
+import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isIpAddress, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
 type Result = {
   domain: string;
@@ -105,9 +107,10 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 export default function WhoisLookupPage() {
   const [domain, setDomain] = useState("");
   const [result, setResult] = useState<Result | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
+  const [fixApplied, setFixApplied] = useState<{ fix: string; original: string; corrected: string } | null>(null);
 
   const parsed = useMemo(() => (result ? parseWhois(result.raw) : {}), [result]);
   const expiryDate = firstValue(parsed, ["Registry Expiry Date", "Registrar Registration Expiration Date", "Expiration Date", "Expiry Date"]);
@@ -115,15 +118,47 @@ export default function WhoisLookupPage() {
   const nameServers = valuesFor(parsed, ["Name Server"]).map((value) => value.toUpperCase());
 
   const run = async () => {
-    setError("");
+    const original = domain;
+    if (!original.trim()) {
+      setError(null);
+      setResult(null);
+      setFixApplied(null);
+      return;
+    }
+
+    const normalized = normalizeDomain(original);
+    if (normalized.wasFixed && normalized.fixDescription) {
+      setDomain(normalized.domain);
+      setFixApplied({ fix: normalized.fixDescription, original, corrected: normalized.domain });
+    } else {
+      setFixApplied(null);
+    }
+
+    if (!normalized.domain.includes(".") || isIpAddress(normalized.domain) || !isValidDomain(normalized.domain)) {
+      setResult(null);
+      setError(ERROR_MESSAGES.invalid_domain);
+      return;
+    }
+
+    setError(null);
     setResult(null);
     setShowRaw(false);
     setLoading(true);
     try {
-      const data = await apiGet<Result>("/tools/whois-lookup", { domain });
+      const data = await apiGet<Result>("/tools/whois-lookup", { domain: normalized.domain });
+      const raw = data.raw.trim();
+      if (/no match for/i.test(raw)) {
+        setError(ERROR_MESSAGES.whois_no_match);
+      } else if (raw.length < 20) {
+        setError({
+          title: "WHOIS server returned no data",
+          detail: "Some TLDs, including .io and .ai, may have restricted WHOIS access.",
+          suggestion: "Try the registry website for this domain, or verify the domain spelling.",
+        });
+      }
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Request failed.");
+      setError(errorFromUnknown(e, "whois_no_match"));
     } finally {
       setLoading(false);
     }
@@ -148,20 +183,23 @@ export default function WhoisLookupPage() {
           <Label>Domain</Label>
           <Input
             value={domain}
-            onChange={(e) => setDomain(e.target.value)}
+            onChange={(e) => { setDomain(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
             placeholder="example.com"
-            onKeyDown={(e) => e.key === "Enter" && domain && run()}
+            onKeyDown={(e) => e.key === "Enter" && run()}
+            disabled={loading}
           />
+          {fixApplied && <AutoFixBanner fix={fixApplied.fix} original={fixApplied.original} corrected={fixApplied.corrected} />}
+          {error && <InlineError error={error} />}
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!domain || loading}>
-            {loading ? "Looking up..." : "Lookup"}
+            {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Looking up...</> : "Lookup"}
           </Button>
-          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(""); setShowRaw(false); }}>
+          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(null); setShowRaw(false); setFixApplied(null); }}>
             Clear
           </Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {loading && <LoadingSkeleton />}
 
         {result && (
           <div className="space-y-5">
@@ -244,3 +282,4 @@ export default function WhoisLookupPage() {
     </div>
   );
 }
+

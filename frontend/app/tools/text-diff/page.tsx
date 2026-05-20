@@ -10,7 +10,13 @@ export default function TextDiffPage() {
   const [b, setB] = useState("");
   const [diff, setDiff] = useState<Change[] | null>(null);
 
-  const compare = () => setDiff(diffLines(a, b));
+  const compare = () => {
+    if (!a && !b) {
+      setDiff(null);
+      return;
+    }
+    setDiff(diffLines(a, b));
+  };
 
   return (
     <ToolShell slug="text-diff">

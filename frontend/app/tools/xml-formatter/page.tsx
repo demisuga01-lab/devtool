@@ -1,25 +1,27 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, CodeBlock, CopyButton, ErrorCard, Label, Textarea } from "@/components/ui";
+import { Button, CodeBlock, CopyButton, Label, Textarea } from "@/components/ui";
+import { InlineError, SuccessBanner, explainXmlError } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
 
-function parseXml(input: string): Document {
+function parseXml(input: string): { doc: Document | null; error: ToolError | null } {
   const doc = new DOMParser().parseFromString(input, "text/xml");
-  const error = doc.querySelector("parsererror");
-  if (error) throw new Error(error.textContent?.trim() || "Invalid XML");
-  return doc;
+  const parseError = doc.querySelector("parsererror");
+  return parseError ? { doc: null, error: explainXmlError(parseError.textContent || "") } : { doc, error: null };
 }
 
 function formatXml(input: string): string {
-  const xml = new XMLSerializer().serializeToString(parseXml(input));
+  const parsed = parseXml(input);
+  if (!parsed.doc) throw parsed.error ?? new Error("Invalid XML");
+  const xml = new XMLSerializer().serializeToString(parsed.doc);
   return xml.replace(/></g, ">\n<").split("\n").reduce((lines: string[], line) => {
     const trimmed = line.trim();
     const prev = lines.length ? lines[lines.length - 1] : "";
     let depth = Math.max(0, (prev.match(/^ */)?.[0].length ?? 0) / 2);
     if (/^<\//.test(trimmed)) depth = Math.max(0, depth - 1);
     lines.push(`${"  ".repeat(depth)}${trimmed}`);
-    if (/^<[^!?/][^>]*[^/]>/ .test(trimmed) && !/^<[^>]+>.*<\/[^>]+>$/.test(trimmed)) depth++;
     return lines;
   }, []).join("\n");
 }
@@ -27,30 +29,51 @@ function formatXml(input: string): string {
 export default function XmlFormatterPage() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
+  const [success, setSuccess] = useState("");
+
   const run = (mode: "format" | "minify" | "validate") => {
-    try {
-      setError("");
-      parseXml(input);
-      if (mode === "validate") setOutput("Valid XML.");
-      else if (mode === "minify") setOutput(input.replace(/>\s+</g, "><").trim());
-      else setOutput(formatXml(input));
-    } catch (e) {
+    if (!input.trim()) {
       setOutput("");
-      setError(e instanceof Error ? e.message : "Invalid XML");
+      setError(null);
+      setSuccess("");
+      return;
+    }
+    const parsed = parseXml(input);
+    if (parsed.error) {
+      setOutput("");
+      setSuccess("");
+      setError(parsed.error);
+      return;
+    }
+    setError(null);
+    if (mode === "validate") {
+      setOutput("");
+      setSuccess("Valid XML.");
+    } else if (mode === "minify") {
+      setSuccess("");
+      setOutput(input.replace(/>\s+</g, "><").trim());
+    } else {
+      setSuccess("");
+      setOutput(formatXml(input));
     }
   };
+
   return (
     <ToolShell slug="xml-formatter">
       <div className="space-y-5">
-        <div><Label>XML</Label><Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={12} /></div>
+        <div>
+          <Label>XML</Label>
+          <Textarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); setSuccess(""); } }} rows={12} />
+          {error && <InlineError error={error} />}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={() => run("format")} disabled={!input}>Format</Button>
           <Button onClick={() => run("minify")} disabled={!input}>Minify</Button>
           <Button onClick={() => run("validate")} disabled={!input}>Validate</Button>
-          <Button variant="ghost" onClick={() => { setInput(""); setOutput(""); setError(""); }}>Clear</Button>
+          <Button variant="ghost" onClick={() => { setInput(""); setOutput(""); setError(null); setSuccess(""); }}>Clear</Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {success && <SuccessBanner>{success}</SuccessBanner>}
         {output && <div className="space-y-2"><div className="flex items-center justify-between"><Label>Output</Label><CopyButton value={output} /></div><CodeBlock value={output} /></div>}
       </div>
     </ToolShell>

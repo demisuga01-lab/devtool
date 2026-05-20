@@ -1,25 +1,44 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
-import { Button, ErrorCard, Label, SuccessCard, Textarea } from "@/components/ui";
+import { Button, Label, Textarea } from "@/components/ui";
+import { InlineError, SuccessBanner, explainXmlError } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
 
 export default function XmlValidatorPage() {
   const [input, setInput] = useState("");
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [error, setError] = useState<ToolError | null>(null);
+  const [valid, setValid] = useState(false);
+
   const validate = () => {
+    if (!input.trim()) {
+      setError(null);
+      setValid(false);
+      return;
+    }
     const doc = new DOMParser().parseFromString(input, "text/xml");
-    const error = doc.querySelector("parsererror");
-    setResult(error ? { ok: false, message: error.textContent?.trim() || "Invalid XML" } : { ok: true, message: "Valid XML." });
+    const parseError = doc.querySelector("parsererror");
+    if (parseError) {
+      setValid(false);
+      setError(explainXmlError(parseError.textContent || ""));
+    } else {
+      setError(null);
+      setValid(true);
+    }
   };
+
   return (
     <ToolShell slug="xml-validator">
       <div className="space-y-5">
-        <div><Label>XML</Label><Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={14} /></div>
-        <div className="flex gap-2"><Button variant="primary" onClick={validate} disabled={!input}>Validate</Button><Button variant="ghost" onClick={() => { setInput(""); setResult(null); }}>Clear</Button></div>
-        {result?.ok && <SuccessCard><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />{result.message}</div></SuccessCard>}
-        {result && !result.ok && <ErrorCard>{result.message}</ErrorCard>}
+        <div>
+          <Label>XML</Label>
+          <Textarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setError(null); setValid(false); } }} rows={14} />
+          {error && <InlineError error={error} />}
+        </div>
+        <div className="flex gap-2"><Button variant="primary" onClick={validate} disabled={!input}>Validate</Button><Button variant="ghost" onClick={() => { setInput(""); setError(null); setValid(false); }}>Clear</Button></div>
+        {valid && <SuccessBanner><div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Valid XML.</div></SuccessBanner>}
         <p className="text-xs text-zinc-500 dark:text-zinc-500">Validates well-formedness only, not against a schema.</p>
       </div>
     </ToolShell>

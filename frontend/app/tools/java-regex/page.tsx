@@ -1,9 +1,12 @@
-"use client";
+﻿"use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
 import { apiGet } from "@/lib/api";
-import { Button, Checkbox, ErrorCard, Label, Textarea, Input } from "@/components/ui";
+import { InlineError, LoadingSkeleton } from "@/lib/toolErrors";
+import type { ToolError } from "@/lib/toolErrors";
+import { Button, Checkbox, Label, Textarea, Input } from "@/components/ui";
 
 type RegexMatch = { start: number; end: number; value: string; groups: (string | null)[] };
 type RegexResult = { total_matches: number; matches: RegexMatch[]; truncated?: boolean };
@@ -38,17 +41,38 @@ export default function JavaRegexPage() {
   const [flags, setFlags] = useState<string[]>(["CASE_INSENSITIVE"]);
   const [result, setResult] = useState<RegexResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ToolError | null>(null);
 
   const run = async () => {
-    if (!pattern || !input) return;
+    if (!pattern || !input) {
+      setResult(null);
+      setError(null);
+      return;
+    }
+    try {
+      new RegExp(pattern);
+    } catch (err) {
+      setResult(null);
+      setError({
+        title: "Pattern syntax error",
+        detail: err instanceof Error ? err.message : "Invalid regular expression.",
+        suggestion: "Fix the regex syntax before sending to the Java engine.",
+      });
+      return;
+    }
     setLoading(true);
     try {
       setResult(await apiGet<RegexResult>("/tools/java-regex", { pattern, input, flags: flags.join(",") }));
-      setError("");
+      setError(null);
     } catch (err) {
+      const raw = err instanceof Error ? err.message : "Java regex request failed.";
+      const javaMsg = raw.replace(/java\.[a-z.]+Exception:\s*/gi, "");
       setResult(null);
-      setError(err instanceof Error ? err.message : "Java regex request failed.");
+      setError({
+        title: "Java regex error",
+        detail: javaMsg,
+        suggestion: "Java regex syntax differences from JavaScript: \\d works the same, but use (?i) for case-insensitive instead of the /i flag. Lookaheads and lookbehinds are supported.",
+      });
     } finally {
       setLoading(false);
     }
@@ -69,20 +93,21 @@ export default function JavaRegexPage() {
       <div className="space-y-5">
         <div>
           <Label>Regex pattern</Label>
-          <Input value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="\\d+" />
+          <Input value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="\\d+" disabled={loading} />
         </div>
         <div className="flex flex-wrap gap-4">
           {flagOptions.map((flag) => <Checkbox key={flag} label={flag} checked={flags.includes(flag)} onChange={(checked) => toggleFlag(flag, checked)} />)}
         </div>
         <div>
           <Label>Test string</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} />
+          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} disabled={loading} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="primary" onClick={run} disabled={!pattern || !input || loading}>{loading ? "Testing..." : "Test"}</Button>
-          <Button variant="ghost" onClick={() => { setInput(""); setResult(null); setError(""); }}>Clear</Button>
+          <Button variant="primary" onClick={run} disabled={!pattern || !input || loading}>{loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Testing...</> : "Test"}</Button>
+          <Button variant="ghost" onClick={() => { setInput(""); setResult(null); setError(null); }}>Clear</Button>
         </div>
-        {error && <ErrorCard>{error}</ErrorCard>}
+        {error && <InlineError error={error} />}
+        {loading && <LoadingSkeleton />}
         {result && (
           <div className="space-y-4">
             <div className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
@@ -106,3 +131,4 @@ export default function JavaRegexPage() {
     </ToolShell>
   );
 }
+

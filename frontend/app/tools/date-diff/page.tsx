@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { ToolShell } from "@/components/ToolShell";
 import { Input, Label } from "@/components/ui";
+import { InlineError, WarningBanner } from "@/lib/toolErrors";
 
 function workingDays(start: Date, end: Date): number {
   if (end < start) [start, end] = [end, start];
@@ -41,6 +42,15 @@ export default function DateDiffPage() {
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(today);
 
+  const startDate = useMemo(() => new Date(start), [start]);
+  const endDate = useMemo(() => new Date(end), [end]);
+  const startError = Number.isNaN(startDate.getTime())
+    ? { title: "Invalid date", detail: `Invalid date: "${start}"`, suggestion: "Use formats like 2024-01-15, Jan 15 2024, or 2024-01-15T12:00:00Z." }
+    : null;
+  const endError = Number.isNaN(endDate.getTime())
+    ? { title: "Invalid date", detail: `Invalid date: "${end}"`, suggestion: "Use formats like 2024-01-15, Jan 15 2024, or 2024-01-15T12:00:00Z." }
+    : null;
+
   const stats = useMemo(() => {
     const a = new Date(start);
     const b = new Date(end);
@@ -74,12 +84,17 @@ export default function DateDiffPage() {
           <div>
             <Label>Start date</Label>
             <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            {startError && <InlineError error={startError} />}
           </div>
           <div>
             <Label>End date</Label>
             <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            {endError && <InlineError error={endError} />}
           </div>
         </div>
+        {!startError && !endError && endDate < startDate && (
+          <WarningBanner title="End date before start date">End date is before start date. Showing absolute difference.</WarningBanner>
+        )}
         {stats && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Stat label="Total days" value={`${stats.totalDays}`} />
@@ -109,3 +124,4 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
