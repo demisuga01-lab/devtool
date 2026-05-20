@@ -56,7 +56,7 @@ const tabs: DemoTab[] = [
     name: "UUID",
     href: "/tools/uuid-generator",
     icon: Code2,
-    input: "v4 · Bulk: 5",
+    input: "v4 - Bulk: 5",
     outputs: [
       { label: "1", value: "550e8400-e29b-41d4-a716-446655440000" },
       { label: "2", value: "6ba7b810-9dad-11d1-80b4-00c04fd430c8" },
@@ -160,8 +160,8 @@ export function ToolOutputDemo() {
   const outputText = current.outputs.map((row) => row.value).join("\n");
 
   return (
-    <div className="ml-auto min-h-[360px] w-full max-w-[540px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex min-h-[360px] h-full flex-row">
+    <div className="min-h-[440px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex min-h-[440px] h-full flex-row">
         <div className="flex w-12 flex-shrink-0 flex-col border-r border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950">
           {tabs.map((tab, index) => {
             const Icon = tab.icon;
@@ -215,10 +215,10 @@ export function ToolOutputDemo() {
               (visible ? "opacity-100" : "opacity-0")
             }
           >
-            <div className="px-4 pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            <div className="px-5 pb-2 pt-5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
               INPUT
             </div>
-            <div className="flex items-center justify-between gap-3 px-4 pb-3 text-sm font-mono text-zinc-700 dark:text-zinc-300">
+            <div className="flex items-center justify-between gap-3 px-5 pb-4 text-sm font-mono text-zinc-700 dark:text-zinc-300">
               <span className="min-w-0 flex-1 truncate">{current.input}</span>
               <CopyButton
                 copied={copiedKey === `${current.name}-input`}
@@ -229,15 +229,15 @@ export function ToolOutputDemo() {
 
             <div className="border-t border-zinc-100 dark:border-zinc-800" />
 
-            <div className="px-4 pt-4 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            <div className="px-5 pb-2 pt-5 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
               OUTPUT
             </div>
-            <div className="pb-2">
+            <div className="pb-3">
               {current.outputs.map((row) => {
                 const key = `${current.name}-${row.label}`;
 
                 return (
-                  <div key={key} className="flex items-center justify-between px-4 py-2">
+                  <div key={key} className="flex items-center justify-between px-5 py-3">
                     <span className="w-16 flex-shrink-0 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       {row.label}
                     </span>
@@ -259,7 +259,7 @@ export function ToolOutputDemo() {
             <div className="flex min-w-0 items-center gap-2 text-xs text-zinc-400 dark:text-zinc-500">
               <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
               <span className="whitespace-nowrap text-emerald-600 dark:text-emerald-400">Live preview</span>
-              <span>·</span>
+              <span>&middot;</span>
               <span className="truncate">Processed in your browser</span>
             </div>
             <div className="flex flex-shrink-0 items-center gap-4">
@@ -281,7 +281,7 @@ export function ToolOutputDemo() {
                 href={current.href}
                 className="text-xs font-medium text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
               >
-                Open tool →
+                Open tool -&gt;
               </Link>
             </div>
           </div>

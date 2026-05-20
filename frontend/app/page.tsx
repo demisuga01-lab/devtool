@@ -102,7 +102,14 @@ export default function HomePage() {
             </div>
           </div>
 
-          <ToolOutputDemo />
+          <div className="flex items-center justify-center lg:justify-end">
+            <div className="relative w-full">
+              <div className="pointer-events-none absolute -inset-[1px] rounded-2xl bg-emerald-200/60 blur-[2px] dark:bg-white/[0.08]" />
+              <div className="relative">
+                <ToolOutputDemo />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

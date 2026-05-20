@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
+  AlertCircle,
   AlertTriangle,
   Bell,
   CheckCircle2,
@@ -15,6 +16,7 @@ import {
   Pause,
   Play,
   Plus,
+  RefreshCw,
   Save,
   Trash2,
   X,
@@ -205,15 +207,32 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function relativeTime(value: string | null) {
-  if (!value) return "Never";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+function useRelativeTime(dateStr: string | null) {
+  const [, forceUpdate] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => forceUpdate((value) => value + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  if (!dateStr) return "Never";
+
+  const diff = Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000));
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ${diff % 60}s ago`;
+
+  const hours = Math.floor(diff / 3600);
+  const minutes = Math.floor((diff % 3600) / 60);
+  const seconds = diff % 60;
+  return `${hours}h ${minutes}m ${seconds}s ago`;
+}
+
+function formatLastUpdated(lastUpdatedAt: number | null, now: number) {
+  if (!lastUpdatedAt) return "Not updated yet";
+  const seconds = Math.max(0, Math.floor((now - lastUpdatedAt) / 1000));
+  if (seconds < 5) return "Updated just now";
+  if (seconds < 60) return `Updated ${seconds}s ago`;
+  return `Updated ${Math.floor(seconds / 60)}m ago`;
 }
 
 function intervalLabel(seconds: number) {
@@ -325,6 +344,29 @@ function DashboardPageLoading() {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <section className="space-y-6">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-24 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-800" />
+        ))}
+      </div>
+      <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mb-5 flex items-center justify-between">
+          <div className="h-5 w-32 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+          <div className="h-9 w-28 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800" />
+        </div>
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="h-12 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800" />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -336,6 +378,11 @@ function DashboardContent() {
   const [checksByMonitor, setChecksByMonitor] = useState<Record<number, MonitorCheck[]>>({});
   const [expandedMonitor, setExpandedMonitor] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const hasLoadedRef = useRef(false);
   const [monitorModalOpen, setMonitorModalOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<StatusMonitor | null>(null);
   const [monitorForm, setMonitorForm] = useState<MonitorForm>(defaultMonitorForm);
@@ -385,8 +432,10 @@ function DashboardContent() {
     [router],
   );
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async () => {
+    setIsRefreshing(true);
+    if (!hasLoadedRef.current) setLoading(true);
+
     try {
       const [dashboardData, monitorData, incidentData, maintenanceData] = await Promise.all([
         request<DashboardData>("/status/dashboard"),
@@ -398,18 +447,30 @@ function DashboardContent() {
       setMonitors(monitorData);
       setIncidents(incidentData.items);
       setMaintenance(maintenanceData);
+      setLoadError(null);
+      setLastUpdatedAt(Date.now());
     } catch (error) {
-      showToast("error", error instanceof Error ? error.message : "Unable to load dashboard.");
+      setLoadError(error instanceof Error ? error.message : "Unable to load dashboard.");
     } finally {
+      hasLoadedRef.current = true;
       setLoading(false);
+      setIsRefreshing(false);
     }
-  }, [request, showToast]);
+  }, [request]);
 
   useEffect(() => {
-    loadData();
-    const timer = window.setInterval(loadData, 30000);
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const timer = window.setInterval(fetchData, loadError ? 30000 : 120000);
     return () => window.clearInterval(timer);
-  }, [loadData]);
+  }, [fetchData, loadError]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (searchParams.get("action") === "add" && section === "monitors") {
@@ -467,7 +528,7 @@ function DashboardContent() {
         showToast("success", "Monitor created.");
       }
       setMonitorModalOpen(false);
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to save monitor.");
     }
@@ -480,7 +541,7 @@ function DashboardContent() {
         body: JSON.stringify({ is_active: !monitor.is_active }),
       });
       showToast("success", monitor.is_active ? "Monitor paused." : "Monitor resumed.");
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to update monitor.");
     }
@@ -491,7 +552,7 @@ function DashboardContent() {
     try {
       await request(`/status/monitors/${monitor.id}`, { method: "DELETE" });
       showToast("success", "Monitor deleted.");
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to delete monitor.");
     }
@@ -530,7 +591,7 @@ function DashboardContent() {
         showToast("success", "Incident created.");
       }
       setIncidentModalOpen(false);
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to save incident.");
     }
@@ -547,7 +608,7 @@ function DashboardContent() {
       showToast("success", "Incident update added.");
       setUpdateIncident(null);
       setUpdateForm({ status: "monitoring", message: "" });
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to add update.");
     }
@@ -560,7 +621,7 @@ function DashboardContent() {
         body: JSON.stringify({ status: "resolved", resolved_at: new Date().toISOString() }),
       });
       showToast("success", "Incident resolved.");
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to resolve incident.");
     }
@@ -580,7 +641,7 @@ function DashboardContent() {
       showToast("success", "Maintenance scheduled.");
       setMaintenanceModalOpen(false);
       setMaintenanceForm(defaultMaintenanceForm);
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to schedule maintenance.");
     }
@@ -591,7 +652,7 @@ function DashboardContent() {
     try {
       await request(`/status/maintenance/${windowItem.id}`, { method: "DELETE" });
       showToast("success", "Maintenance deleted.");
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to delete maintenance.");
     }
@@ -611,7 +672,7 @@ function DashboardContent() {
       showToast("success", "Alert added.");
       setAlertMonitorId(null);
       setAlertForm({ type: "email", target: "", on_down: true, on_recovery: true });
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to add alert.");
     }
@@ -621,7 +682,7 @@ function DashboardContent() {
     try {
       await request(`/status/alerts/${alert.id}`, { method: "DELETE" });
       showToast("success", "Alert deleted.");
-      await loadData();
+      await fetchData();
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to delete alert.");
     }
@@ -662,16 +723,39 @@ function DashboardContent() {
   const recentIncidents = incidents.slice(0, 5);
   const user = getUser();
   const strength = passwordStrength(passwordForm.next);
+  const lastUpdatedLabel = isRefreshing ? "Refreshing..." : formatLastUpdated(lastUpdatedAt, now);
 
   return (
     <div className="space-y-6">
-      {loading && (
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
-          Refreshing dashboard data
+      <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold capitalize text-zinc-900 dark:text-zinc-100">{section}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-600">Live monitor data refreshes automatically.</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
+          <span>{lastUpdatedLabel}</span>
+          <button
+            type="button"
+            onClick={fetchData}
+            disabled={isRefreshing}
+            aria-label="Refresh dashboard data"
+            className="rounded-xl border border-zinc-200 p-2 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      {loadError && (
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>Failed to load monitor data. Retrying automatically...</span>
         </div>
       )}
 
-      {section === "dashboard" && dashboard && (
+      {section === "dashboard" && loading && <DashboardSkeleton />}
+
+      {section === "dashboard" && !loading && dashboard && (
         <section className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
@@ -1129,7 +1213,9 @@ function MonitorsTable({
                           <div className={`h-1 rounded-full ${uptimeBarClass(monitor.uptime_30d)}`} style={{ width: `${Math.min(100, monitor.uptime_30d)}%` }} />
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-zinc-500 dark:text-zinc-600">{relativeTime(monitor.last_checked_at)}</td>
+                      <td className="px-5 py-4 text-zinc-500 dark:text-zinc-600">
+                        <LiveRelativeTime value={monitor.last_checked_at} />
+                      </td>
                       <td className="px-5 py-4 text-zinc-500 dark:text-zinc-600">{intervalLabel(monitor.interval)}</td>
                       <td className="px-5 py-4">
                         <div className="flex gap-1">
@@ -1164,6 +1250,10 @@ function MonitorsTable({
       )}
     </section>
   );
+}
+
+function LiveRelativeTime({ value }: { value: string | null }) {
+  return <>{useRelativeTime(value)}</>;
 }
 
 function MonitorDetail({

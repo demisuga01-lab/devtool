@@ -61,6 +61,15 @@ export function Footer() {
           <div>&copy; 2026 WellFriend &middot; devtools.wellfriend.online</div>
           <div>Open source software. Free to use and self-host.</div>
         </div>
+
+        <div className="flex justify-center pb-1 pt-2">
+          <Link
+            href="/dashboard/login"
+            className="text-xs text-zinc-300 transition-colors hover:text-zinc-500 dark:text-zinc-700 dark:hover:text-zinc-500"
+          >
+            Admin
+          </Link>
+        </div>
       </div>
     </footer>
   );
