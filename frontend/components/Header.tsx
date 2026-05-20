@@ -24,6 +24,15 @@ const pasteLinks = [
   { name: "Recent Pastes", href: "/paste#recent" },
 ];
 
+const compilerLinks = [
+  { name: "Web Runner", href: "/tools/web-runner", description: "HTML, CSS, JavaScript & TypeScript" },
+  { name: "Systems Runner", href: "/tools/systems-runner", description: "C, C++, Rust, Go" },
+  { name: "Scripting Runner", href: "/tools/scripting-runner", description: "Python, Ruby, PHP, Perl, Bash, Lua" },
+  { name: "JVM Runner", href: "/tools/jvm-runner", description: "Java, Kotlin, Scala, C#, Basic" },
+  { name: "Data Runner", href: "/tools/data-runner", description: "SQLite, Julia" },
+  { name: "Other Languages", href: "/tools/other-runner", description: "Swift, Dart, Fortran, D" },
+];
+
 const navClass =
   "inline-flex h-full items-center border-b-2 border-transparent px-2 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35";
 const inactiveNavClass =
@@ -45,12 +54,14 @@ export function Header() {
   const router = useRouter();
   const [toolsOpen, setToolsOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
+  const [compilersOpen, setCompilersOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [statusAuthed, setStatusAuthed] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const toolsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pasteCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const compilersCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const statusCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -64,6 +75,7 @@ export function Header() {
     return () => {
       if (toolsCloseTimer.current) clearTimeout(toolsCloseTimer.current);
       if (pasteCloseTimer.current) clearTimeout(pasteCloseTimer.current);
+      if (compilersCloseTimer.current) clearTimeout(compilersCloseTimer.current);
       if (statusCloseTimer.current) clearTimeout(statusCloseTimer.current);
     };
   }, []);
@@ -99,6 +111,16 @@ export function Header() {
     pasteCloseTimer.current = setTimeout(() => setPasteOpen(false), 180);
   };
 
+  const openCompilersMenu = () => {
+    if (compilersCloseTimer.current) clearTimeout(compilersCloseTimer.current);
+    setCompilersOpen(true);
+  };
+
+  const closeCompilersMenu = () => {
+    if (compilersCloseTimer.current) clearTimeout(compilersCloseTimer.current);
+    compilersCloseTimer.current = setTimeout(() => setCompilersOpen(false), 180);
+  };
+
   const openStatusMenu = () => {
     if (statusCloseTimer.current) clearTimeout(statusCloseTimer.current);
     setStatusOpen(true);
@@ -125,7 +147,6 @@ export function Header() {
   const xmlDataGroup = toolGroups.find((group) => group.slug === "xml-data");
   const escapeGroup = toolGroups.find((group) => group.slug === "escape");
   const referenceGroup = toolGroups.find((group) => group.slug === "reference");
-  const codeRunnersGroup = toolGroups.find((group) => group.slug === "code-runners");
   const textTools = textGroup?.tools ?? [];
   const xmlDataTools = xmlDataGroup?.tools ?? [];
   const referenceTools = referenceGroup?.tools ?? [];
@@ -142,7 +163,6 @@ export function Header() {
     { name: "XML & Data", tools: xmlDataTools.slice(0, 7) },
     escapeGroup ? { name: escapeGroup.name, tools: escapeGroup.tools } : null,
     { name: "Reference & Utils", tools: referenceTools.slice(0, 6) },
-    codeRunnersGroup ? { name: codeRunnersGroup.name, tools: codeRunnersGroup.tools } : null,
     remainingTools.length > 0 ? { name: "More Tools", tools: remainingTools } : null,
   ].filter((group): group is { name: string; tools: Tool[] } => Boolean(group && group.tools.length));
 
@@ -309,6 +329,44 @@ export function Header() {
               )}
             </div>
 
+            <div className="relative" onMouseEnter={openCompilersMenu} onMouseLeave={closeCompilersMenu}>
+              <button
+                type="button"
+                onFocus={openCompilersMenu}
+                onBlur={closeCompilersMenu}
+                className={`${navClass} ${pathname.startsWith("/tools/web-runner") || pathname.startsWith("/tools/systems-runner") || pathname.startsWith("/tools/scripting-runner") || pathname.startsWith("/tools/jvm-runner") || pathname.startsWith("/tools/data-runner") || pathname.startsWith("/tools/other-runner") ? activeNavClass : inactiveNavClass}`}
+                aria-expanded={compilersOpen}
+              >
+                Compilers
+                <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${compilersOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {compilersOpen && (
+                <div
+                  className="absolute left-0 top-full z-[110] w-[280px] max-w-[calc(100vw-24px)] pt-4"
+                  onMouseEnter={openCompilersMenu}
+                  onMouseLeave={closeCompilersMenu}
+                >
+                  <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                    <ul className="space-y-1">
+                      {compilerLinks.map((item) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className={menuLinkClass}
+                            onClick={() => setCompilersOpen(false)}
+                          >
+                            <span className="block font-medium">{item.name}</span>
+                            <span className="block text-xs text-zinc-400 dark:text-zinc-600">{item.description}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {mainLinks.map((link) => (
               <Link
                 key={link.href}
@@ -391,7 +449,7 @@ export function Header() {
               open={openMobileGroup === "tools"}
               onToggle={() => setOpenMobileGroup(openMobileGroup === "tools" ? null : "tools")}
             >
-              {toolGroups.map((group) => (
+              {toolGroups.filter((group) => group.slug !== "code-runners").map((group) => (
                 <div key={group.slug} className="py-1">
                   <div className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                     {group.name}
@@ -430,6 +488,24 @@ export function Header() {
                 <Code2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                 <span>Add /raw to any paste URL for plain text</span>
               </div>
+            </MobileAccordion>
+
+            <MobileAccordion
+              title="Compilers"
+              open={openMobileGroup === "compilers"}
+              onToggle={() => setOpenMobileGroup(openMobileGroup === "compilers" ? null : "compilers")}
+            >
+              {compilerLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                  onClick={() => setMobile(false)}
+                >
+                  <span className="block">{item.name}</span>
+                  <span className="block text-xs text-zinc-400 dark:text-zinc-600">{item.description}</span>
+                </Link>
+              ))}
             </MobileAccordion>
 
             {mainLinks.map((link) => (
