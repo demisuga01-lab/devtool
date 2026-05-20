@@ -20,6 +20,14 @@ def _iso(dt: datetime | None) -> str | None:
     return dt.isoformat() if dt else None
 
 
+def _status_from_uptime(uptime: float) -> str:
+    if uptime >= 90:
+        return "operational"
+    if uptime >= 70:
+        return "degraded"
+    return "outage"
+
+
 async def check_monitor(monitor: Monitor, db: Session) -> MonitorCheck:
     previous_status = monitor.last_status or "unknown"
     checked_at = datetime.utcnow()
@@ -62,20 +70,20 @@ async def check_monitor(monitor: Monitor, db: Session) -> MonitorCheck:
     )
     db.add(check)
 
-    monitor.last_status = status
     monitor.last_checked_at = checked_at
     monitor.last_response_ms = response_ms
     db.flush()
 
     _prune_old_checks(db, monitor.id)
     monitor.uptime_30d = _calculate_uptime_30d(db, monitor.id)
+    monitor.last_status = _status_from_uptime(monitor.uptime_30d)
     db.commit()
     db.refresh(check)
     db.refresh(monitor)
 
-    if previous_status == "operational" and status in {"outage", "degraded"}:
+    if previous_status == "operational" and monitor.last_status in {"outage", "degraded"}:
         await send_alert(monitor, check, "down", db)
-    elif previous_status in {"outage", "degraded"} and status == "operational":
+    elif previous_status in {"outage", "degraded"} and monitor.last_status == "operational":
         await send_alert(monitor, check, "recovery", db)
 
     return check

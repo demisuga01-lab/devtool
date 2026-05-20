@@ -133,6 +133,15 @@ def _public_overall_status(statuses: list[str]) -> str:
     return "operational"
 
 
+def _status_from_uptime(uptime: float | None) -> str:
+    value = 100.0 if uptime is None else uptime
+    if value >= 90:
+        return "operational"
+    if value >= 70:
+        return "degraded"
+    return "outage"
+
+
 def _validate_monitor_values(data: dict[str, Any]) -> None:
     if "url" in data and data["url"] is not None:
         data["url"] = _validate_url(data["url"])
@@ -265,7 +274,7 @@ async def public_status(db: Session = Depends(get_db)) -> dict:
 
     groups = []
     for group_name, group_monitors in groups_by_name.items():
-        statuses = [monitor.last_status or "unknown" for monitor in group_monitors]
+        statuses = [_status_from_uptime(monitor.uptime_30d) for monitor in group_monitors]
         groups.append(
             {
                 "name": group_name,
@@ -274,7 +283,7 @@ async def public_status(db: Session = Depends(get_db)) -> dict:
                     {
                         "id": monitor.id,
                         "name": monitor.name,
-                        "status": monitor.last_status or "unknown",
+                        "status": _status_from_uptime(monitor.uptime_30d),
                         "uptime_30d": monitor.uptime_30d,
                         "last_checked_at": _iso(monitor.last_checked_at),
                         "last_response_ms": monitor.last_response_ms,
@@ -301,7 +310,7 @@ async def public_status(db: Session = Depends(get_db)) -> dict:
     last_updated = max(last_checked) if last_checked else now
 
     return {
-        "overall_status": _public_overall_status([monitor.last_status or "unknown" for monitor in monitors]),
+        "overall_status": _public_overall_status([_status_from_uptime(monitor.uptime_30d) for monitor in monitors]),
         "last_updated": _iso(last_updated),
         "groups": groups,
         "active_incidents": [_serialize_incident(incident, db, include_private=False) for incident in active_incidents],
