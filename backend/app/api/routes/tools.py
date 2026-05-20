@@ -529,7 +529,7 @@ async def run_code(payload: RunCodeRequest) -> dict:
                     "files": [{"content": code}],
                     "stdin": stdin,
                     "run_timeout": 10000,
-                    "compile_timeout": 15000,
+                    "compile_timeout": 10000,
                     "run_memory_limit": 128000000,
                 },
             )
