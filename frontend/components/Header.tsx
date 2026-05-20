@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -25,11 +24,15 @@ const pasteLinks = [
 ];
 
 const navClass =
-  "inline-flex h-11 items-center border-b-2 border-transparent px-2 text-base font-medium text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:text-white";
+  "inline-flex h-full items-center border-b-2 border-transparent px-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35";
+const inactiveNavClass =
+  "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100";
 const activeNavClass =
-  "border-b-2 border-emerald-600 dark:border-emerald-400";
+  "border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400";
 const menuLinkClass =
-  "block rounded-lg px-2 py-1 text-[15px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
+  "block rounded-lg px-2 py-1 text-[15px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100";
+const themeToggleClass =
+  "[&>div>button]:rounded-lg [&>div>button]:border-0 [&>div>button]:bg-transparent [&>div>button]:p-2 [&>div>button]:text-zinc-500 [&>div>button]:transition-colors [&>div>button:hover]:bg-zinc-100 [&>div>button:hover]:text-zinc-700 dark:[&>div>button]:text-zinc-500 dark:[&>div>button:hover]:bg-zinc-800 dark:[&>div>button:hover]:text-zinc-300";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -141,42 +144,34 @@ export function Header() {
   ].filter((group): group is { name: string; tools: Tool[] } => Boolean(group && group.tools.length));
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-      <div className="relative mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6">
-        <div className="absolute left-4 flex items-center sm:left-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image
-              src="/logo.png"
-              alt="WellFriend DevTools"
-              width={40}
-              height={40}
-              className="h-10 w-10 flex-shrink-0 rounded-2xl"
-            />
-            <span className="leading-tight">
-              <span className="block">
-                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Dev</span>
-                <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Tools</span>
-              </span>
-              <span className="block text-sm text-zinc-400">
-                by WellFriend
-              </span>
+    <header className="sticky top-0 z-40 h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-3">
+          <span className="flex flex-shrink-0 items-center justify-center rounded-xl bg-emerald-600 p-2">
+            <Code2 className="h-9 w-9 text-white" aria-hidden="true" />
+          </span>
+          <span className="flex flex-col justify-center leading-tight">
+            <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+              DevTools
             </span>
-          </Link>
-        </div>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              by WellFriend
+            </span>
+          </span>
+        </Link>
 
-        <div className="flex flex-1 items-center justify-center">
-          <nav className="hidden items-center gap-2 md:flex">
+        <nav className="hidden h-full items-center gap-2 md:flex">
             {statusAuthed ? (
               <div className="relative" onMouseEnter={openStatusMenu} onMouseLeave={closeStatusMenu}>
                 <button
                   type="button"
                   onFocus={openStatusMenu}
                   onBlur={closeStatusMenu}
-                  className={`${navClass} ${pathname.startsWith("/status") || pathname.startsWith("/dashboard") ? activeNavClass : ""}`}
+                  className={`${navClass} ${pathname.startsWith("/status") || pathname.startsWith("/dashboard") ? activeNavClass : inactiveNavClass}`}
                   aria-expanded={statusOpen}
                 >
                   Status
-                  <ChevronDown className="ml-1 h-4 w-4" />
+                  <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${statusOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 {statusOpen && (
@@ -185,7 +180,7 @@ export function Header() {
                     onMouseEnter={openStatusMenu}
                     onMouseLeave={closeStatusMenu}
                   >
-                    <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                       <Link
                         href="/status"
                         className={menuLinkClass}
@@ -215,7 +210,7 @@ export function Header() {
             ) : (
               <Link
                 href="/status"
-                className={`${navClass} ${isActive(pathname, "/status") ? activeNavClass : ""}`}
+                className={`${navClass} ${isActive(pathname, "/status") ? activeNavClass : inactiveNavClass}`}
               >
                 Status
               </Link>
@@ -226,11 +221,11 @@ export function Header() {
                 type="button"
                 onFocus={openToolsMenu}
                 onBlur={closeToolsMenu}
-                className={`${navClass} ${pathname.startsWith("/tools") ? activeNavClass : ""}`}
+                className={`${navClass} ${pathname.startsWith("/tools") ? activeNavClass : inactiveNavClass}`}
                 aria-expanded={toolsOpen}
               >
                 Dev Tools
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
               </button>
 
               {toolsOpen && (
@@ -239,7 +234,7 @@ export function Header() {
                   onMouseEnter={openToolsMenu}
                   onMouseLeave={closeToolsMenu}
                 >
-                  <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                  <div className="scrollbar-thin max-h-[calc(100vh-6rem)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                     <ToolMenuColumns
                       groups={topToolGroups}
                       onClick={() => setToolsOpen(false)}
@@ -261,11 +256,11 @@ export function Header() {
                 type="button"
                 onFocus={openPasteMenu}
                 onBlur={closePasteMenu}
-                className={`${navClass} ${pathname.startsWith("/paste") ? activeNavClass : ""}`}
+                className={`${navClass} ${pathname.startsWith("/paste") ? activeNavClass : inactiveNavClass}`}
                 aria-expanded={pasteOpen}
               >
                 Paste
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${pasteOpen ? "rotate-180" : ""}`} />
               </button>
 
               {pasteOpen && (
@@ -274,7 +269,7 @@ export function Header() {
                   onMouseEnter={openPasteMenu}
                   onMouseLeave={closePasteMenu}
                 >
-                  <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                  <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
                     <ul className="space-y-1">
                       {pasteLinks.map((item) => (
                         <li key={item.href}>
@@ -302,25 +297,24 @@ export function Header() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`${navClass} ${isActive(pathname, link.href) ? activeNavClass : ""}`}
+                className={`${navClass} ${isActive(pathname, link.href) ? activeNavClass : inactiveNavClass}`}
               >
                 {link.name}
               </Link>
             ))}
-          </nav>
-        </div>
+        </nav>
 
-        <div className="absolute right-4 flex items-center gap-2 sm:right-6">
-          <div className="hidden md:block">
+        <div className="flex items-center gap-2">
+          <div className={`hidden md:block ${themeToggleClass}`}>
             <ThemeToggle />
           </div>
           <a
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer"
-            className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex"
+            className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex"
           >
-            <Github className="h-[18px] w-[18px]" />
+            <Github className="h-4 w-4" />
             GitHub
           </a>
           <button
@@ -336,7 +330,7 @@ export function Header() {
       </div>
 
       {mobile && (
-        <div className="fixed inset-x-0 top-16 z-[100] max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
+        <div className="fixed inset-x-0 top-16 z-[100] max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900 md:hidden">
           <div className="space-y-2">
             {statusAuthed ? (
               <MobileAccordion
@@ -437,9 +431,9 @@ export function Header() {
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2.5 text-base font-medium text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
-              <Github className="h-[18px] w-[18px]" />
+              <Github className="h-4 w-4" />
               GitHub
             </a>
 
@@ -447,7 +441,9 @@ export function Header() {
               <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 Theme
               </span>
-              <ThemeToggle />
+              <div className={themeToggleClass}>
+                <ThemeToggle />
+              </div>
             </div>
           </div>
         </div>
