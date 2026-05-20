@@ -124,6 +124,20 @@ export const toolGroups: ToolGroup[] = [
       { name: "I18N Standards", slug: "i18n-standards", description: "Internationalization standards, locale codes, and snippets.", href: "/tools/i18n-standards", implemented: true },
     ],
   },
+  {
+    name: "Code Runner",
+    slug: "code-runner",
+    description: "Run code in 20+ languages directly in your browser.",
+    tools: [
+      {
+        name: "Code Runner",
+        slug: "code-runner",
+        description: "Write and run code in Python, JavaScript, Java, C++, Rust, Go, and 15+ more languages.",
+        href: "/tools/code-runner",
+        implemented: true,
+      },
+    ],
+  },
 ];
 
 export const allTools: Tool[] = toolGroups.flatMap((g) => g.tools);

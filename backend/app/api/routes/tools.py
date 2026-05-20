@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/tools", tags=["tools"])
 
@@ -491,3 +492,89 @@ async def whois_lookup(domain: str = Query(..., max_length=253)) -> dict:
         "raw": text[:_WHOIS_LIMIT],
         "truncated": truncated,
     }
+
+
+class RunCodeRequest(BaseModel):
+    language: str
+    version: str
+    code: str
+    stdin: str = ""
+
+
+PISTON_URL = "http://localhost:2000/api/v2/execute"
+PISTON_RUNTIMES_URL = "http://localhost:2000/api/v2/runtimes"
+
+
+@router.post("/run-code")
+async def run_code(payload: RunCodeRequest) -> dict:
+    language = payload.language.strip().lower()
+    version = payload.version.strip()
+    code = payload.code
+    stdin = payload.stdin
+
+    if not language or not version or not code:
+        raise HTTPException(status_code=400, detail="language, version, and code are required.")
+    if len(code) > 100000:
+        raise HTTPException(status_code=400, detail="Code too large. Maximum 100,000 characters.")
+    if len(stdin) > 10000:
+        raise HTTPException(status_code=400, detail="Stdin too large. Maximum 10,000 characters.")
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                PISTON_URL,
+                json={
+                    "language": language,
+                    "version": version,
+                    "files": [{"content": code}],
+                    "stdin": stdin,
+                    "run_timeout": 10000,
+                    "compile_timeout": 15000,
+                    "run_memory_limit": 128000000,
+                },
+            )
+            if resp.status_code == 400:
+                data = resp.json()
+                raise HTTPException(status_code=400, detail=data.get("message", "Invalid request."))
+            if not resp.is_success:
+                raise HTTPException(status_code=502, detail="Code execution service unavailable.")
+            data = resp.json()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Code execution timed out.")
+    except httpx.ConnectError:
+        raise HTTPException(status_code=503, detail="Code execution service is not available.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="Code execution failed.")
+
+    run = data.get("run", {})
+    compile_result = data.get("compile", {})
+
+    return {
+        "language": data.get("language", language),
+        "version": data.get("version", version),
+        "stdout": run.get("stdout", ""),
+        "stderr": run.get("stderr", ""),
+        "output": run.get("output", ""),
+        "exit_code": run.get("code"),
+        "signal": run.get("signal"),
+        "cpu_time": run.get("cpu_time"),
+        "wall_time": run.get("wall_time"),
+        "memory": run.get("memory"),
+        "compile_output": compile_result.get("output", "") if compile_result else "",
+        "compile_stderr": compile_result.get("stderr", "") if compile_result else "",
+        "status": "ok" if run.get("code") == 0 else "error",
+    }
+
+
+@router.get("/runtimes")
+async def get_runtimes() -> list:
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(PISTON_RUNTIMES_URL)
+            if not resp.is_success:
+                return []
+            return resp.json()
+    except Exception:
+        return []
