@@ -330,16 +330,24 @@ export function Header() {
             </div>
 
             <div className="relative" onMouseEnter={openCompilersMenu} onMouseLeave={closeCompilersMenu}>
-              <button
-                type="button"
-                onFocus={openCompilersMenu}
-                onBlur={closeCompilersMenu}
-                className={`${navClass} ${pathname.startsWith("/tools/web-runner") || pathname.startsWith("/tools/systems-runner") || pathname.startsWith("/tools/scripting-runner") || pathname.startsWith("/tools/jvm-runner") || pathname.startsWith("/tools/data-runner") || pathname.startsWith("/tools/other-runner") ? activeNavClass : inactiveNavClass}`}
-                aria-expanded={compilersOpen}
-              >
-                Compilers
-                <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${compilersOpen ? "rotate-180" : ""}`} />
-              </button>
+              <div className="flex items-center">
+                <Link
+                  href="/compilers"
+                  className={`${navClass} ${pathname.startsWith("/tools/web-runner") || pathname.startsWith("/tools/systems-runner") || pathname.startsWith("/tools/scripting-runner") || pathname.startsWith("/tools/jvm-runner") || pathname.startsWith("/tools/data-runner") || pathname.startsWith("/tools/database-runner") || pathname.startsWith("/tools/other-runner") || pathname === "/compilers" ? activeNavClass : inactiveNavClass}`}
+                >
+                  Compilers
+                </Link>
+                <button
+                  type="button"
+                  onFocus={openCompilersMenu}
+                  onBlur={closeCompilersMenu}
+                  onClick={() => setCompilersOpen((value) => !value)}
+                  className={`inline-flex h-full items-center px-1 ${pathname === "/compilers" || pathname.startsWith("/tools/web-runner") || pathname.startsWith("/tools/systems-runner") || pathname.startsWith("/tools/scripting-runner") || pathname.startsWith("/tools/jvm-runner") || pathname.startsWith("/tools/data-runner") || pathname.startsWith("/tools/database-runner") || pathname.startsWith("/tools/other-runner") ? activeNavClass : inactiveNavClass}`}
+                  aria-expanded={compilersOpen}
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform ${compilersOpen ? "rotate-180" : ""}`} />
+                </button>
+              </div>
 
               {compilersOpen && (
                 <div

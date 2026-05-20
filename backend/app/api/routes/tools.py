@@ -283,6 +283,45 @@ async def http_headers(url: str = Query(..., max_length=500)) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Fetch URL — for Web Runner import
+# ---------------------------------------------------------------------------
+
+
+@router.get("/fetch-url")
+async def fetch_url(url: str = Query(..., max_length=500)) -> dict:
+    target = _validate_url(url)
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(target, headers={"User-Agent": "Mozilla/5.0 (compatible; DevTools/1.0)"})
+            if not resp.is_success:
+                raise HTTPException(status_code=502, detail=f"Remote server returned {resp.status_code}")
+            html_text = resp.text
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Request timed out.")
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not connect to URL.")
+
+    import re as _re
+
+    css_blocks = _re.findall(r"<style[^>]*>(.*?)</style>", html_text, _re.DOTALL | _re.IGNORECASE)
+    extracted_css = "\n\n".join(block.strip() for block in css_blocks)
+
+    js_blocks = _re.findall(r"<script(?![^>]*\bsrc\b)[^>]*>(.*?)</script>", html_text, _re.DOTALL | _re.IGNORECASE)
+    extracted_js = "\n\n".join(block.strip() for block in js_blocks if block.strip())
+
+    clean_html = _re.sub(r"<style[^>]*>.*?</style>", "", html_text, flags=_re.DOTALL | _re.IGNORECASE)
+    clean_html = _re.sub(r"<script[^>]*>.*?</script>", "", clean_html, flags=_re.DOTALL | _re.IGNORECASE)
+    clean_html = clean_html.strip()
+
+    return {
+        "html": clean_html[:50000],
+        "css": extracted_css[:20000],
+        "js": extracted_js[:20000],
+        "url": target,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Redirect checker
 # ---------------------------------------------------------------------------
 

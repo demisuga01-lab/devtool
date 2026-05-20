@@ -169,7 +169,7 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="flex min-h-[320px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
+    <section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col flex-1 min-h-0 p-4">
       <div className="mb-4 flex flex-wrap gap-2">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -278,8 +278,8 @@ export default function OtherRunnerPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
+    <main className="flex flex-col min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 min-h-0">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -290,12 +290,12 @@ export default function OtherRunnerPage() {
           <span>Other Languages</span>
         </nav>
 
-        <header className="mt-6">
+        <header>
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Other Languages</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run Swift, Dart, Fortran, and D code.</p>
         </header>
 
-        <section className="mt-6 grid gap-3 sm:grid-cols-2">
+        <section className="grid gap-3 sm:grid-cols-2">
           {languages.map((language, index) => (
             <button
               key={language.label}
@@ -316,9 +316,9 @@ export default function OtherRunnerPage() {
           ))}
         </section>
 
-        <div className="mt-6 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-1 gap-5 min-h-0">
+          <section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{active.label} Editor</h2>
               <span className="text-xs text-zinc-500">{active.language} {active.version}</span>
             </div>
@@ -327,19 +327,19 @@ export default function OtherRunnerPage() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className={`${editorClass} min-h-[360px] flex-1 resize-none lg:min-h-0`}
+              className={`${editorClass} flex-1 resize-none rounded-none border-x-0`}
             />
 
-            <label className="mb-1.5 mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
+            <label className="mb-1.5 mt-4 block px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
             <textarea
               value={stdin}
               onChange={(event) => setStdin(event.target.value)}
               onKeyDown={handleStdinKeyDown}
               placeholder="Optional input for your program..."
-              className={`${editorClass} min-h-[80px]`}
+              className={`${editorClass} mx-4 min-h-[80px] w-auto`}
             />
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3 px-4 pb-4">
               <button
                 type="button"
                 onClick={runCode}

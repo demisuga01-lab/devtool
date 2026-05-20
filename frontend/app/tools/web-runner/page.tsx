@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
-import { PanelLeft, PanelTop, Play, RefreshCw, Square } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  Link2,
+  Maximize2,
+  PanelLeft,
+  PanelTop,
+  Play,
+  RefreshCw,
+  Square,
+  X,
+} from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type Mode = "combined" | "html" | "css" | "javascript" | "typescript";
@@ -21,6 +32,10 @@ type RunResult = {
   compile_output: string;
   compile_stderr?: string;
 };
+
+type LintError = { line: number; col: number; message: string; severity: "error" | "warning" };
+type LintResult = { errors: LintError[] };
+type ModalTarget = "html" | "css" | "js" | "ts" | "preview" | null;
 
 const modes: { label: string; value: Mode }[] = [
   { label: "Combined", value: "combined" },
@@ -191,18 +206,285 @@ function handleTab(value: string, onChange: (value: string) => void, event: Keyb
   return true;
 }
 
+// ---------------------------------------------------------------------------
+// Linters
+// ---------------------------------------------------------------------------
+
+function posToLineCol(text: string, pos: number): { line: number; col: number } {
+  let line = 1;
+  let col = 1;
+  for (let i = 0; i < pos && i < text.length; i++) {
+    if (text[i] === "\n") {
+      line++;
+      col = 1;
+    } else {
+      col++;
+    }
+  }
+  return { line, col };
+}
+
+function lintHtml(html: string): LintResult {
+  const errors: LintError[] = [];
+  const pairedTags = [
+    "div", "p", "span", "h1", "h2", "h3", "h4", "h5", "h6",
+    "section", "article", "header", "footer", "main", "nav",
+    "ul", "ol", "table", "form",
+  ];
+
+  for (const tag of pairedTags) {
+    const openRe = new RegExp(`<${tag}(?:\\s[^>]*)?>`, "gi");
+    const closeRe = new RegExp(`</${tag}\\s*>`, "gi");
+    const opens = (html.match(openRe) || []).length;
+    const closes = (html.match(closeRe) || []).length;
+    if (opens > closes) {
+      const m = openRe.exec(html);
+      const { line, col } = m ? posToLineCol(html, m.index) : { line: 1, col: 1 };
+      errors.push({
+        line,
+        col,
+        message: `Unclosed <${tag}> tag (${opens} opening, ${closes} closing)`,
+        severity: "error",
+      });
+    }
+  }
+
+  const imgRe = /<img\b([^>]*)>/gi;
+  let imgMatch: RegExpExecArray | null;
+  while ((imgMatch = imgRe.exec(html))) {
+    if (!/\balt\s*=/i.test(imgMatch[1])) {
+      const { line, col } = posToLineCol(html, imgMatch.index);
+      errors.push({ line, col, message: "img element missing alt attribute", severity: "warning" });
+    }
+  }
+
+  const anchorRe = /<a\b([^>]*)>/gi;
+  let anchorMatch: RegExpExecArray | null;
+  while ((anchorMatch = anchorRe.exec(html))) {
+    if (!/\bhref\s*=/i.test(anchorMatch[1])) {
+      const { line, col } = posToLineCol(html, anchorMatch.index);
+      errors.push({ line, col, message: "anchor element missing href attribute", severity: "warning" });
+    }
+  }
+
+  const styleRe = /\bstyle\s*=\s*["']/gi;
+  let styleMatch: RegExpExecArray | null;
+  while ((styleMatch = styleRe.exec(html))) {
+    const { line, col } = posToLineCol(html, styleMatch.index);
+    errors.push({ line, col, message: "Avoid inline styles, use CSS classes instead", severity: "warning" });
+  }
+
+  const scriptRe = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+  let scriptMatch: RegExpExecArray | null;
+  while ((scriptMatch = scriptRe.exec(html))) {
+    if (/\bsrc\s*=/i.test(scriptMatch[1]) && scriptMatch[2].trim().length > 0) {
+      const { line, col } = posToLineCol(html, scriptMatch.index);
+      errors.push({
+        line,
+        col,
+        message: "Script tag has both src and inline content",
+        severity: "warning",
+      });
+    }
+  }
+
+  return { errors };
+}
+
+function lintCss(css: string): LintResult {
+  const errors: LintError[] = [];
+  const lines = css.split("\n");
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trim();
+    const lineNum = i + 1;
+
+    if (line.length === 0) continue;
+    const noComment = line.replace(/\/\*.*?\*\//g, "").trim();
+    if (noComment.length === 0) continue;
+
+    if (
+      noComment.includes(":") &&
+      !noComment.endsWith("{") &&
+      !noComment.endsWith("}") &&
+      !noComment.endsWith(";") &&
+      !noComment.endsWith(",") &&
+      !/^\s*\/\//.test(noComment) &&
+      !/^@/.test(noComment) &&
+      !/^[.#&:\[a-zA-Z*]/.test(noComment.split(":")[0].trim()) === false &&
+      /^[\w-]+\s*:/.test(noComment)
+    ) {
+      errors.push({ line: lineNum, col: 1, message: "Missing semicolon", severity: "error" });
+    }
+
+    if (/!important\b/i.test(raw)) {
+      const col = raw.indexOf("!important") + 1;
+      errors.push({ line: lineNum, col, message: "Avoid using !important", severity: "warning" });
+    }
+
+    if (raw.length > 120) {
+      errors.push({ line: lineNum, col: 121, message: "Line too long (>120 chars)", severity: "warning" });
+    }
+  }
+
+  const emptyRuleRe = /([^{}]+)\{\s*\}/g;
+  let emptyMatch: RegExpExecArray | null;
+  while ((emptyMatch = emptyRuleRe.exec(css))) {
+    const { line, col } = posToLineCol(css, emptyMatch.index);
+    errors.push({ line, col, message: "Empty rule block", severity: "warning" });
+  }
+
+  const vendorRe = /(-webkit-|-moz-|-ms-|-o-)([\w-]+)\s*:/g;
+  let vendorMatch: RegExpExecArray | null;
+  while ((vendorMatch = vendorRe.exec(css))) {
+    const standardProp = vendorMatch[2];
+    const stdRe = new RegExp(`(?<!-)\\b${standardProp}\\s*:`);
+    if (!stdRe.test(css)) {
+      const { line, col } = posToLineCol(css, vendorMatch.index);
+      errors.push({
+        line,
+        col,
+        message: `Vendor prefix ${vendorMatch[1]}${standardProp} used without standard property`,
+        severity: "warning",
+      });
+    }
+  }
+
+  return { errors };
+}
+
+function lintJs(js: string): LintResult {
+  const errors: LintError[] = [];
+  const lines = js.split("\n");
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const lineNum = i + 1;
+    const stripped = raw.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
+
+    const varMatch = /\bvar\s+/.exec(stripped);
+    if (varMatch) {
+      errors.push({
+        line: lineNum,
+        col: varMatch.index + 1,
+        message: "Use let or const instead of var",
+        severity: "warning",
+      });
+    }
+
+    const consoleMatch = /\bconsole\.log\s*\(/.exec(stripped);
+    if (consoleMatch) {
+      errors.push({
+        line: lineNum,
+        col: consoleMatch.index + 1,
+        message: "console.log found (remove before production)",
+        severity: "warning",
+      });
+    }
+
+    const eqMatch = /[^=!<>]==[^=]/.exec(stripped);
+    if (eqMatch) {
+      errors.push({
+        line: lineNum,
+        col: eqMatch.index + 2,
+        message: "Use === instead of ==",
+        severity: "warning",
+      });
+    }
+
+    const neqMatch = /[^!]!=[^=]/.exec(stripped);
+    if (neqMatch) {
+      errors.push({
+        line: lineNum,
+        col: neqMatch.index + 2,
+        message: "Use !== instead of !=",
+        severity: "warning",
+      });
+    }
+  }
+
+  let inString: string | null = null;
+  let inLineComment = false;
+  let inBlockComment = false;
+  let braces = 0;
+  let parens = 0;
+  let brackets = 0;
+  for (let i = 0; i < js.length; i++) {
+    const ch = js[i];
+    const next = js[i + 1];
+
+    if (inLineComment) {
+      if (ch === "\n") inLineComment = false;
+      continue;
+    }
+    if (inBlockComment) {
+      if (ch === "*" && next === "/") {
+        inBlockComment = false;
+        i++;
+      }
+      continue;
+    }
+    if (inString) {
+      if (ch === "\\") {
+        i++;
+        continue;
+      }
+      if (ch === inString) inString = null;
+      continue;
+    }
+    if (ch === "/" && next === "/") {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+    if (ch === "/" && next === "*") {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      inString = ch;
+      continue;
+    }
+    if (ch === "{") braces++;
+    else if (ch === "}") braces--;
+    else if (ch === "(") parens++;
+    else if (ch === ")") parens--;
+    else if (ch === "[") brackets++;
+    else if (ch === "]") brackets--;
+  }
+  if (braces !== 0) {
+    errors.push({ line: lines.length, col: 1, message: `Mismatched braces (${braces > 0 ? "unclosed" : "extra"})`, severity: "error" });
+  }
+  if (parens !== 0) {
+    errors.push({ line: lines.length, col: 1, message: `Mismatched parens (${parens > 0 ? "unclosed" : "extra"})`, severity: "error" });
+  }
+  if (brackets !== 0) {
+    errors.push({ line: lines.length, col: 1, message: `Mismatched brackets (${brackets > 0 ? "unclosed" : "extra"})`, severity: "error" });
+  }
+
+  return { errors };
+}
+
 function CodeEditor({
   label,
   value,
   onChange,
   onKeyDown,
   tone,
+  lintErrors,
+  onMaximize,
+  onNewTab,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   tone: "html" | "css" | "js" | "ts";
+  lintErrors?: LintError[];
+  onMaximize?: () => void;
+  onNewTab?: () => void;
 }) {
   const labelClass = {
     html: "text-orange-400",
@@ -211,9 +493,42 @@ function CodeEditor({
     ts: "text-sky-400",
   }[tone];
 
+  const errorCount = (lintErrors || []).filter((e) => e.severity === "error").length;
+  const warnCount = (lintErrors || []).filter((e) => e.severity === "warning").length;
+
   return (
     <section className="flex min-h-0 flex-1 flex-col bg-zinc-950">
-      <div className={`border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-semibold ${labelClass}`}>{label}</div>
+      <div className="flex items-center border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-semibold">
+        <span className={labelClass}>{label}</span>
+        {errorCount > 0 && (
+          <span className="ml-2 rounded bg-red-500/20 px-1.5 py-0.5 text-xs text-red-400">{errorCount}</span>
+        )}
+        {warnCount > 0 && (
+          <span className="ml-1 rounded bg-yellow-500/20 px-1.5 py-0.5 text-xs text-yellow-400">{warnCount}</span>
+        )}
+        <div className="ml-auto flex items-center gap-1">
+          {onMaximize && (
+            <button
+              type="button"
+              title="Maximize editor"
+              onClick={onMaximize}
+              className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onNewTab && (
+            <button
+              type="button"
+              title="Open in new tab"
+              onClick={onNewTab}
+              className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -225,15 +540,80 @@ function CodeEditor({
   );
 }
 
-function WebPreviewPanel({ doc, previewKey }: { doc: string; previewKey: number }) {
+function LintPanel({ errors }: { errors: LintError[] }) {
+  if (errors.length === 0) {
+    return (
+      <div className="border-t border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-emerald-400">
+        ✓ No issues found
+      </div>
+    );
+  }
+
+  const errorCount = errors.filter((e) => e.severity === "error").length;
+  const warnCount = errors.filter((e) => e.severity === "warning").length;
+
+  return (
+    <div className="border-t border-zinc-800 bg-zinc-900">
+      <div className="flex items-center gap-3 px-3 py-1.5 text-xs text-zinc-400">
+        {errorCount > 0 && <span className="text-red-400">{errorCount} error{errorCount !== 1 ? "s" : ""}</span>}
+        {warnCount > 0 && <span className="text-yellow-400">{warnCount} warning{warnCount !== 1 ? "s" : ""}</span>}
+      </div>
+      <div className="max-h-[120px] overflow-auto">
+        {errors.map((err, index) => (
+          <div
+            key={index}
+            className={`flex items-start gap-2 px-3 py-1 text-xs ${err.severity === "error" ? "text-red-400" : "text-yellow-400"}`}
+          >
+            <span className="shrink-0">Line {err.line}:{err.col}</span>
+            <span>{err.message}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function WebPreviewPanel({
+  doc,
+  previewKey,
+  onMaximize,
+  onNewTab,
+}: {
+  doc: string;
+  previewKey: number;
+  onMaximize?: () => void;
+  onNewTab?: () => void;
+}) {
   return (
     <section className="flex h-full min-h-0 flex-col bg-white">
       <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-800">
         <span className="font-semibold text-zinc-700 dark:text-zinc-200">Preview</span>
-        <span className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          Auto-updating
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Auto-updating
+          </span>
+          {onMaximize && (
+            <button
+              type="button"
+              title="Maximize preview"
+              onClick={onMaximize}
+              className="rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onNewTab && (
+            <button
+              type="button"
+              title="Open in new tab"
+              onClick={onNewTab}
+              className="rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
       <iframe
         key={previewKey}
@@ -333,6 +713,17 @@ export default function WebRunnerPage() {
   const [hasRun, setHasRun] = useState(false);
   const consoleIdRef = useRef(0);
 
+  const [modalTarget, setModalTarget] = useState<ModalTarget>(null);
+
+  const [htmlLint, setHtmlLint] = useState<LintError[]>([]);
+  const [cssLint, setCssLint] = useState<LintError[]>([]);
+  const [jsLint, setJsLint] = useState<LintError[]>([]);
+
+  const [showUrlBar, setShowUrlBar] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [urlLoading, setUrlLoading] = useState(false);
+  const [urlError, setUrlError] = useState("");
+
   useEffect(() => {
     setHasRun(false);
   }, [mode]);
@@ -371,6 +762,21 @@ export default function WebRunnerPage() {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHtmlLint(lintHtml(html).errors), 800);
+    return () => window.clearTimeout(timer);
+  }, [html]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setCssLint(lintCss(css).errors), 800);
+    return () => window.clearTimeout(timer);
+  }, [css]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setJsLint(lintJs(js).errors), 800);
+    return () => window.clearTimeout(timer);
+  }, [js]);
 
   const runTypeScript = useCallback(async () => {
     if (running) return;
@@ -438,6 +844,28 @@ export default function WebRunnerPage() {
     return () => window.removeEventListener("keydown", handleGlobalRun);
   }, [runPreview]);
 
+  const loadUrl = useCallback(async () => {
+    if (!urlInput.trim() || urlLoading) return;
+    setUrlLoading(true);
+    setUrlError("");
+    try {
+      const res = await fetch(`${API_BASE}/tools/fetch-url?url=${encodeURIComponent(urlInput.trim())}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Failed to fetch URL");
+
+      if (data.html) setHtml(data.html);
+      if (data.css) setCss(data.css);
+      if (data.js) setJs(data.js);
+      setShowUrlBar(false);
+      setUrlInput("");
+      setMode("combined");
+    } catch (error) {
+      setUrlError(error instanceof Error ? error.message : "Failed to load URL");
+    } finally {
+      setUrlLoading(false);
+    }
+  }, [urlInput, urlLoading]);
+
   function handleEditorKeyDown(
     value: string,
     onChange: (value: string) => void,
@@ -460,6 +888,14 @@ export default function WebRunnerPage() {
     }
   }
 
+  function openInNewTab(content: string) {
+    const w = window.open("about:blank");
+    if (w) {
+      w.document.write(content);
+      w.document.close();
+    }
+  }
+
   const runButton = (
     <button
       type="button"
@@ -472,29 +908,99 @@ export default function WebRunnerPage() {
     </button>
   );
 
+  const htmlEditor = (
+    <CodeEditor
+      label="HTML"
+      value={html}
+      onChange={setHtml}
+      tone="html"
+      onKeyDown={(event) => handleEditorKeyDown(html, setHtml, event)}
+      lintErrors={htmlLint}
+      onMaximize={() => setModalTarget("html")}
+      onNewTab={() => openInNewTab(html)}
+    />
+  );
+  const cssEditor = (
+    <CodeEditor
+      label="CSS"
+      value={css}
+      onChange={setCss}
+      tone="css"
+      onKeyDown={(event) => handleEditorKeyDown(css, setCss, event)}
+      lintErrors={cssLint}
+      onMaximize={() => setModalTarget("css")}
+      onNewTab={() => openInNewTab(`<style>${css}</style>${cssDemoHtml}`)}
+    />
+  );
+  const jsEditor = (
+    <CodeEditor
+      label="JS"
+      value={js}
+      onChange={setJs}
+      tone="js"
+      onKeyDown={(event) => handleEditorKeyDown(js, setJs, event)}
+      lintErrors={jsLint}
+      onMaximize={() => setModalTarget("js")}
+      onNewTab={() => openInNewTab(jsDocument(js))}
+    />
+  );
+
   const editorPane = (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-950">
       {mode === "combined" && (
         <>
-          <CodeEditor label="HTML" value={html} onChange={setHtml} tone="html" onKeyDown={(event) => handleEditorKeyDown(html, setHtml, event)} />
-          <CodeEditor label="CSS" value={css} onChange={setCss} tone="css" onKeyDown={(event) => handleEditorKeyDown(css, setCss, event)} />
-          <CodeEditor label="JS" value={js} onChange={setJs} tone="js" onKeyDown={(event) => handleEditorKeyDown(js, setJs, event)} />
+          {htmlEditor}
+          <LintPanel errors={htmlLint} />
+          {cssEditor}
+          <LintPanel errors={cssLint} />
+          {jsEditor}
+          <LintPanel errors={jsLint} />
         </>
       )}
       {mode === "html" && (
-        <CodeEditor label="HTML" value={html} onChange={setHtml} tone="html" onKeyDown={(event) => handleEditorKeyDown(html, setHtml, event)} />
+        <>
+          <CodeEditor
+            label="HTML"
+            value={html}
+            onChange={setHtml}
+            tone="html"
+            onKeyDown={(event) => handleEditorKeyDown(html, setHtml, event)}
+            lintErrors={htmlLint}
+            onMaximize={() => setModalTarget("html")}
+            onNewTab={() => openInNewTab(html)}
+          />
+          <LintPanel errors={htmlLint} />
+        </>
       )}
       {mode === "css" && (
-        <CodeEditor label="CSS" value={css} onChange={setCss} tone="css" onKeyDown={(event) => handleEditorKeyDown(css, setCss, event)} />
+        <>
+          <CodeEditor
+            label="CSS"
+            value={css}
+            onChange={setCss}
+            tone="css"
+            onKeyDown={(event) => handleEditorKeyDown(css, setCss, event)}
+            lintErrors={cssLint}
+            onMaximize={() => setModalTarget("css")}
+            onNewTab={() => openInNewTab(`<style>${css}</style>${cssDemoHtml}`)}
+          />
+          <LintPanel errors={cssLint} />
+        </>
       )}
       {mode === "javascript" && (
-        <CodeEditor
-          label="JavaScript"
-          value={js}
-          onChange={setJs}
-          tone="js"
-          onKeyDown={(event) => handleEditorKeyDown(js, setJs, event)}
-        />
+        <>
+          <CodeEditor
+            label="JavaScript"
+            value={js}
+            onChange={setJs}
+            tone="js"
+            onKeyDown={(event) => handleEditorKeyDown(js, setJs, event)}
+            lintErrors={jsLint}
+            onMaximize={() => setModalTarget("js")}
+            onNewTab={() => openInNewTab(jsDocument(js))}
+          />
+          <LintPanel errors={jsLint} />
+        </>
       )}
       {mode === "typescript" && (
         <>
@@ -504,6 +1010,8 @@ export default function WebRunnerPage() {
             onChange={setTs}
             tone="ts"
             onKeyDown={(event) => handleEditorKeyDown(ts, setTs, event)}
+            onMaximize={() => setModalTarget("ts")}
+            onNewTab={() => openInNewTab(`<pre>${ts}</pre>`)}
           />
           <div className="flex flex-col gap-3 border-t border-zinc-800 bg-zinc-900 p-3 sm:flex-row sm:items-center">
             <label className="text-xs font-semibold uppercase tracking-wide text-zinc-400">stdin</label>
@@ -532,7 +1040,12 @@ export default function WebRunnerPage() {
     ) : mode === "typescript" ? (
       <TypeScriptOutputPanel result={tsResult} error={tsError} hasRun={hasRun} />
     ) : (
-      <WebPreviewPanel doc={previewDoc} previewKey={previewKey} />
+      <WebPreviewPanel
+        doc={previewDoc}
+        previewKey={previewKey}
+        onMaximize={() => setModalTarget("preview")}
+        onNewTab={() => openInNewTab(previewDoc)}
+      />
     );
 
   return (
@@ -587,10 +1100,53 @@ export default function WebRunnerPage() {
               );
             })}
           </div>
+          <button
+            type="button"
+            onClick={() => setShowUrlBar((value) => !value)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            Import URL
+          </button>
           {runButton}
           <span className="hidden text-xs text-zinc-400 md:inline">Ctrl+Enter to run</span>
         </div>
       </header>
+
+      {showUrlBar && (
+        <div className="flex items-center gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+          <Link2 className="h-4 w-4 shrink-0 text-zinc-400" />
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(event) => setUrlInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void loadUrl();
+              if (event.key === "Escape") setShowUrlBar(false);
+            }}
+            placeholder="https://example.com — fetches HTML, extracts inline CSS and JS"
+            autoFocus
+            className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          />
+          <button
+            type="button"
+            onClick={() => void loadUrl()}
+            disabled={urlLoading}
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {urlLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            {urlLoading ? "Loading..." : "Load"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowUrlBar(false)}
+            className="rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          {urlError && <span className="text-xs text-red-500">{urlError}</span>}
+        </div>
+      )}
 
       <div className="h-[calc(100vh-3.5rem)] overflow-hidden">
         {layout === "horizontal" && (
@@ -614,6 +1170,109 @@ export default function WebRunnerPage() {
           </div>
         )}
       </div>
+
+      {modalTarget === "html" && (
+        <ExpandModal title="HTML" tone="html" value={html} onChange={setHtml} onClose={() => setModalTarget(null)} />
+      )}
+      {modalTarget === "css" && (
+        <ExpandModal title="CSS" tone="css" value={css} onChange={setCss} onClose={() => setModalTarget(null)} />
+      )}
+      {modalTarget === "js" && (
+        <ExpandModal title="JavaScript" tone="js" value={js} onChange={setJs} onClose={() => setModalTarget(null)} />
+      )}
+      {modalTarget === "ts" && (
+        <ExpandModal title="TypeScript" tone="ts" value={ts} onChange={setTs} onClose={() => setModalTarget(null)} />
+      )}
+      {modalTarget === "preview" && <PreviewModal doc={previewDoc} onClose={() => setModalTarget(null)} />}
     </main>
+  );
+}
+
+function ExpandModal({
+  title,
+  tone,
+  value,
+  onChange,
+  onClose,
+}: {
+  title: string;
+  tone: "html" | "css" | "js" | "ts";
+  value: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+}) {
+  const labelClass = {
+    html: "text-orange-400",
+    css: "text-blue-400",
+    js: "text-yellow-400",
+    ts: "text-sky-400",
+  }[tone];
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Escape") {
+      onClose();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    const target = event.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    onChange(`${value.slice(0, start)}  ${value.slice(end)}`);
+    window.requestAnimationFrame(() => target.setSelectionRange(start + 2, start + 2));
+  }
+
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col bg-zinc-950">
+      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4 py-2">
+        <span className={`text-sm font-semibold ${labelClass}`}>{title}</span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={handleKeyDown}
+        spellCheck={false}
+        autoFocus
+        className="flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm text-zinc-100 outline-none"
+      />
+    </div>
+  );
+}
+
+function PreviewModal({ doc, onClose }: { doc: string; onClose: () => void }) {
+  useEffect(() => {
+    function handleKey(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col bg-white">
+      <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-4 py-2">
+        <span className="text-sm font-semibold text-zinc-700">Preview</span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded p-1.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <iframe
+        title="Preview fullscreen"
+        sandbox="allow-scripts allow-same-origin"
+        srcDoc={doc}
+        className="flex-1 border-0"
+      />
+    </div>
   );
 }
