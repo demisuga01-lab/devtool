@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64 as _base64
 import ipaddress
 import re
 import shutil
@@ -540,8 +541,70 @@ class RunCodeRequest(BaseModel):
     stdin: str = ""
 
 
-PISTON_URL = "http://localhost:2000/api/v2/execute"
-PISTON_RUNTIMES_URL = "http://localhost:2000/api/v2/runtimes"
+JUDGE0_URL = "http://localhost:2358/submissions"
+JUDGE0_LANGUAGES_URL = "http://localhost:2358/languages"
+
+
+# Judge0 language ID mapping
+JUDGE0_LANGUAGE_MAP: dict[str, int] = {
+    "python": 71,
+    "python3": 71,
+    "javascript": 63,
+    "node": 63,
+    "typescript": 74,
+    "java": 62,
+    "c": 50,
+    "c++": 54,
+    "cpp": 54,
+    "rust": 73,
+    "go": 60,
+    "kotlin": 78,
+    "php": 68,
+    "ruby": 72,
+    "bash": 46,
+    "sh": 46,
+    "lua": 64,
+    "dart": 90,
+    "scala": 81,
+    "perl": 85,
+    "csharp": 51,
+    "c#": 51,
+    "mono": 51,
+    "basic": 84,
+    "swift": 83,
+    "r": 80,
+    "rscript": 80,
+    "julia": 91,
+    "sqlite3": 82,
+    "sql": 82,
+    "d": 56,
+    "fortran": 59,
+    "haskell": 61,
+    "elixir": 57,
+    "erlang": 58,
+    "ocaml": 65,
+    "clojure": 86,
+    "groovy": 88,
+    "cobol": 77,
+    "nasm": 45,
+    "nasm64": 45,
+    "assembly": 45,
+    "fsharp": 87,
+    "f#": 87,
+    "racket": 91,
+    "nim": 91,
+    "crystal": 91,
+    "pascal": 67,
+    "prolog": 69,
+    "coffeescript": 91,
+    "zig": 91,
+    "commonlisp": 55,
+    "lisp": 55,
+    "objc": 79,
+    "objectivec": 79,
+    "vb": 84,
+    "visualbasic": 84,
+}
 
 
 @router.post("/run-code")
@@ -551,27 +614,40 @@ async def run_code(payload: RunCodeRequest) -> dict:
     code = payload.code
     stdin = payload.stdin
 
-    if not language or not version or not code:
-        raise HTTPException(status_code=400, detail="language, version, and code are required.")
+    if not language or not code:
+        raise HTTPException(status_code=400, detail="language and code are required.")
     if len(code) > 100000:
         raise HTTPException(status_code=400, detail="Code too large. Maximum 100,000 characters.")
     if len(stdin) > 10000:
         raise HTTPException(status_code=400, detail="Stdin too large. Maximum 10,000 characters.")
 
+    # Get language ID from map
+    language_id = JUDGE0_LANGUAGE_MAP.get(language)
+    if language_id is None:
+        # Try to match by version string for Piston compatibility
+        language_id = JUDGE0_LANGUAGE_MAP.get(language.split()[0])
+    if language_id is None:
+        raise HTTPException(status_code=400, detail=f"Language '{language}' is not supported.")
+
+    # Judge0 expects base64-encoded source code and stdin
+    source_b64 = _base64.b64encode(code.encode()).decode()
+    stdin_b64 = _base64.b64encode(stdin.encode()).decode() if stdin else None
+
+    request_body: dict = {
+        "source_code": source_b64,
+        "language_id": language_id,
+        "encoding": "base64",
+    }
+    if stdin_b64:
+        request_body["stdin"] = stdin_b64
+
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            # Submit and wait for result
             resp = await client.post(
-                PISTON_URL,
-                json={
-                    "language": language,
-                    "version": version,
-                    "files": [{"content": code}],
-                    "stdin": stdin,
-                },
+                f"{JUDGE0_URL}?wait=true",
+                json=request_body,
             )
-            if resp.status_code == 400:
-                data = resp.json()
-                raise HTTPException(status_code=400, detail=data.get("message", "Invalid request."))
             if not resp.is_success:
                 raise HTTPException(status_code=502, detail="Code execution service unavailable.")
             data = resp.json()
@@ -584,23 +660,50 @@ async def run_code(payload: RunCodeRequest) -> dict:
     except Exception:
         raise HTTPException(status_code=502, detail="Code execution failed.")
 
-    run = data.get("run", {})
-    compile_result = data.get("compile", {})
+    # Decode base64 outputs from Judge0
+    def decode_b64(value: str | None) -> str:
+        if not value:
+            return ""
+        try:
+            return _base64.b64decode(value).decode("utf-8", errors="replace")
+        except Exception:
+            return value
+
+    stdout = decode_b64(data.get("stdout"))
+    stderr = decode_b64(data.get("stderr"))
+    compile_output = decode_b64(data.get("compile_output"))
+    message = data.get("message") or ""
+
+    status = data.get("status", {})
+    status_id = status.get("id", 0)
+    status_desc = status.get("description", "")
+
+    # Map Judge0 status to our format
+    exit_code = data.get("exit_code")
+    if exit_code is None:
+        if status_id == 3:
+            exit_code = 0
+        elif status_id in (5, 6):
+            exit_code = 1
+        else:
+            exit_code = 1 if status_id != 3 else 0
 
     return {
-        "language": data.get("language", language),
-        "version": data.get("version", version),
-        "stdout": run.get("stdout", ""),
-        "stderr": run.get("stderr", ""),
-        "output": run.get("output", ""),
-        "exit_code": run.get("code"),
-        "signal": run.get("signal"),
-        "cpu_time": run.get("cpu_time"),
-        "wall_time": run.get("wall_time"),
-        "memory": run.get("memory"),
-        "compile_output": compile_result.get("output", "") if compile_result else "",
-        "compile_stderr": compile_result.get("stderr", "") if compile_result else "",
-        "status": "ok" if run.get("code") == 0 else "error",
+        "language": language,
+        "version": version,
+        "stdout": stdout,
+        "stderr": stderr,
+        "output": stdout,
+        "exit_code": exit_code,
+        "signal": data.get("signal"),
+        "cpu_time": int(float(data.get("time") or 0) * 1000),
+        "wall_time": int(float(data.get("time") or 0) * 1000),
+        "memory": int(data.get("memory") or 0) * 1000,
+        "compile_output": compile_output,
+        "compile_stderr": "",
+        "status": "ok" if status_id == 3 else "error",
+        "status_description": status_desc,
+        "message": message,
     }
 
 
@@ -608,9 +711,20 @@ async def run_code(payload: RunCodeRequest) -> dict:
 async def get_runtimes() -> list:
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(PISTON_RUNTIMES_URL)
+            resp = await client.get(JUDGE0_LANGUAGES_URL)
             if not resp.is_success:
                 return []
-            return resp.json()
+            languages = resp.json()
+            # Return in Piston-compatible format for frontend compatibility
+            return [
+                {
+                    "language": lang.get("name", "").split(" ")[0].lower(),
+                    "version": lang.get("name", ""),
+                    "aliases": [],
+                    "id": lang.get("id"),
+                }
+                for lang in languages
+                if lang.get("id") and lang.get("name")
+            ]
     except Exception:
         return []
