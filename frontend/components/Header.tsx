@@ -153,7 +153,7 @@ export function Header() {
             alt="DevTools logo"
             width={48}
             height={48}
-            className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 dark:brightness-90 dark:contrast-125 dark:saturate-150"
+            className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 dark:mix-blend-lighten"
             priority
           />
           <span className="flex flex-col justify-center leading-tight">
