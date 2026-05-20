@@ -157,8 +157,8 @@ export function Header() {
             priority
           />
           <span className="flex flex-col justify-center leading-tight">
-            <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
-              DevTools
+            <span className="text-base font-bold">
+              <span className="text-emerald-600 dark:text-emerald-400">Dev</span><span className="text-zinc-900 dark:text-white">Tools</span>
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
               by WellFriend
