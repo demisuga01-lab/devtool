@@ -157,7 +157,7 @@ export function Header() {
             priority
           />
           <span className="flex flex-col justify-center leading-tight">
-            <span className="text-base font-bold">
+            <span className="text-lg font-bold">
               <span className="text-emerald-600 dark:text-emerald-400">Dev</span><span className="text-zinc-900 dark:text-white">Tools</span>
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
