@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { KeyboardEvent, useCallback, useEffect, useState } from "react";
-import { Database, FlaskConical, Play, RefreshCw } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type Mode = "sqlite" | "julia";
@@ -368,7 +368,7 @@ export default function DataRunnerPage() {
           <div className="mt-5 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
             <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
-                <Database className="h-4 w-4" />
+                <svg viewBox="0 0 48 48" className="h-5 w-5"><path d="M36 4c-6 0-12 8-12 20s6 20 12 20c2 0 4-1 4-3V7c0-2-2-3-4-3z" fill="#0F80CC"/><path d="M24 24c0-12-6-20-12-20C8 4 6 5 6 7v34c0 2 2 3 4 3 6 0 14-8 14-20z" fill="#003B57"/></svg>
                 SQL Query
               </div>
               <textarea
@@ -396,7 +396,7 @@ export default function DataRunnerPage() {
           <div className="mt-5 grid min-h-0 flex-1 gap-5 lg:grid-cols-2">
             <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-purple-700 dark:border-zinc-800 dark:text-purple-400">
-                <FlaskConical className="h-4 w-4" />
+                <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="16" cy="32" r="8" fill="#CB3C33"/><circle cx="32" cy="32" r="8" fill="#389826"/><circle cx="24" cy="18" r="8" fill="#9558B2"/></svg>
                 Julia Script
               </div>
               <div className="flex min-h-0 flex-1 flex-col p-4">

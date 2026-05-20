@@ -7,6 +7,7 @@ import { API_BASE } from "@/lib/api";
 
 type Language = {
   label: "C" | "C++" | "Rust" | "Go";
+  icon: ReactNode;
   language: string;
   version: string;
   compiler: string;
@@ -31,6 +32,7 @@ type RunResult = {
 const languages: Language[] = [
   {
     label: "C",
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="24" cy="24" r="20" fill="#5C6BC0"/><path d="M30 29.5c-1.3 1.3-3 2-5 2-4.1 0-7.5-3.4-7.5-7.5S20.9 16.5 25 16.5c2 0 3.7.8 5 2l-2 2c-.8-.8-1.8-1.3-3-1.3-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5c1.2 0 2.2-.5 3-1.3l2 1.6z" fill="white"/></svg>,
     language: "c",
     version: "10.2.0",
     compiler: "gcc",
@@ -44,6 +46,7 @@ int main() {
   },
   {
     label: "C++",
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="24" cy="24" r="20" fill="#00599C"/><path d="M22 29.5c-1.3 1.3-3 2-5 2-4.1 0-7.5-3.4-7.5-7.5S12.9 16.5 17 16.5c2 0 3.7.8 5 2l-2 2c-.8-.8-1.8-1.3-3-1.3-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5c1.2 0 2.2-.5 3-1.3l2 1.6zM31 22v-3h-2v3h-3v2h3v3h2v-3h3v-2h-3z" fill="white"/></svg>,
     language: "c++",
     version: "10.2.0",
     compiler: "g++",
@@ -62,6 +65,7 @@ int main() {
   },
   {
     label: "Rust",
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="24" cy="24" r="20" fill="#CE422B"/><path d="M24 8l1.5 2.5h-3L24 8zm0 32l-1.5-2.5h3L24 40zm16-16l-2.5 1.5v-3L40 24zM8 24l2.5-1.5v3L8 24z" fill="white"/><circle cx="24" cy="24" r="8" fill="none" stroke="white" strokeWidth="2"/><path d="M20 22h8M20 26h8" stroke="white" strokeWidth="2"/></svg>,
     language: "rust",
     version: "1.68.2",
     compiler: "rustc",
@@ -76,6 +80,7 @@ int main() {
   },
   {
     label: "Go",
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><rect width="48" height="48" rx="4" fill="#00ACD7"/><path d="M8 20.5c-.2 0-.2-.1-.1-.2l.7-.9c.1-.1.3-.2.5-.2h13.5c.2 0 .2.1.1.3l-.5.8c-.1.1-.3.2-.5.2H8zM5 23c-.2 0-.2-.1-.1-.2l.7-.9c.1-.1.3-.2.5-.2H22c.2 0 .3.1.2.3l-.3.7c-.1.2-.3.3-.5.3H5zM11 25.5c-.2 0-.2-.1-.1-.3l.5-.8c.1-.1.3-.2.5-.2h7c.2 0 .3.1.3.3l-.1.7c0 .2-.2.3-.4.3H11z" fill="white"/><path d="M36 16v2h-4v2h4v2h-6v-8h6v2zm-12 6c0 1.7-1.3 3-3 3h-3v-8h3c1.7 0 3 1.3 3 3zm-4 1h1c.6 0 1-.4 1-1v-2c0-.6-.4-1-1-1h-1v4z" fill="white"/></svg>,
     language: "go",
     version: "1.16.2",
     compiler: "go",
@@ -186,7 +191,10 @@ export default function SystemsRunnerPage() {
               onClick={() => setActiveIndex(index)}
               className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"}`}
             >
-              {language.label}
+              <span className="flex items-center gap-1.5">
+                {language.icon}
+                {language.label}
+              </span>
             </button>
           ))}
         </div>

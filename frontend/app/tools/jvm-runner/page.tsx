@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { KeyboardEvent, ReactNode, useCallback, useEffect, useState } from "react";
-import { Coffee, Crosshair, FileText, Hash, Play, RefreshCw, Zap } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type OutputTab = "output" | "errors";
@@ -31,7 +31,7 @@ type RunResult = {
 const languages: Language[] = [
   {
     label: "Java",
-    icon: <Coffee className="h-4 w-4" />,
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><path d="M18.5 35.5s-1.5.9.9 1.2c2.7.3 4.1.3 7-.1 0 0 .8.5 1.9 1-6.7 2.9-15.2-.2-9.8-2.1zm-.9-4s-1.7 1.3 1 1.5c3.3.3 5.9.3 10.4-.4 0 0 .5.5 1.4.9-9.2 2.7-19.5.2-12.8-2z" fill="#5382A1"/><path d="M24.5 20c1.9 2.1-.5 4-.5 4s4.7-2.4 2.5-5.4c-2-2.8-3.5-4.2 4.7-9 0 0-12.9 3.2-6.7 10.4z" fill="#E76F00"/><path d="M32.5 38.5s1.1.9-1.2 1.6c-4.3 1.3-18 1.7-21.8.1-1.4-.6 1.2-1.5 2-1.6.8-.2 1.3-.2 1.3-.2-1.5-1-9.7 2.1-4.2 3 15.1 2.5 27.5-1.1 23.9-2.9zm-13.5-11.5s-6.8 1.6-2.4 2.2c1.9.3 5.6.2 9.1-.1 2.8-.3 5.7-.9 5.7-.9s-1 .4-1.7.9c-7 1.9-20.5 1-16.6-.8 3.3-1.6 5.9-1.3 5.9-1.3zm12.4 6.9c7.1-3.7 3.8-7.2 1.5-6.7-.6.1-.8.3-.8.3s.2-.3.6-.5c4.6-1.6 8.1 4.8-1.5 7.3 0-.1.1-.2.2-.4z" fill="#5382A1"/><path d="M27 4s3.9 3.9-3.7 9.9c-6.1 4.8-1.4 7.6 0 10.7-3.6-3.2-6.2-6.1-4.4-8.7 2.5-3.8 9.6-5.6 8.1-11.9z" fill="#E76F00"/></svg>,
     language: "java",
     version: "15.0.2",
     defaultCode: `public class Main {
@@ -45,7 +45,7 @@ const languages: Language[] = [
   },
   {
     label: "Kotlin",
-    icon: <Crosshair className="h-4 w-4" />,
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><defs><linearGradient id="kg-jvm" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#E44857"/><stop offset="50%" stopColor="#C711E1"/><stop offset="100%" stopColor="#7F52FF"/></linearGradient></defs><rect width="48" height="48" rx="4" fill="url(#kg-jvm)"/><path d="M6 6h18L6 24V6zM6 42L24 24l18 18H6z" fill="white"/></svg>,
     language: "kotlin",
     version: "1.8.20",
     defaultCode: `fun main() {
@@ -57,7 +57,7 @@ const languages: Language[] = [
   },
   {
     label: "Scala",
-    icon: <Zap className="h-4 w-4" />,
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><rect width="48" height="48" rx="4" fill="#DC322F"/><path d="M12 18h24c0 3-24 3-24 6s24 3 24 6H12c0-3 24-3 24-6s-24-3-24-6zm0-6h24c0 2-24 2-24 4s24 2 24 4H12c0-2 24-2 24-4s-24-2-24-4z" fill="white" opacity="0.9"/></svg>,
     language: "scala",
     version: "3.2.2",
     defaultCode: `@main def hello(): Unit =
@@ -66,7 +66,7 @@ const languages: Language[] = [
   },
   {
     label: "C#",
-    icon: <Hash className="h-4 w-4" />,
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="24" cy="24" r="20" fill="#9B4F96"/><path d="M20 29.5c-1.3 1.3-3 2-5 2-4.1 0-7.5-3.4-7.5-7.5S10.9 16.5 15 16.5c2 0 3.7.8 5 2l-2 2c-.8-.8-1.8-1.3-3-1.3-2.5 0-4.5 2-4.5 4.5s2 4.5 4.5 4.5c1.2 0 2.2-.5 3-1.3l2 1.6zM29 19h-6v2h2v8h2v-8h2v-2zM33 19h-2v3h-2v2h2v3h2v-3h2v-2h-2v-3z" fill="white"/></svg>,
     language: "csharp",
     version: "6.12.0",
     defaultCode: `using System;
@@ -83,7 +83,7 @@ class Program {
   },
   {
     label: "Basic",
-    icon: <FileText className="h-4 w-4" />,
+    icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><rect width="48" height="48" rx="4" fill="#512BD4"/><path d="M12 14h8c3 0 5 1.5 5 4 0 1.5-.8 2.8-2 3.5 1.5.7 2.5 2 2.5 3.8 0 2.8-2.2 4.7-5.5 4.7H12V14zm4 6.5h3c1 0 1.8-.7 1.8-1.8S20 17 19 17h-3v3.5zm0 7h3.5c1.2 0 2-.8 2-2s-.8-2-2-2H16V27.5zm16-13.5l-6 12h3l1-2.5h5l1 2.5h3l-6-12h-1zm.5 7l1.5-4 1.5 4H32.5z" fill="white"/></svg>,
     language: "basic",
     version: "6.12.0",
     defaultCode: `MODULE Hello

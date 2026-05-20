@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { KeyboardEvent, ReactNode, useCallback, useEffect, useState } from "react";
-import { Crosshair, Diamond, Hash, Play, RefreshCw, Wind } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type OutputTab = "output" | "errors";
@@ -33,7 +33,7 @@ type RunResult = {
 const languages: Language[] = [
   {
     label: "Swift",
-    icon: <Wind className="h-8 w-8 text-orange-500" />,
+    icon: <svg viewBox="0 0 48 48" className="h-8 w-8"><rect width="48" height="48" rx="10" fill="#F05138"/><path d="M35 27c-2.5 4.5-7.5 7-12.5 6C16 32 11 27 11 21c0 4 2 8 6 10 3 1.5 6.5 1.5 9.5 0C30 29 33 26 35 23c0 0 2 2 0 4z" fill="white"/><path d="M35 18c0-4-3-8-8-10 3 3 4 6 3 9-1 2-3 4-5 5 3-1 7-2 10-4z" fill="white" opacity="0.8"/></svg>,
     language: "swift",
     version: "5.3.3",
     description: "Apple's modern language for iOS, macOS, and server-side development.",
@@ -57,7 +57,7 @@ for name in names {
   },
   {
     label: "Dart",
-    icon: <Crosshair className="h-8 w-8 text-blue-500" />,
+    icon: <svg viewBox="0 0 48 48" className="h-8 w-8"><path d="M12 6l-6 6v20l6 6 20-2 8-8V14L34 6H12z" fill="#00B4AB"/><path d="M14 14l14-2 8 8-2 14-14 2-8-8 2-14z" fill="#00D2FF"/><path d="M22 18v12l6-6-6-6z" fill="white"/></svg>,
     language: "dart",
     version: "3.0.1",
     description: "Google's language for Flutter apps and web development.",
@@ -84,7 +84,7 @@ void main() {
   },
   {
     label: "Fortran",
-    icon: <Hash className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />,
+    icon: <svg viewBox="0 0 48 48" className="h-8 w-8"><rect width="48" height="48" rx="4" fill="#734F96"/><path d="M12 12h24v5H17v5h15v5H17v9h-5V12z" fill="white"/></svg>,
     language: "fortran",
     version: "10.2.0",
     description: "Classic scientific computing language, still widely used in HPC.",
@@ -103,7 +103,7 @@ end program hello`,
   },
   {
     label: "D",
-    icon: <Diamond className="h-8 w-8 text-indigo-500" />,
+    icon: <svg viewBox="0 0 48 48" className="h-8 w-8"><rect width="48" height="48" rx="4" fill="#B03931"/><path d="M12 12h10c8 0 14 5 14 12s-6 12-14 12H12V12zm5 5v14h5c5 0 9-3 9-7s-4-7-9-7h-5z" fill="white"/></svg>,
     language: "d",
     version: "10.2.0",
     description: "Systems programming with productivity of dynamic languages.",

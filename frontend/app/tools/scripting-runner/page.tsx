@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { KeyboardEvent, ReactNode, useCallback, useEffect, useState } from "react";
-import { Code, Code2, FileCode, Gem, Play, RefreshCw, Terminal } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type Language = { label: string; icon: ReactNode; language: string; version: string; defaultCode: string; color: string };
@@ -10,14 +10,14 @@ type RunResult = { stdout: string; stderr: string; output: string; exit_code: nu
 type OutputTab = "output" | "errors";
 
 const languages: Language[] = [
-  { label: "Python", icon: <Code2 className="h-4 w-4" />, language: "python", version: "3.12.0", color: "bg-blue-500 hover:bg-blue-600", defaultCode: `# Python 3.12
+  { label: "Python", icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><path d="M24 3.5c-5.8 0-10.5 1.2-10.5 4.5v3h10.5v1.5H10c-3 0-5.5 2.3-5.5 7s2.5 7 5.5 7h2v-3.5c0-3.3 2.8-5.5 6-5.5h10c2.8 0 5-2 5-5V8c0-2.8-2.5-4.5-9-4.5zm-3 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" fill="#3776AB"/><path d="M24 44.5c5.8 0 10.5-1.2 10.5-4.5v-3H24v-1.5H38c3 0 5.5-2.3 5.5-7s-2.5-7-5.5-7h-2v3.5c0 3.3-2.8 5.5-6 5.5H20c-2.8 0-5 2-5 5v7c0 2.8 2.5 4.5 9 4.5zm3-3a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#FFD43B"/></svg>, language: "python", version: "3.12.0", color: "bg-blue-500 hover:bg-blue-600", defaultCode: `# Python 3.12
 def greet(name: str) -> str:
     return f"Hello, {name}!"
 
 names = ["World", "Python", "DevTools"]
 for name in names:
     print(greet(name))` },
-  { label: "Ruby", icon: <Gem className="h-4 w-4" />, language: "ruby", version: "3.0.1", color: "bg-red-500 hover:bg-red-600", defaultCode: `# Ruby 3.0
+  { label: "Ruby", icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><path d="M38 10l2 28-28 2-8-6 6-28 28 4z" fill="#CC342D"/><path d="M16 14l16 2-2 16-14-6 0-12z" fill="#FF6060"/><path d="M32 16l4 20-20 2 16-22z" fill="#CC342D"/><path d="M16 26l14-12-12 20-2-8z" fill="#FF6060"/></svg>, language: "ruby", version: "3.0.1", color: "bg-red-500 hover:bg-red-600", defaultCode: `# Ruby 3.0
 def greet(name)
   "Hello, #{name}!"
 end
@@ -25,7 +25,7 @@ end
 ["World", "Ruby", "DevTools"].each do |name|
   puts greet(name)
 end` },
-  { label: "PHP", icon: <FileCode className="h-4 w-4" />, language: "php", version: "8.2.3", color: "bg-violet-500 hover:bg-violet-600", defaultCode: `<?php
+  { label: "PHP", icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><ellipse cx="24" cy="24" rx="20" ry="12" fill="#8892BF"/><path d="M14 20h3l1 4h3l-1-4h3l-1 8h-3l.5-2H17l-.5 2h-3l1-8zm12 0h5c2 0 3 1 3 3 0 3-2 5-5 5h-2l-.5 2h-3l2-10zm3 2h-1.5l-.7 4h1.5c1.3 0 2-1 2-2.5 0-.9-.4-1.5-1.3-1.5z" fill="white"/></svg>, language: "php", version: "8.2.3", color: "bg-violet-500 hover:bg-violet-600", defaultCode: `<?php
 function greet(string $name): string {
     return "Hello, $name!";
 }
@@ -34,7 +34,7 @@ $names = ["World", "PHP", "DevTools"];
 foreach ($names as $name) {
     echo greet($name) . "\\n";
 }` },
-  { label: "Perl", icon: <FileCode className="h-4 w-4" />, language: "perl", version: "5.36.0", color: "bg-yellow-600 hover:bg-yellow-700", defaultCode: `use strict;
+  { label: "Perl", icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="24" cy="24" r="20" fill="#39457E"/><path d="M14 20c0-5.5 4.5-10 10-10 4 0 7.5 2.3 9.2 5.7" stroke="white" strokeWidth="3" fill="none"/><path d="M24 38c-7.7 0-14-6.3-14-14 0-2.3.6-4.5 1.6-6.4" stroke="white" strokeWidth="3" fill="none"/><circle cx="24" cy="24" r="4" fill="white"/></svg>, language: "perl", version: "5.36.0", color: "bg-yellow-600 hover:bg-yellow-700", defaultCode: `use strict;
 use warnings;
 
 sub greet {
@@ -46,7 +46,7 @@ my @names = ("World", "Perl", "DevTools");
 foreach my $name (@names) {
     print greet($name) . "\\n";
 }` },
-  { label: "Bash", icon: <Terminal className="h-4 w-4" />, language: "bash", version: "5.2.0", color: "bg-zinc-700 hover:bg-zinc-800", defaultCode: `#!/bin/bash
+  { label: "Bash", icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><rect width="48" height="48" rx="4" fill="#1D1D1D"/><path d="M14 20l6 4-6 4v-8zm8 7h12" stroke="#4EAA25" strokeWidth="2.5" fill="none" strokeLinecap="round"/></svg>, language: "bash", version: "5.2.0", color: "bg-zinc-700 hover:bg-zinc-800", defaultCode: `#!/bin/bash
 greet() {
     echo "Hello, $1!"
 }
@@ -54,7 +54,7 @@ greet() {
 for name in "World" "Bash" "DevTools"; do
     greet "$name"
 done` },
-  { label: "Lua", icon: <Code className="h-4 w-4" />, language: "lua", version: "5.4.4", color: "bg-indigo-500 hover:bg-indigo-600", defaultCode: `-- Lua 5.4
+  { label: "Lua", icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="24" cy="24" r="20" fill="#000080"/><circle cx="24" cy="24" r="12" fill="white"/><circle cx="30" cy="18" r="5" fill="#000080"/></svg>, language: "lua", version: "5.4.4", color: "bg-indigo-500 hover:bg-indigo-600", defaultCode: `-- Lua 5.4
 local function greet(name)
     return string.format("Hello, %s!", name)
 end
