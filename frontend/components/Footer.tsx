@@ -65,9 +65,9 @@ export function Footer() {
         <div className="flex justify-center pb-1 pt-2">
           <Link
             href="/dashboard/login"
-            className="text-xs text-zinc-300 transition-colors hover:text-zinc-500 dark:text-zinc-700 dark:hover:text-zinc-500"
+            className="text-xs text-zinc-400 underline underline-offset-2 transition-colors hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
           >
-            Admin
+            Admin login
           </Link>
         </div>
       </div>

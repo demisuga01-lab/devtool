@@ -11,8 +11,8 @@ const cards = [
     iconClass: "text-red-500 bg-red-50 dark:bg-red-950/30",
     text: "Found something broken? Open a GitHub issue with steps to reproduce.",
     links: [
-      { label: "Open GitHub Issue -&gt;", href: "https://github.com/demisuga01-lab/devtool/issues" },
-      { label: "Email support -&gt;", href: "mailto:support@wellfriend.online" },
+      { label: "Open GitHub Issue →", href: "https://github.com/demisuga01-lab/devtool/issues" },
+      { label: "Email support →", href: "mailto:support@wellfriend.online" },
     ],
   },
   {
@@ -21,8 +21,8 @@ const cards = [
     iconClass: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30",
     text: "Have an idea for a new tool or improvement? We would love to hear it.",
     links: [
-      { label: "GitHub Discussions -&gt;", href: "https://github.com/demisuga01-lab/devtool/discussions" },
-      { label: "Join Discord -&gt;", href: "https://discord.gg/ZQFmYaQbVu" },
+      { label: "GitHub Discussions →", href: "https://github.com/demisuga01-lab/devtool/discussions" },
+      { label: "Join Discord →", href: "https://discord.gg/ZQFmYaQbVu" },
     ],
   },
   {
@@ -32,7 +32,7 @@ const cards = [
     text: "Partnerships, API access, or anything else.",
     links: [
       { label: "contact@wellfriend.online", href: "mailto:contact@wellfriend.online" },
-      { label: "Join Discord -&gt;", href: "https://discord.gg/ZQFmYaQbVu" },
+      { label: "Join Discord →", href: "https://discord.gg/ZQFmYaQbVu" },
     ],
   },
 ];
@@ -93,7 +93,7 @@ export default function ContactPage() {
           rel="noreferrer"
           className="mt-5 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
         >
-          Join Discord -&gt;
+          Join Discord →
         </a>
       </section>
 

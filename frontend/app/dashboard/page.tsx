@@ -208,31 +208,39 @@ function formatDate(value: string | null) {
 }
 
 function useRelativeTime(dateStr: string | null) {
-  const [, forceUpdate] = useState(0);
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    const id = window.setInterval(() => forceUpdate((value) => value + 1), 1000);
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
   if (!dateStr) return "Never";
 
-  const diff = Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000));
+  const diff = Math.max(0, Math.floor((now - new Date(dateStr).getTime()) / 1000));
   if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ${diff % 60}s ago`;
+  if (diff < 3600) {
+    const minutes = Math.floor(diff / 60);
+    const seconds = diff % 60;
+    return `${minutes}m ${seconds}s ago`;
+  }
 
   const hours = Math.floor(diff / 3600);
   const minutes = Math.floor((diff % 3600) / 60);
-  const seconds = diff % 60;
-  return `${hours}h ${minutes}m ${seconds}s ago`;
+  return `${hours}h ${minutes}m ago`;
 }
 
-function formatLastUpdated(lastUpdatedAt: number | null, now: number) {
-  if (!lastUpdatedAt) return "Not updated yet";
-  const seconds = Math.max(0, Math.floor((now - lastUpdatedAt) / 1000));
-  if (seconds < 5) return "Updated just now";
-  if (seconds < 60) return `Updated ${seconds}s ago`;
-  return `Updated ${Math.floor(seconds / 60)}m ago`;
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return "Updated just now";
+  if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s ago`;
+  }
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${hours}h ${minutes}m ago`;
 }
 
 function intervalLabel(seconds: number) {
@@ -381,8 +389,8 @@ function DashboardContent() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isForceChecking, setIsForceChecking] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const hasLoadedRef = useRef(false);
   const [monitorModalOpen, setMonitorModalOpen] = useState(false);
   const [editingMonitor, setEditingMonitor] = useState<StatusMonitor | null>(null);
@@ -449,7 +457,8 @@ function DashboardContent() {
       setIncidents(incidentData.items);
       setMaintenance(maintenanceData);
       setLoadError(null);
-      setLastUpdatedAt(Date.now());
+      setLastRefreshedAt(new Date());
+      setElapsedSeconds(0);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Unable to load dashboard.");
     } finally {
@@ -468,6 +477,8 @@ function DashboardContent() {
       showToast("success", `Force check started for ${result.checked} monitors.`);
       await new Promise((resolve) => window.setTimeout(resolve, 3000));
       await fetchData();
+      setLastRefreshedAt(new Date());
+      setElapsedSeconds(0);
     } catch (error) {
       showToast("error", error instanceof Error ? error.message : "Unable to force check monitors.");
     } finally {
@@ -485,9 +496,11 @@ function DashboardContent() {
   }, [fetchData, loadError]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - lastRefreshedAt.getTime()) / 1000));
+    }, 1000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [lastRefreshedAt]);
 
   useEffect(() => {
     if (searchParams.get("action") === "add" && section === "monitors") {
@@ -740,7 +753,7 @@ function DashboardContent() {
   const recentIncidents = incidents.slice(0, 5);
   const user = getUser();
   const strength = passwordStrength(passwordForm.next);
-  const lastUpdatedLabel = isRefreshing || isForceChecking ? "Refreshing..." : formatLastUpdated(lastUpdatedAt, now);
+  const lastUpdatedLabel = isRefreshing || isForceChecking ? "Refreshing..." : formatElapsed(elapsedSeconds);
 
   return (
     <div className="space-y-6">

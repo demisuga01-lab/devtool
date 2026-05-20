@@ -67,7 +67,7 @@ const statusContent = {
     icon: CheckCircle2,
     title: "All Systems Operational",
     className:
-      "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400",
+      "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400",
   },
   degraded: {
     icon: AlertTriangle,
@@ -99,6 +99,17 @@ function formatDateTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatRelativeTime(value: string | null, now: number) {
+  if (!value) return "not yet";
+  const seconds = Math.max(0, Math.floor((now - new Date(value).getTime()) / 1000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 function formatUntil(value: string, now: number) {
@@ -150,17 +161,17 @@ function MonitorTimeline({ checks }: { checks: MonitorCheck[] }) {
   }, [checks]);
 
   return (
-    <div>
-      <div className="flex items-center gap-0.5 overflow-hidden">
+    <div className="min-w-0">
+      <div className="flex w-full items-center gap-px overflow-hidden md:gap-0.5">
         {bars.map((check, index) => (
           <span
             key={`${check.checked_at || "empty"}-${index}`}
             title={check.checked_at ? `${check.status} at ${formatDateTime(check.checked_at)}` : "No data"}
-            className={`h-8 w-1.5 flex-shrink-0 rounded-sm ${historyColor(check.status)}`}
+            className={`h-6 w-1 flex-shrink-0 rounded-sm md:h-8 md:w-1.5 ${historyColor(check.status)}`}
           />
         ))}
       </div>
-      <div className="mt-1 flex justify-between text-xs text-zinc-400 dark:text-zinc-600">
+      <div className="mt-1 flex justify-between text-[11px] text-zinc-400 dark:text-zinc-600 md:text-xs">
         <span>90 days</span>
         <span>Today</span>
       </div>
@@ -214,18 +225,18 @@ export default function StatusPage() {
   const BannerIcon = banner.icon;
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-4 py-10 dark:bg-zinc-950 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-8">
-        <section className={`rounded-2xl border px-6 py-10 shadow-sm ${banner.className}`}>
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-5">
-              <BannerIcon className="h-12 w-12 flex-shrink-0" />
+    <div className="min-h-screen overflow-x-hidden bg-zinc-50 px-4 py-6 dark:bg-zinc-950 sm:px-6 sm:py-10">
+      <div className="mx-auto w-full max-w-6xl space-y-6 sm:space-y-8">
+        <section className={`rounded-2xl border px-4 py-5 shadow-sm sm:px-6 sm:py-10 ${banner.className}`}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3 sm:items-center sm:gap-5">
+              <BannerIcon className="h-8 w-8 flex-shrink-0 sm:h-12 sm:w-12" />
               <div>
-                <h1 className="text-3xl font-bold">{banner.title}</h1>
-                <p className="mt-2 text-base opacity-85">
+                <h1 className="text-xl font-bold sm:text-3xl">{banner.title}</h1>
+                <p className="mt-1 text-sm opacity-85 sm:mt-2 sm:text-base">
                   {statusSubtext(data?.overall_status ?? "operational", monitors.length, issueCount)}
                 </p>
-                <p className="mt-3 text-sm opacity-75">
+                <p className="mt-2 text-xs opacity-75 sm:mt-3 sm:text-sm">
                   Last updated {data?.last_updated ? formatDateTime(data.last_updated) : "not yet"}
                 </p>
               </div>
@@ -234,7 +245,7 @@ export default function StatusPage() {
         </section>
 
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-sm dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-sm dark:border-red-800 dark:bg-red-950/30 dark:text-red-400 sm:rounded-2xl">
             {error}
           </div>
         )}
@@ -247,7 +258,7 @@ export default function StatusPage() {
             {data.active_incidents.map((incident) => (
               <article
                 key={incident.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:rounded-2xl sm:p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -299,7 +310,7 @@ export default function StatusPage() {
               return (
                 <article
                   key={windowItem.id}
-                  className="rounded-2xl border border-blue-200 bg-blue-50 p-5 shadow-sm dark:border-blue-800 dark:bg-blue-950/30"
+                  className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm dark:border-blue-800 dark:bg-blue-950/30 sm:rounded-2xl sm:p-5"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -326,17 +337,17 @@ export default function StatusPage() {
           </section>
         )}
 
-        <section className="space-y-4">
+        <section className="space-y-3 sm:space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
             Services
           </h2>
-          <div className="space-y-5">
+          <div className="space-y-3 sm:space-y-5">
             {data?.groups.map((group) => (
               <div
                 key={group.name}
-                className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:rounded-2xl md:p-5"
               >
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between gap-3 md:mb-4">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
                     {group.name}
                   </h3>
@@ -344,20 +355,33 @@ export default function StatusPage() {
                 </div>
                 <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
                   {group.monitors.map((monitor) => (
-                    <div key={monitor.id} className="grid gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className={`mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ${dotClass[monitor.status]}`} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="font-medium text-zinc-900 dark:text-zinc-100">{monitor.name}</h4>
-                            <span className={`rounded-xl px-2 py-1 text-xs font-medium ${uptimePillClass(monitor.uptime_30d)}`}>
-                              {monitor.uptime_30d.toFixed(2)}% uptime
+                    <div
+                      key={monitor.id}
+                      className="grid min-w-0 gap-3 px-3 py-3 md:px-4 md:py-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className={`h-2 w-2 flex-shrink-0 rounded-full md:h-2.5 md:w-2.5 ${dotClass[monitor.status]}`} />
+                          <h4 className="min-w-0 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                            {monitor.name}
+                          </h4>
+                          <span className={`flex-shrink-0 rounded-xl px-1.5 py-0.5 text-xs font-medium ${uptimePillClass(monitor.uptime_30d)}`}>
+                            {monitor.uptime_30d.toFixed(2)}% uptime
+                          </span>
+                        </div>
+                        <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-600 md:mt-2 md:gap-3">
+                          <span>
+                            <span className="hidden md:inline">Last response </span>
+                            {monitor.last_response_ms == null ? "-" : `${monitor.last_response_ms}ms`}
+                          </span>
+                          <span className="md:hidden">&middot;</span>
+                          <span>
+                            <span className="hidden md:inline">Last check </span>
+                            <span className="md:hidden">{formatRelativeTime(monitor.last_checked_at, now)}</span>
+                            <span className="hidden md:inline">
+                              {monitor.last_checked_at ? formatDateTime(monitor.last_checked_at) : "not yet"}
                             </span>
-                          </div>
-                          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-400 dark:text-zinc-600">
-                            <span>Last response {monitor.last_response_ms == null ? "-" : `${monitor.last_response_ms}ms`}</span>
-                            <span>Last check {monitor.last_checked_at ? formatDateTime(monitor.last_checked_at) : "not yet"}</span>
-                          </div>
+                          </span>
                         </div>
                       </div>
                       <MonitorTimeline checks={histories[monitor.id] ?? []} />

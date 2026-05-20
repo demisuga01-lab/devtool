@@ -58,9 +58,7 @@ export default function DocsPage() {
         <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-400">
           User guides, tool references, API docs, and self-hosting instructions for the DevTools suite.
         </p>
-        <div className="mx-auto mt-8 max-w-2xl">
-          <DocsSearch large />
-        </div>
+        <DocsSearch large />
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -78,7 +76,7 @@ export default function DocsPage() {
               <h2 className="mt-5 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{card.title}</h2>
               <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{card.text}</p>
               <span className="mt-5 inline-flex text-sm font-medium text-emerald-600 group-hover:text-emerald-700 dark:text-emerald-400 dark:group-hover:text-emerald-300">
-                Open guide -&gt;
+                Open guide →
               </span>
             </Link>
           );
