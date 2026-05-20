@@ -125,6 +125,7 @@ export function Header() {
   const xmlDataGroup = toolGroups.find((group) => group.slug === "xml-data");
   const escapeGroup = toolGroups.find((group) => group.slug === "escape");
   const referenceGroup = toolGroups.find((group) => group.slug === "reference");
+  const codeRunnersGroup = toolGroups.find((group) => group.slug === "code-runners");
   const textTools = textGroup?.tools ?? [];
   const xmlDataTools = xmlDataGroup?.tools ?? [];
   const referenceTools = referenceGroup?.tools ?? [];
@@ -141,6 +142,7 @@ export function Header() {
     { name: "XML & Data", tools: xmlDataTools.slice(0, 7) },
     escapeGroup ? { name: escapeGroup.name, tools: escapeGroup.tools } : null,
     { name: "Reference & Utils", tools: referenceTools.slice(0, 6) },
+    codeRunnersGroup ? { name: codeRunnersGroup.name, tools: codeRunnersGroup.tools } : null,
     remainingTools.length > 0 ? { name: "More Tools", tools: remainingTools } : null,
   ].filter((group): group is { name: string; tools: Tool[] } => Boolean(group && group.tools.length));
 
