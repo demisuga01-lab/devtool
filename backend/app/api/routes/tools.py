@@ -456,6 +456,9 @@ _WHOIS_LIMIT = 5000
 
 @router.get("/whois-lookup")
 async def whois_lookup(domain: str = Query(..., max_length=253)) -> dict:
+    domain = domain.strip()
+    if domain.lower().startswith("www."):
+        domain = domain[4:]
     target = _validate_domain(domain, allow_chars_only=True)
 
     try:

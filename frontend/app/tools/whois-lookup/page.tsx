@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Button, Input, ErrorCard, Label, CopyButton } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 
@@ -32,7 +33,26 @@ export default function WhoisLookupPage() {
   };
 
   return (
-    <ToolShell slug="whois-lookup">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      <nav className="mb-4 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-500">
+        <Link href="/" className="hover:text-zinc-900 dark:hover:text-zinc-100">
+          Home
+        </Link>
+        <ChevronRight className="h-3 w-3" />
+        <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
+          Tools
+        </Link>
+        <ChevronRight className="h-3 w-3" />
+        <span>Web & Network</span>
+      </nav>
+      <header className="mb-8">
+        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+          WHOIS Lookup
+        </h1>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          Look up WHOIS records for a domain.
+        </p>
+      </header>
       <div className="space-y-5">
         <div>
           <Label>Domain</Label>
@@ -69,6 +89,9 @@ export default function WhoisLookupPage() {
           </div>
         )}
       </div>
-    </ToolShell>
+      <p className="mt-8 text-xs text-zinc-500 dark:text-zinc-500">
+        WHOIS lookup is performed server-side. Your query is not logged or stored.
+      </p>
+    </div>
   );
 }
