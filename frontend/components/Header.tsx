@@ -2,16 +2,16 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Code2, Github, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Tool, toolGroups } from "@/lib/tools";
+import { authChangedEvent, clearAuth, getToken } from "@/lib/auth";
 
 const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
 
 const mainLinks = [
-  { name: "Status", href: "/status" },
   { name: "Pricing", href: "/pricing" },
   { name: "About", href: "/about" },
   { name: "Docs", href: "/docs" },
@@ -38,12 +38,16 @@ function isActive(pathname: string, href: string) {
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [toolsOpen, setToolsOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [statusAuthed, setStatusAuthed] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>(null);
   const toolsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pasteCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = mobile ? "hidden" : "";
@@ -56,6 +60,18 @@ export function Header() {
     return () => {
       if (toolsCloseTimer.current) clearTimeout(toolsCloseTimer.current);
       if (pasteCloseTimer.current) clearTimeout(pasteCloseTimer.current);
+      if (statusCloseTimer.current) clearTimeout(statusCloseTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncAuth = () => setStatusAuthed(!!getToken());
+    syncAuth();
+    window.addEventListener("storage", syncAuth);
+    window.addEventListener(authChangedEvent, syncAuth);
+    return () => {
+      window.removeEventListener("storage", syncAuth);
+      window.removeEventListener(authChangedEvent, syncAuth);
     };
   }, []);
 
@@ -77,6 +93,24 @@ export function Header() {
   const closePasteMenu = () => {
     if (pasteCloseTimer.current) clearTimeout(pasteCloseTimer.current);
     pasteCloseTimer.current = setTimeout(() => setPasteOpen(false), 180);
+  };
+
+  const openStatusMenu = () => {
+    if (statusCloseTimer.current) clearTimeout(statusCloseTimer.current);
+    setStatusOpen(true);
+  };
+
+  const closeStatusMenu = () => {
+    if (statusCloseTimer.current) clearTimeout(statusCloseTimer.current);
+    statusCloseTimer.current = setTimeout(() => setStatusOpen(false), 180);
+  };
+
+  const logoutStatus = () => {
+    clearAuth();
+    setStatusAuthed(false);
+    setStatusOpen(false);
+    setMobile(false);
+    router.push("/status");
   };
 
   const textGroup = toolGroups.find((group) => group.slug === "text");
@@ -132,6 +166,69 @@ export function Header() {
 
         <div className="flex flex-1 items-center justify-center">
           <nav className="hidden items-center gap-1 md:flex">
+            {statusAuthed ? (
+              <div className="relative" onMouseEnter={openStatusMenu} onMouseLeave={closeStatusMenu}>
+                <button
+                  type="button"
+                  onFocus={openStatusMenu}
+                  onBlur={closeStatusMenu}
+                  className={`${navClass} ${pathname.startsWith("/status") ? activeNavClass : ""}`}
+                  aria-expanded={statusOpen}
+                >
+                  Status
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </button>
+
+                {statusOpen && (
+                  <div
+                    className="absolute left-0 top-full z-[110] w-[230px] max-w-[calc(100vw-24px)] pt-4"
+                    onMouseEnter={openStatusMenu}
+                    onMouseLeave={closeStatusMenu}
+                  >
+                    <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                      <Link
+                        href="/status"
+                        className={menuLinkClass}
+                        onClick={() => setStatusOpen(false)}
+                      >
+                        Public Status
+                      </Link>
+                      <Link
+                        href="/status/admin"
+                        className={menuLinkClass}
+                        onClick={() => setStatusOpen(false)}
+                      >
+                        Admin Dashboard
+                      </Link>
+                      <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
+                      <button
+                        type="button"
+                        onClick={logoutStatus}
+                        className={`${menuLinkClass} w-full text-left`}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/status"
+                  className={`${navClass} ${isActive(pathname, "/status") ? activeNavClass : ""}`}
+                >
+                  Status
+                </Link>
+                <Link
+                  href="/status/login"
+                  className="text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+                >
+                  Admin
+                </Link>
+              </div>
+            )}
+
             <div className="relative" onMouseEnter={openToolsMenu} onMouseLeave={closeToolsMenu}>
               <button
                 type="button"
@@ -249,6 +346,53 @@ export function Header() {
       {mobile && (
         <div className="fixed inset-x-0 top-16 z-[100] max-h-[calc(100vh-4rem)] overflow-y-auto border-b border-zinc-200 bg-white px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
           <div className="space-y-2">
+            {statusAuthed ? (
+              <MobileAccordion
+                title="Status"
+                open={openMobileGroup === "status"}
+                onToggle={() => setOpenMobileGroup(openMobileGroup === "status" ? null : "status")}
+              >
+                <Link
+                  href="/status"
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                  onClick={() => setMobile(false)}
+                >
+                  Public Status
+                </Link>
+                <Link
+                  href="/status/admin"
+                  className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                  onClick={() => setMobile(false)}
+                >
+                  Admin Dashboard
+                </Link>
+                <button
+                  type="button"
+                  onClick={logoutStatus}
+                  className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+                >
+                  Logout
+                </button>
+              </MobileAccordion>
+            ) : (
+              <div className="grid grid-cols-[1fr_auto] gap-2">
+                <Link
+                  href="/status"
+                  className="block rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+                  onClick={() => setMobile(false)}
+                >
+                  Status
+                </Link>
+                <Link
+                  href="/status/login"
+                  className="flex items-center rounded-xl border border-zinc-200 px-3 py-2.5 text-xs font-semibold text-zinc-400 dark:border-zinc-800 dark:text-zinc-500"
+                  onClick={() => setMobile(false)}
+                >
+                  Admin
+                </Link>
+              </div>
+            )}
+
             <MobileAccordion
               title="Dev Tools"
               open={openMobileGroup === "tools"}

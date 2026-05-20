@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "changeme"
     ADMIN_TOKEN: str = "changeme"
     ALLOWED_ORIGINS: str = "http://localhost:3001"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_DAYS: int = 7
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "alerts@wellfriend.online"
+    SMTP_TLS: bool = True
 
     @property
     def allowed_origins_list(self) -> List[str]:
