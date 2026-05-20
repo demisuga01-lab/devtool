@@ -25,11 +25,11 @@ const pasteLinks = [
 ];
 
 const navClass =
-  "inline-flex h-11 items-center border-b-2 border-transparent px-2 text-[15px] font-medium text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:text-white";
+  "inline-flex h-11 items-center border-b-2 border-transparent px-2 text-base font-medium text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:text-white";
 const activeNavClass =
   "border-b-2 border-emerald-600 dark:border-emerald-400";
 const menuLinkClass =
-  "block rounded-lg px-2 py-1 text-[15px] text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
+  "block rounded-lg px-2 py-1 text-[15px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -154,10 +154,10 @@ export function Header() {
             />
             <span className="leading-tight">
               <span className="block">
-                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">Dev</span>
-                <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">Tools</span>
+                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">Dev</span>
+                <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Tools</span>
               </span>
-              <span className="block text-xs font-normal text-zinc-400">
+              <span className="block text-sm text-zinc-400">
                 by WellFriend
               </span>
             </span>
@@ -318,7 +318,7 @@ export function Header() {
             href={GITHUB_URL}
             target="_blank"
             rel="noreferrer"
-            className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[15px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex"
+            className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-base font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex"
           >
             <Github className="h-[18px] w-[18px]" />
             GitHub
@@ -437,7 +437,7 @@ export function Header() {
               href={GITHUB_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2.5 text-[15px] font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+              className="flex items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-2.5 text-base font-medium text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
             >
               <Github className="h-[18px] w-[18px]" />
               GitHub

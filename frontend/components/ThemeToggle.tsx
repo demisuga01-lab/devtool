@@ -57,7 +57,7 @@ export function ThemeToggle() {
         aria-label="Toggle theme"
         aria-hidden
       >
-        <Monitor className="h-[18px] w-[18px]" />
+        <Monitor className="h-5 w-5" />
       </button>
     );
   }
@@ -73,7 +73,7 @@ export function ThemeToggle() {
         aria-expanded={open}
         className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
       >
-        <Icon className="h-[18px] w-[18px]" />
+        <Icon className="h-5 w-5" />
       </button>
 
       {open && (
