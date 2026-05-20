@@ -106,7 +106,12 @@ def _model_data(model: BaseModel, **kwargs: Any) -> dict[str, Any]:
 
 
 def _iso(value: datetime | None) -> str | None:
-    return value.isoformat() if value else None
+    if value is None:
+        return None
+    iso = value.isoformat()
+    if not iso.endswith("Z") and "+" not in iso:
+        iso += "Z"
+    return iso
 
 
 def _parse_ids(value: str | None) -> list[int]:
