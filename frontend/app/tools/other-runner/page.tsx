@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, useCallback, useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { KeyboardEvent, ReactNode, useCallback, useEffect, useState } from "react";
+import { Crosshair, Diamond, Hash, Play, RefreshCw, Wind } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type OutputTab = "output" | "errors";
 
 type Language = {
   label: string;
-  emoji: string;
+  icon: ReactNode;
   language: string;
   version: string;
   description: string;
@@ -33,7 +33,7 @@ type RunResult = {
 const languages: Language[] = [
   {
     label: "Swift",
-    emoji: "🦅",
+    icon: <Wind className="h-8 w-8 text-orange-500" />,
     language: "swift",
     version: "5.3.3",
     description: "Apple's modern language for iOS, macOS, and server-side development.",
@@ -57,7 +57,7 @@ for name in names {
   },
   {
     label: "Dart",
-    emoji: "🎯",
+    icon: <Crosshair className="h-8 w-8 text-blue-500" />,
     language: "dart",
     version: "3.0.1",
     description: "Google's language for Flutter apps and web development.",
@@ -84,7 +84,7 @@ void main() {
   },
   {
     label: "Fortran",
-    emoji: "🔢",
+    icon: <Hash className="h-8 w-8 text-zinc-600 dark:text-zinc-400" />,
     language: "fortran",
     version: "10.2.0",
     description: "Classic scientific computing language, still widely used in HPC.",
@@ -103,7 +103,7 @@ end program hello`,
   },
   {
     label: "D",
-    emoji: "🔷",
+    icon: <Diamond className="h-8 w-8 text-indigo-500" />,
     language: "d",
     version: "10.2.0",
     description: "Systems programming with productivity of dynamic languages.",
@@ -156,18 +156,20 @@ function OutputPanel({
   error,
   outputTab,
   setOutputTab,
+  hasRun,
 }: {
   result: RunResult | null;
   error: string;
   outputTab: OutputTab;
   setOutputTab: (tab: OutputTab) => void;
+  hasRun: boolean;
 }) {
   const stdout = result?.stdout || result?.output || "";
   const errors = [result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <section className="flex min-h-[320px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
       <div className="mb-4 flex flex-wrap gap-2">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -199,10 +201,12 @@ function OutputPanel({
           Killed by signal {result.signal}
         </div>
       )}
-      <pre className="max-h-96 overflow-auto whitespace-pre-wrap font-mono text-sm text-zinc-800 dark:text-zinc-200">
-        {outputTab === "output"
-          ? stdout || (result?.exit_code === 0 ? <span className="text-zinc-400">Program exited with no output.</span> : "")
-          : errors || <span className="text-zinc-400">No errors.</span>}
+      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap font-mono text-sm text-zinc-800 dark:text-zinc-200">
+        {!hasRun
+          ? "Select a language and run code to see output."
+          : outputTab === "output"
+            ? stdout || (result?.exit_code === 0 ? <span className="text-zinc-400">Program exited with no output.</span> : "")
+            : errors || <span className="text-zinc-400">No errors.</span>}
       </pre>
       {result && (
         <div className="mt-3 text-xs text-zinc-400">
@@ -274,8 +278,8 @@ export default function OtherRunnerPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950 sm:px-6 sm:py-12">
-      <div className="mx-auto max-w-6xl space-y-6">
+    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -286,12 +290,12 @@ export default function OtherRunnerPage() {
           <span>Other Languages</span>
         </nav>
 
-        <header>
+        <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Other Languages</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run Swift, Dart, Fortran, and D code.</p>
         </header>
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-6 grid gap-3 sm:grid-cols-2">
           {languages.map((language, index) => (
             <button
               key={language.label}
@@ -303,7 +307,7 @@ export default function OtherRunnerPage() {
                   : "border-zinc-200 bg-white hover:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900"
               }`}
             >
-              <div className="mb-3 text-2xl">{language.emoji}</div>
+              <div className="mb-3">{language.icon}</div>
               <div className="font-semibold text-zinc-900 dark:text-zinc-100">{language.label}</div>
               <div className="mt-1 text-xs text-zinc-500">{language.version}</div>
               <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{language.description}</p>
@@ -312,43 +316,45 @@ export default function OtherRunnerPage() {
           ))}
         </section>
 
-        <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{active.label} Editor</h2>
-            <span className="text-xs text-zinc-500">{active.language} {active.version}</span>
-          </div>
-          <textarea
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            onKeyDown={handleCodeKeyDown}
-            spellCheck={false}
-            className={`${editorClass} min-h-[360px]`}
-          />
+        <div className="mt-6 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
+          <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{active.label} Editor</h2>
+              <span className="text-xs text-zinc-500">{active.language} {active.version}</span>
+            </div>
+            <textarea
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              onKeyDown={handleCodeKeyDown}
+              spellCheck={false}
+              className={`${editorClass} min-h-[360px] flex-1 resize-none lg:min-h-0`}
+            />
 
-          <label className="mb-1.5 mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
-          <textarea
-            value={stdin}
-            onChange={(event) => setStdin(event.target.value)}
-            onKeyDown={handleStdinKeyDown}
-            placeholder="Optional input for your program..."
-            className={`${editorClass} min-h-[80px]`}
-          />
+            <label className="mb-1.5 mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
+            <textarea
+              value={stdin}
+              onChange={(event) => setStdin(event.target.value)}
+              onKeyDown={handleStdinKeyDown}
+              placeholder="Optional input for your program..."
+              className={`${editorClass} min-h-[80px]`}
+            />
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={runCode}
-              disabled={running}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : "▶"}
-              {running ? "Running..." : "Run"}
-            </button>
-            <span className="text-xs text-zinc-400 dark:text-zinc-600">Ctrl+Enter to run</span>
-          </div>
-        </section>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={runCode}
+                disabled={running}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {running ? "Running..." : "Run"}
+              </button>
+              <span className="text-xs text-zinc-400 dark:text-zinc-600">Ctrl+Enter to run</span>
+            </div>
+          </section>
 
-        {hasRun && <OutputPanel result={result} error={error} outputTab={outputTab} setOutputTab={setOutputTab} />}
+          <OutputPanel result={result} error={error} outputTab={outputTab} setOutputTab={setOutputTab} hasRun={hasRun} />
+        </div>
       </div>
     </main>
   );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { KeyboardEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type Language = {
@@ -170,35 +170,45 @@ export default function SystemsRunnerPage() {
   const dotClass = !hasRun ? "bg-zinc-400" : success ? "bg-emerald-500" : "bg-red-500";
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950 sm:px-6 sm:py-12">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
         <Breadcrumb title="Systems Runner" />
-        <header>
+        <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Systems Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Compile and run C, C++, Rust, and Go code with full compiler output.</p>
         </header>
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
-          <section className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="flex flex-wrap gap-2 border-b border-zinc-200 p-4 dark:border-zinc-800">
-              {languages.map((language, index) => (
-                <button
-                  key={language.label}
-                  type="button"
-                  onClick={() => setActiveIndex(index)}
-                  className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"}`}
-                >
-                  {language.label}
-                </button>
-              ))}
-            </div>
+
+        <div className="mt-6 flex flex-wrap gap-2">
+          {languages.map((language, index) => (
+            <button
+              key={language.label}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"}`}
+            >
+              {language.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 flex min-h-0 flex-1 flex-col gap-5 lg:flex-row">
+          <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="border-b border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
               {active.label} · {active.compiler} {active.version}
             </div>
-            <div className="flex max-h-[640px] min-h-[480px] overflow-hidden bg-zinc-950">
-              <div ref={lineRef} className="min-w-[2.5rem] overflow-hidden px-2 py-4 text-right font-mono text-sm leading-5 text-zinc-600 select-none">
+            <div className="flex min-h-0 flex-1 overflow-hidden bg-zinc-950">
+              <div ref={lineRef} className="h-full min-w-[2.5rem] overflow-hidden px-2 py-4 text-right font-mono text-sm leading-5 text-zinc-600 select-none">
                 {Array.from({ length: lines }).map((_, index) => <div key={index}>{index + 1}</div>)}
               </div>
-              <textarea ref={editorRef} value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={insertTab} onScroll={syncLines} spellCheck={false} className="min-h-[480px] flex-1 resize-y bg-zinc-950 p-4 font-mono text-sm leading-5 text-zinc-100 outline-none" />
+              <textarea
+                ref={editorRef}
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                onKeyDown={insertTab}
+                onScroll={syncLines}
+                spellCheck={false}
+                className="min-h-0 flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-5 text-zinc-100 outline-none"
+              />
             </div>
             <div className="space-y-3 p-4">
               <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">stdin</label>
@@ -214,12 +224,13 @@ export default function SystemsRunnerPage() {
                 className="min-h-[60px] w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 outline-none dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
               />
               <button type="button" onClick={runCode} disabled={running} className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-white ${active.color} disabled:cursor-not-allowed disabled:opacity-60`}>
-                {running && <RefreshCw className="h-4 w-4 animate-spin" />}
-                {running ? "Running..." : `▶ Run ${active.label}`}
+                {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                {running ? "Running..." : `Run ${active.label}`}
               </button>
             </div>
           </section>
-          <section className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+
+          <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
@@ -234,7 +245,9 @@ export default function SystemsRunnerPage() {
             {error && <Banner tone="red">{error}</Banner>}
             {result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0 && <Banner tone="red">Process exited with code {result.exit_code}</Banner>}
             {result?.signal && <Banner tone="orange">Killed by signal {result.signal}</Banner>}
-            <pre className="min-h-[200px] max-h-96 overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-950 p-4 font-mono text-sm text-zinc-100">{hasRun ? (tab === "stdout" ? stdout || (success ? "Program exited with no output." : "") : stderr || "No errors.") : active.hint}</pre>
+            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-950 p-4 font-mono text-sm text-zinc-100">
+              {hasRun ? (tab === "stdout" ? stdout || (success ? "Program exited with no output." : "") : stderr || "No errors.") : active.hint}
+            </pre>
             {result && <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500 dark:text-zinc-500"><Stat label="CPU" value={`${result.cpu_time ?? "-"}ms`} /><Stat label="Wall" value={`${result.wall_time ?? "-"}ms`} /><Stat label="Memory" value={`${result.memory == null ? "-" : Math.round(result.memory / 1000)}KB`} /></div>}
           </section>
         </div>

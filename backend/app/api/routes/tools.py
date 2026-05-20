@@ -528,9 +528,6 @@ async def run_code(payload: RunCodeRequest) -> dict:
                     "version": version,
                     "files": [{"content": code}],
                     "stdin": stdin,
-                    "run_timeout": 10000,
-                    "compile_timeout": 10000,
-                    "run_memory_limit": 128000000,
                 },
             )
             if resp.status_code == 400:
