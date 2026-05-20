@@ -58,7 +58,7 @@ async def logout() -> dict:
     return {"success": True}
 
 
-@router.post("/change-password")
+@router.put("/change-password")
 async def change_password(
     payload: PasswordChangeRequest,
     current_user: User = Depends(get_current_user),
@@ -67,7 +67,7 @@ async def change_password(
     if len(payload.new_password) < 8:
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters.")
     if not verify_password(payload.current_password, current_user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid current password")
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
     current_user.password_hash = get_password_hash(payload.new_password)
     db.commit()
     return {"success": True}

@@ -19,9 +19,33 @@ function notifyAuthChanged() {
   }
 }
 
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    return JSON.parse(atob(padded)) as { exp?: number };
+  } catch {
+    return null;
+  }
+}
+
+function isTokenValid(token: string): boolean {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== "number") return false;
+  return payload.exp > Date.now() / 1000;
+}
+
 export function getToken(): string | null {
   if (!hasStorage()) return null;
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return null;
+  if (!isTokenValid(token)) {
+    clearAuth();
+    return null;
+  }
+  return token;
 }
 
 export function getUser(): StatusUser | null {
@@ -50,7 +74,9 @@ export function clearAuth(): void {
 }
 
 export function isAuthenticated(): boolean {
-  return !!getToken();
+  const token = getToken();
+  if (!token) return false;
+  return isTokenValid(token);
 }
 
 export function authHeaders(): Record<string, string> {

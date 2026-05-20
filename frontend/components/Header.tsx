@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Code2, Github, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Tool, toolGroups } from "@/lib/tools";
-import { authChangedEvent, clearAuth, getToken } from "@/lib/auth";
+import { authChangedEvent, clearAuth, isAuthenticated } from "@/lib/auth";
 
 const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
 
@@ -65,7 +65,7 @@ export function Header() {
   }, []);
 
   useEffect(() => {
-    const syncAuth = () => setStatusAuthed(!!getToken());
+    const syncAuth = () => setStatusAuthed(isAuthenticated());
     syncAuth();
     window.addEventListener("storage", syncAuth);
     window.addEventListener(authChangedEvent, syncAuth);
@@ -172,7 +172,7 @@ export function Header() {
                   type="button"
                   onFocus={openStatusMenu}
                   onBlur={closeStatusMenu}
-                  className={`${navClass} ${pathname.startsWith("/status") ? activeNavClass : ""}`}
+                  className={`${navClass} ${pathname.startsWith("/status") || pathname.startsWith("/dashboard") ? activeNavClass : ""}`}
                   aria-expanded={statusOpen}
                 >
                   Status
@@ -194,7 +194,7 @@ export function Header() {
                         Public Status
                       </Link>
                       <Link
-                        href="/status/admin"
+                        href="/dashboard"
                         className={menuLinkClass}
                         onClick={() => setStatusOpen(false)}
                       >
@@ -352,7 +352,7 @@ export function Header() {
                   Public Status
                 </Link>
                 <Link
-                  href="/status/admin"
+                  href="/dashboard"
                   className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                   onClick={() => setMobile(false)}
                 >

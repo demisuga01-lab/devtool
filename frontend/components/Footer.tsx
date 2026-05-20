@@ -11,7 +11,6 @@ const productLinks = [
   { label: "About", href: "/about" },
   { label: "Docs", href: "/docs" },
   { label: "Contact", href: "/contact" },
-  { label: "Admin", href: "/status/login", muted: true },
 ];
 
 const connectLinks = [
@@ -72,7 +71,7 @@ function FooterLinkColumn({
   links,
 }: {
   title: string;
-  links: { label: string; href: string; external?: boolean; muted?: boolean }[];
+  links: { label: string; href: string; external?: boolean }[];
 }) {
   return (
     <div>
@@ -87,22 +86,14 @@ function FooterLinkColumn({
                 href={link.href}
                 target="_blank"
                 rel="noreferrer"
-                className={
-                  link.muted
-                    ? "text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
-                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }
+                className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               >
                 {link.label}
               </a>
             ) : (
               <Link
                 href={link.href}
-                className={
-                  link.muted
-                    ? "text-xs text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
-                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }
+                className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               >
                 {link.label}
               </Link>
