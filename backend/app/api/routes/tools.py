@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import re
+import re as _re
 import shutil
 import socket
 import ssl
@@ -540,6 +541,21 @@ class RunCodeRequest(BaseModel):
     stdin: str = ""
 
 
+class MySQLRequest(BaseModel):
+    query: str
+    database: str = "coderunner_scratch"
+
+
+class PostgreSQLRequest(BaseModel):
+    query: str
+    database: str = "coderunner_scratch"
+
+
+class MongoDBRequest(BaseModel):
+    code: str
+    database: str = "coderunner_scratch"
+
+
 JUDGE0_URL = "http://localhost:2358/submissions"
 JUDGE0_LANGUAGES_URL = "http://localhost:2358/languages"
 
@@ -713,3 +729,126 @@ async def get_runtimes() -> list:
             ]
     except Exception:
         return []
+
+
+@router.post("/run-mysql")
+async def run_mysql(payload: MySQLRequest) -> dict:
+    if not payload.query or not payload.query.strip():
+        raise HTTPException(status_code=400, detail="Query is required.")
+    if len(payload.query) > 50000:
+        raise HTTPException(status_code=400, detail="Query too large.")
+    dangerous = _re.compile(
+        r"\b(DROP\s+DATABASE|DROP\s+USER|GRANT|REVOKE|SHUTDOWN|CREATE\s+USER|ALTER\s+USER|FLUSH|RESET|PURGE)\b",
+        _re.IGNORECASE,
+    )
+    if dangerous.search(payload.query):
+        raise HTTPException(status_code=400, detail="This statement is not allowed.")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "mysql", "-u", "coderunner", "--password=CodeRunner@2026!",
+            "--host=127.0.0.1", "--port=3306", "--table", payload.database,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(input=payload.query.encode()), timeout=10.0)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            raise HTTPException(status_code=504, detail="Query timed out after 10 seconds.")
+        return {
+            "stdout": stdout.decode("utf-8", errors="replace"),
+            "stderr": stderr.decode("utf-8", errors="replace"),
+            "exit_code": proc.returncode,
+            "status": "ok" if proc.returncode == 0 else "error",
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="MySQL client not available.")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/run-postgresql")
+async def run_postgresql(payload: PostgreSQLRequest) -> dict:
+    if not payload.query or not payload.query.strip():
+        raise HTTPException(status_code=400, detail="Query is required.")
+    if len(payload.query) > 50000:
+        raise HTTPException(status_code=400, detail="Query too large.")
+    dangerous = _re.compile(
+        r"\b(DROP\s+DATABASE|DROP\s+USER|GRANT|REVOKE|CREATE\s+USER|ALTER\s+USER|DROP\s+ROLE|CREATE\s+ROLE)\b",
+        _re.IGNORECASE,
+    )
+    if dangerous.search(payload.query):
+        raise HTTPException(status_code=400, detail="This statement is not allowed.")
+    import os as _os
+    try:
+        env = {**_os.environ, "PGPASSWORD": "CodeRunner@2026!"}
+        proc = await asyncio.create_subprocess_exec(
+            "psql", "-U", "coderunner", "-h", "127.0.0.1", "-p", "5432",
+            "-d", payload.database, "--no-password", "-c", payload.query,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=10.0)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            raise HTTPException(status_code=504, detail="Query timed out after 10 seconds.")
+        return {
+            "stdout": stdout.decode("utf-8", errors="replace"),
+            "stderr": stderr.decode("utf-8", errors="replace"),
+            "exit_code": proc.returncode,
+            "status": "ok" if proc.returncode == 0 else "error",
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="PostgreSQL client not available.")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/run-mongodb")
+async def run_mongodb(payload: MongoDBRequest) -> dict:
+    if not payload.code or not payload.code.strip():
+        raise HTTPException(status_code=400, detail="Code is required.")
+    if len(payload.code) > 50000:
+        raise HTTPException(status_code=400, detail="Code too large.")
+    dangerous = _re.compile(
+        r"\b(dropDatabase|dropUser|createUser|updateUser|grantRolesToUser|revokeRolesFromUser|db\.adminCommand)\b",
+        _re.IGNORECASE,
+    )
+    if dangerous.search(payload.code):
+        raise HTTPException(status_code=400, detail="This operation is not allowed.")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "mongosh", "--host", "127.0.0.1", "--port", "27017",
+            "-u", "coderunner", "-p", "CodeRunner@2026!",
+            "--authenticationDatabase", payload.database,
+            payload.database, "--eval", payload.code, "--quiet",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=10.0)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.wait()
+            raise HTTPException(status_code=504, detail="Query timed out after 10 seconds.")
+        return {
+            "stdout": stdout.decode("utf-8", errors="replace"),
+            "stderr": stderr.decode("utf-8", errors="replace"),
+            "exit_code": proc.returncode,
+            "status": "ok" if proc.returncode == 0 else "error",
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="MongoDB shell not available.")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
