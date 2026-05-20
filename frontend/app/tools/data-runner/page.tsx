@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { KeyboardEvent, useCallback, useEffect, useState } from "react";
-import { Play, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
-type Mode = "sqlite" | "julia" | "mysql" | "postgresql" | "mongodb";
+type Mode = "sqlite" | "mysql" | "postgresql" | "mongodb";
 type OutputTab = "output" | "errors";
 
 type RunResult = {
@@ -45,26 +45,6 @@ FROM employees
 GROUP BY department
 ORDER BY avg_salary DESC;`;
 
-const juliaCode = `# Julia - High Performance Scientific Computing
-println("Julia Data Analysis Example")
-println("=" ^ 35)
-
-# Basic statistics
-data = [23, 45, 12, 67, 34, 89, 11, 56, 78, 42]
-
-n = length(data)
-mean_val = sum(data) / n
-sorted = sort(data)
-median_val = n % 2 == 0 ? (sorted[n÷2] + sorted[n÷2+1]) / 2 : sorted[(n+1)÷2]
-
-println("Data: ", data)
-println("Count: ", n)
-println("Sum: ", sum(data))
-println("Mean: ", round(mean_val, digits=2))
-println("Median: ", median_val)
-println("Min: ", minimum(data))
-println("Max: ", maximum(data))`;
-
 const mysqlCode = `-- MySQL Query
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -101,7 +81,6 @@ print("Total users: " + db.users.countDocuments({}));`;
 
 const defaultCodeByMode: Record<Mode, string> = {
   sqlite: sqliteCode,
-  julia: juliaCode,
   mysql: mysqlCode,
   postgresql: postgresqlCode,
   mongodb: mongodbCode,
@@ -127,15 +106,6 @@ const modeMeta: Record<
     activeClass: "bg-emerald-600 text-white",
     runButtonClass: "bg-emerald-600 hover:bg-emerald-700",
     isDatabase: true,
-  },
-  julia: {
-    label: "Julia",
-    editorLabel: "Julia Script",
-    runLabel: "Run Julia",
-    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><circle cx="16" cy="32" r="8" fill="#CB3C33"/><circle cx="32" cy="32" r="8" fill="#389826"/><circle cx="24" cy="18" r="8" fill="#9558B2"/></svg>,
-    activeClass: "bg-purple-600 text-white",
-    runButtonClass: "bg-purple-600 hover:bg-purple-700",
-    isDatabase: false,
   },
   mysql: {
     label: "MySQL",
@@ -360,22 +330,17 @@ function DatabaseResultsPanel({
 export default function DataRunnerPage() {
   const [mode, setMode] = useState<Mode>("sqlite");
   const [code, setCode] = useState(sqliteCode);
-  const [stdin, setStdin] = useState("");
   const [result, setResult] = useState<RunResult | null>(null);
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
-  const [outputTab, setOutputTab] = useState<OutputTab>("output");
   const currentMode = modeMeta[mode];
-  const isDatabaseMode = currentMode.isDatabase;
 
   useEffect(() => {
     setCode(defaultCodeByMode[mode]);
-    setStdin("");
     setResult(null);
     setError("");
     setHasRun(false);
-    setOutputTab("output");
   }, [mode]);
 
   const runCode = useCallback(async () => {
@@ -384,7 +349,6 @@ export default function DataRunnerPage() {
     setHasRun(true);
     setResult(null);
     setError("");
-    setOutputTab("output");
 
     try {
       const request =
@@ -398,17 +362,7 @@ export default function DataRunnerPage() {
                 stdin: "",
               },
             }
-          : mode === "julia"
-            ? {
-                url: `${API_BASE}/tools/run-code`,
-                body: {
-                  language: "julia",
-                  version: "1.8.5",
-                  code,
-                  stdin,
-                },
-              }
-            : mode === "mysql"
+          : mode === "mysql"
               ? {
                   url: `${API_BASE}/tools/run-mysql`,
                   body: {
@@ -445,7 +399,7 @@ export default function DataRunnerPage() {
     } finally {
       setRunning(false);
     }
-  }, [code, mode, running, stdin]);
+  }, [code, mode, running]);
 
   function handleCodeKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
@@ -456,15 +410,8 @@ export default function DataRunnerPage() {
     insertTab(code, setCode, event);
   }
 
-  function handleStdinKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-      event.preventDefault();
-      runCode();
-    }
-  }
-
   const stdout = result?.stdout || result?.output || "";
-  const table = isDatabaseMode && stdout.includes("|") ? parseTable(stdout) : null;
+  const table = stdout.includes("|") ? parseTable(stdout) : null;
   const queryErrors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
 
   return (
@@ -482,7 +429,7 @@ export default function DataRunnerPage() {
 
         <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Data Runner</h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, MongoDB, and Julia workflows for data analysis.</p>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, and MongoDB workflows for data analysis.</p>
         </header>
 
         <div className="mt-6 flex flex-wrap gap-2">
@@ -491,7 +438,6 @@ export default function DataRunnerPage() {
             "mysql",
             "postgresql",
             "mongodb",
-            "julia",
           ] as const).map((value) => (
             <button
               key={value}
@@ -511,77 +457,33 @@ export default function DataRunnerPage() {
           ))}
         </div>
 
-        {isDatabaseMode ? (
-          <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
-            <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
-                {currentMode.icon}
-                {currentMode.editorLabel}
-              </div>
-              <textarea
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                onKeyDown={handleCodeKeyDown}
-                spellCheck={false}
-                className={`${editorClass} min-h-[400px] flex-1 resize-none rounded-none border-0 focus:ring-0 lg:min-h-0`}
-              />
-              <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={runCode}
-                  disabled={running}
-                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${currentMode.runButtonClass}`}
-                >
-                  {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
-                  {running ? "Running..." : currentMode.runLabel}
-                </button>
-              </div>
-            </section>
-            <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
-          </div>
-        ) : (
-          <div className="mt-5 grid h-[calc(100vh-8rem)] min-h-[560px] gap-5 lg:grid-cols-2">
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-purple-700 dark:border-zinc-800 dark:text-purple-400">
-                <svg viewBox="0 0 48 48" className="h-5 w-5"><circle cx="16" cy="32" r="8" fill="#CB3C33"/><circle cx="32" cy="32" r="8" fill="#389826"/><circle cx="24" cy="18" r="8" fill="#9558B2"/></svg>
-                Julia Script
-              </div>
-              <div className="flex min-h-0 flex-1 flex-col p-4">
-                <textarea
-                  value={code}
-                  onChange={(event) => setCode(event.target.value)}
-                  onKeyDown={handleCodeKeyDown}
-                  spellCheck={false}
-                  className={`${editorClass} min-h-[400px] flex-1 resize-none lg:min-h-0`}
-                />
-                <label className="mb-1.5 mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
-                <textarea
-                  value={stdin}
-                  onChange={(event) => setStdin(event.target.value)}
-                  onKeyDown={handleStdinKeyDown}
-                  placeholder="Optional input for your program..."
-                  className={`${editorClass} min-h-[80px]`}
-                />
-                <button
-                  type="button"
-                  onClick={runCode}
-                  disabled={running}
-                  className="mt-4 inline-flex items-center gap-2 self-start rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  {running ? "Running..." : "Run Julia"}
-                </button>
-              </div>
-            </section>
-            {hasRun ? (
-              <OutputPanel result={result} error={error} outputTab={outputTab} setOutputTab={setOutputTab} accent="purple" />
-            ) : (
-              <section className="flex min-h-[320px] items-center justify-center rounded-2xl border border-purple-200 bg-white p-4 text-sm text-zinc-500 shadow-sm dark:border-purple-900 dark:bg-zinc-900 dark:text-zinc-500 lg:min-h-0">
-                Julia output will appear here after the first run.
-              </section>
-            )}
-          </div>
-        )}
+        <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
+              {currentMode.icon}
+              {currentMode.editorLabel}
+            </div>
+            <textarea
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              onKeyDown={handleCodeKeyDown}
+              spellCheck={false}
+              className={`${editorClass} min-h-[400px] flex-1 resize-none rounded-none border-0 focus:ring-0 lg:min-h-0`}
+            />
+            <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={runCode}
+                disabled={running}
+                className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${currentMode.runButtonClass}`}
+              >
+                {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
+                {running ? "Running..." : currentMode.runLabel}
+              </button>
+            </div>
+          </section>
+          <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
+        </div>
       </div>
     </main>
   );

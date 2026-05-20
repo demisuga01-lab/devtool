@@ -60,9 +60,10 @@ const languages: Language[] = [
     icon: <svg viewBox="0 0 48 48" className="h-5 w-5"><rect width="48" height="48" rx="4" fill="#DC322F"/><path d="M12 18h24c0 3-24 3-24 6s24 3 24 6H12c0-3 24-3 24-6s-24-3-24-6zm0-6h24c0 2-24 2-24 4s24 2 24 4H12c0-2 24-2 24-4s-24-2-24-4z" fill="white" opacity="0.9"/></svg>,
     language: "scala",
     version: "3.2.2",
-    defaultCode: `@main def hello(): Unit =
-  val languages = List("Scala", "Java", "Kotlin")
-  languages.foreach(lang => println(s"Hello from $lang!"))`,
+    defaultCode: `object Main extends App {
+    val languages = List("Scala", "Java", "Kotlin")
+    languages.foreach(lang => println(s"Hello from $lang!"))
+}`,
   },
   {
     label: "C#",
@@ -265,10 +266,10 @@ export default function JvmRunnerPage() {
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />
+                <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-zinc-400 animate-pulse" : successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />
                 <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Build Output</h2>
               </div>
-              {hasRun && (
+              {hasRun && !running && (
                 <span
                   className={`rounded-xl px-2 py-1 text-xs font-semibold ${
                     successful
