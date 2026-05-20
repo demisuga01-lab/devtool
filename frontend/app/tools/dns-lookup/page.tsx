@@ -1,39 +1,97 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { ToolShell } from "@/components/ToolShell";
 import { Button, Input, ErrorCard, Label, Select } from "@/components/ui";
 import { apiGet } from "@/lib/api";
+
+type DnsType = "A" | "AAAA" | "MX" | "NS" | "TXT" | "CNAME" | "SOA";
 
 type Result = {
   domain: string;
   type: string;
   records: string[];
   query_time_ms: number;
+  error?: boolean;
 };
 
-const TYPES = ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SOA"];
+const TYPES: DnsType[] = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
+
+const cardClass =
+  "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
+const sectionHeadingClass =
+  "text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3";
+const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
+const fieldValueClass = "text-sm font-mono text-zinc-900 dark:text-zinc-100";
+
+function parseMx(record: string) {
+  const parts = record.trim().split(/\s+/);
+  if (parts.length < 2) return { priority: "-", host: record };
+  return { priority: parts[0], host: parts.slice(1).join(" ") };
+}
+
+function parseSoa(record: string) {
+  const parts = record.trim().split(/\s+/);
+  return [
+    { label: "Primary NS", value: parts[0] },
+    { label: "Admin Email", value: parts[1] },
+    { label: "Serial", value: parts[2] },
+    { label: "Refresh", value: parts[3] },
+    { label: "Retry", value: parts[4] },
+    { label: "Expire", value: parts[5] },
+    { label: "TTL", value: parts[6] },
+  ].filter((field) => field.value);
+}
 
 export default function DnsLookupPage() {
   const [domain, setDomain] = useState("");
-  const [type, setType] = useState("A");
-  const [result, setResult] = useState<Result | null>(null);
+  const [type, setType] = useState<DnsType | "All">("All");
+  const [results, setResults] = useState<Result[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const run = async () => {
     setError("");
-    setResult(null);
+    setResults(null);
     setLoading(true);
     try {
-      const data = await apiGet<Result>("/tools/dns-lookup", { domain, type });
-      setResult(data);
+      const requestedTypes = type === "All" ? TYPES : [type];
+      const data = await Promise.all(
+        requestedTypes.map(async (recordType) => {
+          try {
+            return await apiGet<Result>("/tools/dns-lookup", { domain, type: recordType });
+          } catch {
+            return {
+              domain,
+              type: recordType,
+              records: [],
+              query_time_ms: 0,
+              error: true,
+            };
+          }
+        })
+      );
+      setResults(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed.");
     } finally {
       setLoading(false);
     }
   };
+
+  const resultMap = useMemo(() => {
+    const map = new Map<string, Result>();
+    results?.forEach((item) => map.set(item.type, item));
+    return map;
+  }, [results]);
+
+  const visibleSections = useMemo(
+    () => TYPES.filter((recordType) => (resultMap.get(recordType)?.records.length ?? 0) > 0),
+    [resultMap]
+  );
+
+  const queryTime = results?.length ? Math.max(...results.map((item) => item.query_time_ms || 0)) : 0;
 
   return (
     <ToolShell slug="dns-lookup">
@@ -50,51 +108,159 @@ export default function DnsLookupPage() {
           </div>
           <div>
             <Label>Record type</Label>
-            <Select value={type} onChange={(e) => setType(e.target.value)} className="w-full">
-              {TYPES.map((t) => (
-                <option key={t}>{t}</option>
+            <Select
+              value={type}
+              onChange={(e) => setType(e.target.value as DnsType | "All")}
+              className="w-full sm:w-36"
+            >
+              <option>All</option>
+              {TYPES.map((recordType) => (
+                <option key={recordType}>{recordType}</option>
               ))}
             </Select>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!domain || loading}>
-            {loading ? "Looking up…" : "Lookup"}
+            {loading ? "Looking up..." : "Lookup"}
           </Button>
-          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(""); }}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setDomain("");
+              setType("All");
+              setResults(null);
+              setError("");
+            }}
+          >
             Clear
           </Button>
         </div>
         {error && <ErrorCard>{error}</ErrorCard>}
-        {result && (
-          <div>
-            <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
-              <span>
-                {result.records.length} {result.records.length === 1 ? "record" : "records"}
-              </span>
-              <span>Query time: {result.query_time_ms} ms</span>
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              {result.records.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-zinc-500">
-                  No {result.type} records found.
+        {results && (
+          <div className="space-y-4">
+            {visibleSections.length === 0 && (
+              <div className={`${cardClass} px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400`}>
+                No DNS records found for the selected lookup.
+              </div>
+            )}
+
+            {resultMap.get("A")?.records.length ? (
+              <RecordSection title="A Records (IPv4)">
+                <PillList records={resultMap.get("A")?.records ?? []} />
+              </RecordSection>
+            ) : null}
+
+            {resultMap.get("AAAA")?.records.length ? (
+              <RecordSection title="AAAA Records (IPv6)">
+                <PillList records={resultMap.get("AAAA")?.records ?? []} />
+              </RecordSection>
+            ) : null}
+
+            {resultMap.get("MX")?.records.length ? (
+              <RecordSection title="MX Records (Mail)">
+                <div className="space-y-2">
+                  {(resultMap.get("MX")?.records ?? []).map((record, index) => {
+                    const mx = parseMx(record);
+                    return (
+                      <div
+                        key={`${record}-${index}`}
+                        className="flex flex-wrap items-center gap-2 rounded-xl border border-zinc-100 px-3 py-2 dark:border-zinc-800"
+                      >
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                          Priority {mx.priority}
+                        </span>
+                        <code className={fieldValueClass}>{mx.host}</code>
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {result.records.map((r, i) => (
-                    <li
-                      key={i}
-                      className="break-all px-4 py-2.5 font-mono text-xs text-zinc-900 dark:text-zinc-100"
+              </RecordSection>
+            ) : null}
+
+            {resultMap.get("NS")?.records.length ? (
+              <RecordSection title="NS Records (Nameservers)">
+                <PillList records={resultMap.get("NS")?.records ?? []} />
+              </RecordSection>
+            ) : null}
+
+            {resultMap.get("TXT")?.records.length ? (
+              <RecordSection title="TXT Records">
+                <div className="space-y-2">
+                  {(resultMap.get("TXT")?.records ?? []).map((record, index) => (
+                    <pre
+                      key={`${record}-${index}`}
+                      className="whitespace-pre-wrap break-all rounded-xl bg-zinc-50 p-3 font-mono text-xs text-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
                     >
-                      {r}
-                    </li>
+                      {record}
+                    </pre>
                   ))}
-                </ul>
-              )}
-            </div>
+                </div>
+              </RecordSection>
+            ) : null}
+
+            {resultMap.get("CNAME")?.records.length ? (
+              <RecordSection title="CNAME Records">
+                <PillList records={resultMap.get("CNAME")?.records ?? []} />
+              </RecordSection>
+            ) : null}
+
+            {resultMap.get("SOA")?.records.length ? (
+              <RecordSection title="SOA Record">
+                <div className="space-y-4">
+                  {(resultMap.get("SOA")?.records ?? []).map((record, index) => (
+                    <div key={`${record}-${index}`} className="space-y-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {parseSoa(record).map((field) => (
+                          <div key={field.label} className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-950">
+                            <div className={fieldLabelClass}>{field.label}</div>
+                            <div className={`${fieldValueClass} mt-1 break-all`}>{field.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <pre className="whitespace-pre-wrap break-all rounded-xl bg-zinc-50 p-3 font-mono text-xs text-zinc-700 dark:bg-zinc-950 dark:text-zinc-300">
+                        {record}
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              </RecordSection>
+            ) : null}
+
+            {results.some((item) => item.error) && (
+              <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
+                Some record types could not be resolved. Available records are shown above.
+              </div>
+            )}
+
+            <div className="text-xs text-zinc-400 dark:text-zinc-500">Resolved in {queryTime}ms</div>
           </div>
         )}
       </div>
     </ToolShell>
+  );
+}
+
+function RecordSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className={`${cardClass} p-4`}>
+      <h2 className={sectionHeadingClass}>{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function PillList({ records }: { records: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {records.map((record, index) => (
+        <code
+          key={`${record}-${index}`}
+          className="rounded-lg bg-zinc-100 px-3 py-1 text-xs font-mono text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
+        >
+          {record}
+        </code>
+      ))}
+    </div>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, Search, XCircle } from "lucide-react";
 import { ToolShell } from "@/components/ToolShell";
 import { Button, Input, ErrorCard, Label } from "@/components/ui";
 import { apiGet } from "@/lib/api";
@@ -18,13 +19,56 @@ type Result = {
   san: string[];
 };
 
+const cardClass = "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
+const sectionHeadingClass = "mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400";
+const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
+const fieldValueClass = "mt-1 break-all font-mono text-sm text-zinc-900 dark:text-zinc-100";
+const greenBadge = "rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400";
+const redBadge = "rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950/40 dark:text-red-400";
+const yellowBadge = "rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400";
+
 function formatDate(iso: string): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
+  if (!iso) return "-";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
+function expiryBadge(result: Result) {
+  if (result.expired) return <span className={redBadge}>Expired</span>;
+  if (result.days_remaining < 10) return <span className={redBadge}>Critical</span>;
+  if (result.days_remaining <= 30) return <span className={yellowBadge}>Renew soon</span>;
+  return <span className={greenBadge}>Active</span>;
+}
+
+function progressClass(days: number) {
+  if (days > 30) return "bg-emerald-500";
+  if (days >= 10) return "bg-yellow-500";
+  return "bg-red-500";
+}
+
+function Detail({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-zinc-100 p-3 dark:border-zinc-800">
+      <div className={fieldLabelClass}>{label}</div>
+      <div className={fieldValueClass}>{children || "-"}</div>
+    </div>
+  );
+}
+
+function AssessmentRow({ passed, neutral = false, label }: { passed: boolean; neutral?: boolean; label: string }) {
+  const Icon = passed ? CheckCircle2 : XCircle;
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-zinc-100 py-3 first:border-t-0 dark:border-zinc-800">
+      <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+        <Icon className={`h-4 w-4 ${passed ? "text-emerald-500" : neutral ? "text-zinc-400" : "text-red-500"}`} />
+        <span>{label}</span>
+      </div>
+      <span className={passed ? greenBadge : neutral ? "rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400" : redBadge}>
+        {passed ? "Pass" : neutral ? "Neutral" : "Fail"}
+      </span>
+    </div>
+  );
 }
 
 export default function SslCheckerPage() {
@@ -32,10 +76,19 @@ export default function SslCheckerPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sanFilter, setSanFilter] = useState("");
+
+  const filteredSan = useMemo(() => {
+    if (!result) return [];
+    const query = sanFilter.trim().toLowerCase();
+    if (!query) return result.san;
+    return result.san.filter((entry) => entry.toLowerCase().includes(query));
+  }, [result, sanFilter]);
 
   const run = async () => {
     setError("");
     setResult(null);
+    setSanFilter("");
     setLoading(true);
     try {
       const data = await apiGet<Result>("/tools/ssl-checker", { domain });
@@ -61,77 +114,94 @@ export default function SslCheckerPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!domain || loading}>
-            {loading ? "Checking…" : "Check SSL"}
+            {loading ? "Checking..." : "Check SSL"}
           </Button>
-          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(""); }}>
+          <Button variant="ghost" onClick={() => { setDomain(""); setResult(null); setError(""); setSanFilter(""); }}>
             Clear
           </Button>
         </div>
         {error && <ErrorCard>{error}</ErrorCard>}
         {result && (
-          <>
-            <div
-              className={
-                "rounded-2xl border px-4 py-4 " +
-                (result.valid
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100"
-                  : "border-red-200 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100")
-              }
-            >
-              <div className="flex items-center gap-2 text-sm font-medium">
-                {result.valid ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  <XCircle className="h-4 w-4" />
-                )}
-                {result.expired
-                  ? "Certificate is expired."
-                  : `Valid for ${result.days_remaining} more day${result.days_remaining === 1 ? "" : "s"}.`}
-              </div>
-              {!result.expired && result.days_remaining < 30 && (
-                <div className="mt-1 text-xs">Renewal recommended — fewer than 30 days remaining.</div>
-              )}
-            </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                  <Row label="Issued to" value={result.issued_to} />
-                  <Row label="Issued by" value={result.issued_by} />
-                  <Row label="Valid from" value={formatDate(result.valid_from)} />
-                  <Row label="Valid until" value={formatDate(result.valid_until)} />
-                  <Row label="Days remaining" value={String(result.days_remaining)} />
-                </tbody>
-              </table>
-            </div>
-            {result.san.length > 0 && (
-              <div>
-                <Label>Subject alternative names</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {result.san.map((n) => (
-                    <span
-                      key={n}
-                      className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
-                    >
-                      {n}
-                    </span>
-                  ))}
+          <div className="space-y-5">
+            <section className={`${cardClass} p-5`}>
+              <h2 className={sectionHeadingClass}>Certificate Status</h2>
+              <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center gap-3">
+                  {result.expired ? (
+                    <AlertTriangle className="h-8 w-8 text-red-500" />
+                  ) : result.valid ? (
+                    <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                  ) : (
+                    <XCircle className="h-8 w-8 text-red-500" />
+                  )}
+                  <div>
+                    <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                      {result.expired ? "Expired" : result.valid ? "Valid certificate" : "Invalid certificate"}
+                    </div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      Valid from {formatDate(result.valid_from)} to {formatDate(result.valid_until)}
+                    </p>
+                  </div>
+                </div>
+                <div className="min-w-[220px]">
+                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    {Math.max(0, result.days_remaining)} days remaining
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
+                    <div
+                      className={`h-2 rounded-full ${progressClass(result.days_remaining)}`}
+                      style={{ width: `${Math.max(0, Math.min(100, (result.days_remaining / 90) * 100))}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            )}
-          </>
+            </section>
+
+            <section className={`${cardClass} p-5`}>
+              <h2 className={sectionHeadingClass}>Certificate Details</h2>
+              <div className="grid gap-3 md:grid-cols-2">
+                <Detail label="Issued To">{result.issued_to}</Detail>
+                <Detail label="Issued By">{result.issued_by}</Detail>
+                <Detail label="Valid From">{formatDate(result.valid_from)}</Detail>
+                <Detail label="Valid Until"><span className="inline-flex flex-wrap items-center gap-2">{formatDate(result.valid_until)} {expiryBadge(result)}</span></Detail>
+                <Detail label="Days Remaining"><span className={result.days_remaining > 30 ? "text-emerald-600 dark:text-emerald-400" : result.days_remaining >= 10 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}>{result.days_remaining}</span></Detail>
+                <Detail label="Domain">{result.domain}</Detail>
+              </div>
+            </section>
+
+            <section className={`${cardClass} p-5`}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 className={sectionHeadingClass}>{result.san.length} domains covered</h2>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">Showing {filteredSan.length} of {result.san.length} domains</span>
+              </div>
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <Input className="pl-9" value={sanFilter} onChange={(event) => setSanFilter(event.target.value)} placeholder="Filter domains..." />
+              </div>
+              <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800">
+                {filteredSan.length === 0 ? (
+                  <div className="px-3 py-4 text-sm text-zinc-500 dark:text-zinc-400">No matching domains.</div>
+                ) : (
+                  filteredSan.map((entry) => (
+                    <div key={entry} className="border-b border-zinc-100 px-3 py-1 font-mono text-xs text-zinc-700 last:border-b-0 dark:border-zinc-800 dark:text-zinc-300">
+                      {entry}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section className={`${cardClass} p-5`}>
+              <h2 className={sectionHeadingClass}>Security Assessment</h2>
+              <AssessmentRow passed={result.valid} label="Certificate is valid" />
+              <AssessmentRow passed={!result.expired} label="Not expired" />
+              <AssessmentRow passed={Boolean(result.issued_by)} label="Issued by trusted CA" />
+              <AssessmentRow passed={result.san.some((entry) => entry.startsWith("*."))} neutral label="Wildcard certificate" />
+              <AssessmentRow passed={result.san.length > 1} label="Multiple domains covered" />
+            </section>
+          </div>
         )}
       </div>
     </ToolShell>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <tr>
-      <td className="w-44 bg-zinc-50 px-4 py-2.5 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/50">
-        {label}
-      </td>
-      <td className="break-all px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100">{value || "—"}</td>
-    </tr>
   );
 }
