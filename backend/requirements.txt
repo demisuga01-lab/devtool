@@ -11,4 +11,3 @@ bcrypt
 cryptography
 apscheduler
 python-jose[cryptography]
-passlib[bcrypt]

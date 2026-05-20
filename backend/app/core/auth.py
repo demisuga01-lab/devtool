@@ -3,8 +3,8 @@ from typing import Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import bcrypt as _bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -12,16 +12,23 @@ from app.core.database import get_db
 from app.models.status import User
 
 
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
-    return password_context.verify(plain_password, password_hash)
+    return _bcrypt.checkpw(
+        plain_password.encode("utf-8"),
+        password_hash.encode("utf-8"),
+    )
 
 
 def get_password_hash(password: str) -> str:
-    return password_context.hash(password)
+    salt = _bcrypt.gensalt()
+    hashed = _bcrypt.hashpw(
+        password.encode("utf-8"),
+        salt,
+    )
+    return hashed.decode("utf-8")
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
