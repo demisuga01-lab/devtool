@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -26,9 +27,9 @@ const pasteLinks = [
 const navClass =
   "inline-flex h-full items-center border-b-2 border-transparent px-2 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35";
 const inactiveNavClass =
-  "text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100";
+  "text-zinc-600 hover:border-emerald-300 hover:text-zinc-950 dark:text-zinc-300 dark:hover:border-emerald-800 dark:hover:text-white";
 const activeNavClass =
-  "border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400";
+  "border-emerald-600 text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
 const menuLinkClass =
   "block rounded-lg px-2 py-1 text-[15px] font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100";
 const themeToggleClass =
@@ -147,7 +148,14 @@ export function Header() {
     <header className="sticky top-0 z-40 h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
-          <Code2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
+          <Image
+            src="/logo.png"
+            alt="DevTools logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 flex-shrink-0"
+            priority
+          />
           <span className="flex flex-col justify-center leading-tight">
             <span className="text-base font-bold text-zinc-900 dark:text-zinc-100">
               DevTools
@@ -158,7 +166,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden h-full items-center gap-2 md:flex">
+        <nav className="hidden h-full items-center gap-6 md:flex">
             {statusAuthed ? (
               <div className="relative" onMouseEnter={openStatusMenu} onMouseLeave={closeStatusMenu}>
                 <button
