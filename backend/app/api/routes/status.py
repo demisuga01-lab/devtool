@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timedelta
 from typing import Any
@@ -12,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.api.routes.tools import _validate_url
 from app.core.auth import get_current_user
 from app.core.database import get_db
+from app.core.monitor_engine import check_monitor
 from app.models.status import (
     AlertConfig,
     Incident,
@@ -352,6 +354,34 @@ async def create_monitor(
     db.commit()
     db.refresh(monitor)
     return _serialize_monitor(monitor, db, include_alerts=True)
+
+
+@router.post("/monitors/force-check")
+async def force_check_monitors(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    monitors = db.query(Monitor).filter(Monitor.is_active.is_(True)).all()
+    if not monitors:
+        return {"checked": 0, "timestamp": _iso(datetime.utcnow())}
+
+    tasks = [asyncio.create_task(check_monitor(monitor, db)) for monitor in monitors]
+    done, pending = await asyncio.wait(tasks, timeout=30)
+
+    for task in pending:
+        task.cancel()
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
+
+    checked = 0
+    for task in done:
+        try:
+            task.result()
+            checked += 1
+        except Exception:
+            continue
+
+    return {"checked": checked, "timestamp": _iso(datetime.utcnow())}
 
 
 @router.put("/monitors/{monitor_id}")

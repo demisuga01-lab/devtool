@@ -25,7 +25,7 @@ const pasteLinks = [
 ];
 
 const navClass =
-  "inline-flex h-11 items-center border-b-2 border-transparent px-1 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:text-white";
+  "inline-flex h-11 items-center border-b-2 border-transparent px-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:text-white";
 const activeNavClass =
   "border-b-2 border-emerald-600 dark:border-emerald-400";
 const menuLinkClass =
@@ -165,7 +165,7 @@ export function Header() {
         </div>
 
         <div className="flex flex-1 items-center justify-center">
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-2 md:flex">
             {statusAuthed ? (
               <div className="relative" onMouseEnter={openStatusMenu} onMouseLeave={closeStatusMenu}>
                 <button

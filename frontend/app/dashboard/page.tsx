@@ -379,6 +379,7 @@ function DashboardContent() {
   const [expandedMonitor, setExpandedMonitor] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isForceChecking, setIsForceChecking] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -457,6 +458,22 @@ function DashboardContent() {
       setIsRefreshing(false);
     }
   }, [request]);
+
+  const forceCheckMonitors = useCallback(async () => {
+    setIsForceChecking(true);
+    try {
+      const result = await request<{ checked: number; timestamp: string }>("/status/monitors/force-check", {
+        method: "POST",
+      });
+      showToast("success", `Force check started for ${result.checked} monitors.`);
+      await new Promise((resolve) => window.setTimeout(resolve, 3000));
+      await fetchData();
+    } catch (error) {
+      showToast("error", error instanceof Error ? error.message : "Unable to force check monitors.");
+    } finally {
+      setIsForceChecking(false);
+    }
+  }, [fetchData, request, showToast]);
 
   useEffect(() => {
     fetchData();
@@ -723,7 +740,7 @@ function DashboardContent() {
   const recentIncidents = incidents.slice(0, 5);
   const user = getUser();
   const strength = passwordStrength(passwordForm.next);
-  const lastUpdatedLabel = isRefreshing ? "Refreshing..." : formatLastUpdated(lastUpdatedAt, now);
+  const lastUpdatedLabel = isRefreshing || isForceChecking ? "Refreshing..." : formatLastUpdated(lastUpdatedAt, now);
 
   return (
     <div className="space-y-6">
@@ -732,16 +749,28 @@ function DashboardContent() {
           <p className="text-sm font-semibold capitalize text-zinc-900 dark:text-zinc-100">{section}</p>
           <p className="text-xs text-zinc-500 dark:text-zinc-600">Live monitor data refreshes automatically.</p>
         </div>
-        <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <span>{lastUpdatedLabel}</span>
           <button
             type="button"
             onClick={fetchData}
             disabled={isRefreshing}
-            aria-label="Refresh dashboard data"
-            className="rounded-xl border border-zinc-200 p-2 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            title="Refresh data"
+            aria-label="Refresh data"
+            className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white p-2 text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            type="button"
+            onClick={forceCheckMonitors}
+            disabled={isForceChecking}
+            title="Force check all monitors now"
+            aria-label="Force check all monitors now"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+          >
+            <Zap className={`h-4 w-4 ${isForceChecking ? "animate-pulse" : ""}`} />
+            {isForceChecking ? "Checking..." : "Force check"}
           </button>
         </div>
       </div>

@@ -17,3 +17,5 @@ website-overview/
 *.log
 dist/
 build/
+devtools-documentation/
+devtools-user-documentation/
