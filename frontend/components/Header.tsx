@@ -25,9 +25,9 @@ const pasteLinks = [
 ];
 
 const navClass =
-  "inline-flex h-11 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-zinc-600 transition-colors hover:border-emerald-300 hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:border-emerald-800 dark:hover:text-white";
+  "inline-flex h-11 items-center border-b-2 border-transparent px-1 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 dark:text-zinc-300 dark:hover:text-white";
 const activeNavClass =
-  "border-b-2 border-emerald-600 font-semibold text-zinc-950 dark:border-emerald-400 dark:text-zinc-50";
+  "border-b-2 border-emerald-600 dark:border-emerald-400";
 const menuLinkClass =
   "block rounded-lg px-2 py-1 text-sm text-zinc-600 transition-colors hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white";
 
@@ -198,7 +198,7 @@ export function Header() {
                         className={menuLinkClass}
                         onClick={() => setStatusOpen(false)}
                       >
-                        Admin Dashboard
+                        Dashboard
                       </Link>
                       <div className="my-1 border-t border-zinc-100 dark:border-zinc-800" />
                       <button
@@ -213,20 +213,12 @@ export function Header() {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/status"
-                  className={`${navClass} ${isActive(pathname, "/status") ? activeNavClass : ""}`}
-                >
-                  Status
-                </Link>
-                <Link
-                  href="/status/login"
-                  className="text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
-                >
-                  Admin
-                </Link>
-              </div>
+              <Link
+                href="/status"
+                className={`${navClass} ${isActive(pathname, "/status") ? activeNavClass : ""}`}
+              >
+                Status
+              </Link>
             )}
 
             <div className="relative" onMouseEnter={openToolsMenu} onMouseLeave={closeToolsMenu}>
@@ -364,7 +356,7 @@ export function Header() {
                   className="block rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-white"
                   onClick={() => setMobile(false)}
                 >
-                  Admin Dashboard
+                  Dashboard
                 </Link>
                 <button
                   type="button"
@@ -375,22 +367,13 @@ export function Header() {
                 </button>
               </MobileAccordion>
             ) : (
-              <div className="grid grid-cols-[1fr_auto] gap-2">
-                <Link
-                  href="/status"
-                  className="block rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
-                  onClick={() => setMobile(false)}
-                >
-                  Status
-                </Link>
-                <Link
-                  href="/status/login"
-                  className="flex items-center rounded-xl border border-zinc-200 px-3 py-2.5 text-xs font-semibold text-zinc-400 dark:border-zinc-800 dark:text-zinc-500"
-                  onClick={() => setMobile(false)}
-                >
-                  Admin
-                </Link>
-              </div>
+              <Link
+                href="/status"
+                className="block rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+                onClick={() => setMobile(false)}
+              >
+                Status
+              </Link>
             )}
 
             <MobileAccordion
