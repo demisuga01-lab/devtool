@@ -199,7 +199,7 @@ export default function SystemsRunnerPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
+        <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="border-b border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
               {active.label} · {active.compiler} {active.version}
@@ -238,7 +238,7 @@ export default function SystemsRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
+          <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />

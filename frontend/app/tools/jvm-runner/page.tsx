@@ -208,7 +208,7 @@ export default function JvmRunnerPage() {
           </p>
         </header>
 
-        <div className="mt-6 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
+        <div className="mt-6 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col">
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {languages.map((language, index) => (
@@ -263,7 +263,7 @@ export default function JvmRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-zinc-400 animate-pulse" : successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />

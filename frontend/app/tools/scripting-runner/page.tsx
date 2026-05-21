@@ -143,7 +143,7 @@ export default function ScriptingRunnerPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
+        <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[300px] w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 lg:flex-1" />
             <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">stdin</label>
@@ -164,7 +164,7 @@ export default function ScriptingRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm lg:min-h-0">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
               <div className="font-semibold text-zinc-100">Output</div>
               <div className="flex items-center gap-2">
