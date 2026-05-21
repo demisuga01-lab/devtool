@@ -852,3 +852,117 @@ async def run_mongodb(payload: MongoDBRequest) -> dict:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/security-headers")
+async def security_headers(url: str = Query(..., max_length=500)) -> dict:
+    target = _validate_url(url)
+    try:
+        async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            resp = await client.get(target)
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Request timed out.")
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not connect.")
+
+    headers = dict(resp.headers)
+    security_header_keys = [
+        "strict-transport-security", "content-security-policy",
+        "x-frame-options", "x-content-type-options", "x-xss-protection",
+        "referrer-policy", "permissions-policy", "cross-origin-embedder-policy",
+        "cross-origin-opener-policy", "cross-origin-resource-policy",
+    ]
+    result = {}
+    for key in security_header_keys:
+        result[key] = headers.get(key, None)
+    return {"url": target, "status_code": resp.status_code, "headers": result}
+
+
+@router.get("/ip-lookup")
+async def ip_lookup(ip: str = Query(..., max_length=45)) -> dict:
+    ip = ip.strip()
+    if not ip:
+        raise HTTPException(status_code=400, detail="IP address is required.")
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.get(f"https://ipapi.co/{ip}/json/")
+            if not resp.is_success:
+                raise HTTPException(status_code=502, detail="IP lookup failed.")
+            return resp.json()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Request timed out.")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=502, detail="IP lookup failed.")
+
+
+@router.get("/spf-checker")
+async def spf_checker(domain: str = Query(..., max_length=253)) -> dict:
+    target = _validate_domain(domain, allow_chars_only=True)
+    results = {}
+
+    async def lookup(name: str, rtype: str) -> list[str]:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "dig", "+short", name, rtype,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=8.0)
+            return [l.strip().strip('"') for l in stdout.decode().splitlines() if l.strip()]
+        except Exception:
+            return []
+
+    txt_records = await lookup(target, "TXT")
+    results["spf"] = [r for r in txt_records if r.startswith("v=spf1")]
+    results["dmarc"] = await lookup(f"_dmarc.{target}", "TXT")
+    results["dkim_selector"] = "default"
+    results["dkim"] = await lookup(f"default._domainkey.{target}", "TXT")
+    results["domain"] = target
+    return results
+
+
+@router.get("/og-preview")
+async def og_preview(url: str = Query(..., max_length=500)) -> dict:
+    import re as _re2
+    target = _validate_url(url)
+    try:
+        async with httpx.AsyncClient(
+            timeout=10.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; DevTools/1.0)"},
+        ) as client:
+            resp = await client.get(target)
+            if not resp.is_success:
+                raise HTTPException(status_code=502, detail=f"Server returned {resp.status_code}")
+            html = resp.text[:200000]
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Request timed out.")
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Could not connect.")
+
+    def meta(prop: str) -> str:
+        m = _re2.search(
+            rf'<meta[^>]+(?:property|name)=["\'](?:og:)?{_re2.escape(prop)}["\'][^>]+content=["\']([^"\']*)["\']',
+            html, _re2.IGNORECASE,
+        ) or _re2.search(
+            rf'<meta[^>]+content=["\']([^"\']*)["\'][^>]+(?:property|name)=["\'](?:og:)?{_re2.escape(prop)}["\']',
+            html, _re2.IGNORECASE,
+        )
+        return m.group(1).strip() if m else ""
+
+    title_m = _re2.search(r"<title[^>]*>([^<]*)</title>", html, _re2.IGNORECASE)
+    return {
+        "url": target,
+        "og_title": meta("og:title") or meta("title") or (title_m.group(1).strip() if title_m else ""),
+        "og_description": meta("og:description") or meta("description"),
+        "og_image": meta("og:image"),
+        "og_type": meta("og:type"),
+        "og_site_name": meta("og:site_name"),
+        "twitter_card": meta("twitter:card"),
+        "twitter_title": meta("twitter:title"),
+        "twitter_description": meta("twitter:description"),
+        "twitter_image": meta("twitter:image"),
+        "title": title_m.group(1).strip() if title_m else "",
+    }
