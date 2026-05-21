@@ -738,7 +738,7 @@ async def run_mysql(payload: MySQLRequest) -> dict:
     if len(payload.query) > 50000:
         raise HTTPException(status_code=400, detail="Query too large.")
     dangerous = _re.compile(
-        r"\b(DROP\s+DATABASE|DROP\s+USER|GRANT|REVOKE|SHUTDOWN|CREATE\s+USER|ALTER\s+USER|FLUSH|RESET|PURGE)\b",
+        r"\b(DROP\s+DATABASE|DROP\s+USER|DROP\s+TABLE|DROP\s+INDEX|GRANT|REVOKE|SHUTDOWN|CREATE\s+USER|ALTER\s+USER|FLUSH|RESET|PURGE|TRUNCATE|LOCK\s+TABLES)\b",
         _re.IGNORECASE,
     )
     if dangerous.search(payload.query):
@@ -778,7 +778,7 @@ async def run_postgresql(payload: PostgreSQLRequest) -> dict:
     if len(payload.query) > 50000:
         raise HTTPException(status_code=400, detail="Query too large.")
     dangerous = _re.compile(
-        r"\b(DROP\s+DATABASE|DROP\s+USER|GRANT|REVOKE|CREATE\s+USER|ALTER\s+USER|DROP\s+ROLE|CREATE\s+ROLE)\b",
+        r"\b(DROP\s+DATABASE|DROP\s+USER|DROP\s+TABLE|DROP\s+INDEX|DROP\s+SCHEMA|GRANT|REVOKE|CREATE\s+USER|ALTER\s+USER|DROP\s+ROLE|CREATE\s+ROLE|TRUNCATE)\b",
         _re.IGNORECASE,
     )
     if dangerous.search(payload.query):
