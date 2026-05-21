@@ -457,7 +457,7 @@ export default function DataRunnerPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
+        <div className="mt-5 flex min-h-[560px] flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
               {currentMode.icon}

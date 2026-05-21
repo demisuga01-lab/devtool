@@ -316,7 +316,7 @@ export default function OtherRunnerPage() {
           ))}
         </section>
 
-        <div className="flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
+        <div className="flex min-h-[560px] flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{active.label} Editor</h2>
