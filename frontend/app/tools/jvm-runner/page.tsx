@@ -99,7 +99,7 @@ END MODULE`,
 ];
 
 const editorClass =
-  "min-h-[480px] w-full flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 lg:min-h-0";
+  "min-h-[300px] w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 lg:flex-1";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -190,7 +190,7 @@ export default function JvmRunnerPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -210,13 +210,13 @@ export default function JvmRunnerPage() {
 
         <div className="mt-6 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col">
-            <div className="flex flex-wrap items-end gap-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {languages.map((language, index) => (
                 <button
                   key={language.label}
                   type="button"
                   onClick={() => setActiveIndex(index)}
-                  className={`rounded-t-lg border-l border-r border-t px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`whitespace-nowrap rounded-t-lg border-l border-r border-t px-4 py-2 text-sm font-medium transition-colors ${
                     index === activeIndex
                       ? "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                       : "border-zinc-200 bg-zinc-50 text-zinc-500 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-500 dark:hover:text-zinc-300"
@@ -263,7 +263,7 @@ export default function JvmRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-zinc-400 animate-pulse" : successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />

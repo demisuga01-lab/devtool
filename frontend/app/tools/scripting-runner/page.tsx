@@ -128,14 +128,14 @@ export default function ScriptingRunnerPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
         <Breadcrumb title="Scripting Runner" />
         <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Scripting Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run Python, Ruby, PHP, Perl, Bash, and Lua scripts instantly.</p>
         </header>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {languages.map((language, index) => (
             <button key={language.label} type="button" onClick={() => setActiveIndex(index)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
               <span className="mr-2 inline-flex">{language.icon}</span>{language.label}
@@ -145,7 +145,7 @@ export default function ScriptingRunnerPage() {
 
         <div className="mt-5 flex h-[calc(100vh-8rem)] min-h-[560px] flex-col gap-5 lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[480px] w-full flex-1 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 lg:min-h-0" />
+            <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[300px] w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 lg:flex-1" />
             <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">stdin</label>
             <textarea
               value={stdin}
@@ -164,7 +164,7 @@ export default function ScriptingRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm lg:min-h-0">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
               <div className="font-semibold text-zinc-100">Output</div>
               <div className="flex items-center gap-2">

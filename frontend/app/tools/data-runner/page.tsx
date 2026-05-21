@@ -197,7 +197,7 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className={`flex h-full min-h-[320px] flex-col rounded-2xl border bg-white p-4 shadow-sm dark:bg-zinc-900 lg:min-h-0 ${accent === "purple" ? "border-purple-200 dark:border-purple-900" : "border-zinc-200 dark:border-zinc-800"}`}>
+    <section className={`flex h-full min-h-[250px] flex-col rounded-2xl border bg-white p-4 shadow-sm dark:bg-zinc-900 lg:min-h-0 ${accent === "purple" ? "border-purple-200 dark:border-purple-900" : "border-zinc-200 dark:border-zinc-800"}`}>
       <div className="mb-4 flex flex-wrap gap-2">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -259,7 +259,7 @@ function DatabaseResultsPanel({
   queryErrors: string;
 }) {
   return (
-    <section className="flex min-h-[320px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
+    <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
       <h2 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">Results</h2>
       {!hasRun ? (
         <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-200 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
@@ -416,7 +416,7 @@ export default function DataRunnerPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -432,7 +432,7 @@ export default function DataRunnerPage() {
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, and MongoDB workflows for data analysis.</p>
         </header>
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {([
             "sqlite",
             "mysql",
@@ -443,7 +443,7 @@ export default function DataRunnerPage() {
               key={value}
               type="button"
               onClick={() => setMode(value)}
-              className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors ${
                 mode === value
                   ? modeMeta[value].activeClass
                   : "border border-zinc-200 text-zinc-600 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
@@ -468,7 +468,7 @@ export default function DataRunnerPage() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className={`${editorClass} min-h-[400px] flex-1 resize-none rounded-none border-0 focus:ring-0 lg:min-h-0`}
+              className={`${editorClass} min-h-[300px] resize-none rounded-none border-0 focus:ring-0 lg:flex-1`}
             />
             <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
               <button

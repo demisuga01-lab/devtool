@@ -554,7 +554,7 @@ function CodeEditor({
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={onKeyDown}
         spellCheck={false}
-        className="min-h-[200px] w-full flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none"
+        className="min-h-[300px] w-full resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:flex-1"
       />
     </section>
   );
@@ -605,7 +605,7 @@ function WebPreviewPanel({
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex h-full min-h-0 flex-col bg-white">
+    <section className="flex h-full min-h-[250px] flex-col bg-white lg:min-h-0">
       <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-800">
         <span className="font-semibold text-zinc-700 dark:text-zinc-200">Preview</span>
         <div className="flex items-center gap-2">
@@ -658,7 +658,7 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex h-full min-h-0 flex-col bg-zinc-950">
+    <section className="flex h-full min-h-[250px] flex-col bg-zinc-950 lg:min-h-0">
       <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
         <button type="button" onClick={clearConsole} className="text-xs text-zinc-400 hover:text-zinc-200">
@@ -692,7 +692,7 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex h-full min-h-0 flex-col bg-zinc-950">
+    <section className="flex h-full min-h-[250px] flex-col bg-zinc-950 lg:min-h-0">
       <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
@@ -1046,6 +1046,9 @@ export default function WebRunnerPage() {
           </div>
         </>
       )}
+      <div className="border-t border-zinc-800 bg-zinc-900 p-3 lg:hidden">
+        {runButton}
+      </div>
     </section>
   );
 
@@ -1070,18 +1073,25 @@ export default function WebRunnerPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <header className="grid h-14 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900">
-        <nav className="flex min-w-0 items-center gap-2 overflow-hidden text-xs text-zinc-500">
-          <Link href="/tools" className="shrink-0 hover:text-zinc-900 dark:hover:text-zinc-100">
-            Tools
-          </Link>
-          <span>/</span>
-          <span className="shrink-0">Code Runners</span>
-          <span>/</span>
-          <span className="truncate">Web Runner</span>
-        </nav>
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center justify-between px-3 py-2">
+          <nav className="flex min-w-0 items-center gap-1 overflow-hidden text-xs text-zinc-500">
+            <Link href="/tools" className="shrink-0 hover:text-zinc-900 dark:hover:text-zinc-100">
+              Tools
+            </Link>
+            <span>/</span>
+            <span className="shrink-0">Code Runners</span>
+            <span>/</span>
+            <span className="truncate">Web Runner</span>
+          </nav>
 
-        <div className="flex min-w-0 gap-1 overflow-x-auto">
+          <div className="flex items-center gap-2">
+            {runButton}
+            <span className="hidden text-xs text-zinc-400 lg:inline">Ctrl+Enter</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 scrollbar-hide">
           {modes.map((item) => (
             <button
               key={item.value}
@@ -1101,7 +1111,7 @@ export default function WebRunnerPage() {
           ))}
         </div>
 
-        <div className="flex min-w-0 items-center justify-end gap-3">
+        <div className="hidden items-center gap-3 border-t border-zinc-200 px-3 py-2 dark:border-zinc-800 lg:flex">
           <div className="flex items-center gap-1">
             {layouts.map((item) => {
               const Icon = item.icon;
@@ -1131,8 +1141,6 @@ export default function WebRunnerPage() {
             <Link2 className="h-3.5 w-3.5" />
             Import URL
           </button>
-          {runButton}
-          <span className="hidden text-xs text-zinc-400 md:inline">Ctrl+Enter to run</span>
         </div>
       </header>
 
@@ -1171,11 +1179,11 @@ export default function WebRunnerPage() {
         </div>
       )}
 
-      <div className="h-[calc(100vh-8rem)] min-h-[560px] overflow-hidden">
+      <div className="min-h-[560px] overflow-auto lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
         {layout === "horizontal" && (
-          <div className="flex h-full">
-            <div className="flex w-1/2 min-w-0 flex-col overflow-hidden border-r border-zinc-200 dark:border-zinc-800">{editorPane}</div>
-            <div className="flex w-1/2 min-w-0 flex-col overflow-hidden">{outputPane}</div>
+          <div className="flex h-full flex-col lg:flex-row">
+            <div className="flex min-h-[300px] min-w-0 flex-col overflow-hidden border-b border-zinc-200 dark:border-zinc-800 lg:min-h-0 lg:w-1/2 lg:border-b-0 lg:border-r">{editorPane}</div>
+            <div className="flex min-h-[250px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-1/2">{outputPane}</div>
           </div>
         )}
 
@@ -1188,7 +1196,7 @@ export default function WebRunnerPage() {
 
         {layout === "bottom" && (
           <div className="flex h-full flex-col overflow-auto">
-            <div className="min-h-[480px]">{editorPane}</div>
+            <div className="min-h-[300px]">{editorPane}</div>
             {hasRun && <div className="min-h-[500px] border-t border-zinc-200 dark:border-zinc-800">{outputPane}</div>}
           </div>
         )}

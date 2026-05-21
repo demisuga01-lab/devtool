@@ -176,20 +176,20 @@ export default function SystemsRunnerPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
         <Breadcrumb title="Systems Runner" />
         <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Systems Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Compile and run C, C++, Rust, and Go code with full compiler output.</p>
         </header>
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {languages.map((language, index) => (
             <button
               key={language.label}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`rounded-xl px-3 py-1.5 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"}`}
+              className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"}`}
             >
               <span className="flex items-center gap-1.5">
                 {language.icon}
@@ -205,7 +205,7 @@ export default function SystemsRunnerPage() {
               {active.label} · {active.compiler} {active.version}
             </div>
             <div className="flex min-h-0 flex-1 overflow-hidden bg-zinc-950">
-              <div ref={lineRef} className="h-full min-w-[2.5rem] overflow-hidden px-2 py-4 text-right font-mono text-sm leading-relaxed text-zinc-600 select-none">
+              <div ref={lineRef} className="h-full w-8 min-w-8 overflow-hidden px-2 py-4 text-right font-mono text-xs leading-relaxed text-zinc-600 select-none lg:w-12 lg:min-w-12 lg:text-sm">
                 {Array.from({ length: lines }).map((_, index) => <div key={index}>{index + 1}</div>)}
               </div>
               <textarea
@@ -215,7 +215,7 @@ export default function SystemsRunnerPage() {
                 onKeyDown={insertTab}
                 onScroll={syncLines}
                 spellCheck={false}
-                className="min-h-[480px] flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:min-h-0"
+                className="min-h-[300px] min-w-0 flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:flex-1"
               />
             </div>
             <div className="space-y-3 p-4">
@@ -238,7 +238,7 @@ export default function SystemsRunnerPage() {
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
