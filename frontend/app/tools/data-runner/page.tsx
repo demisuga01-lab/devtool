@@ -5,7 +5,7 @@ import { KeyboardEvent, useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
-type Mode = "sqlite" | "mysql" | "postgresql" | "mongodb";
+type Mode = "sqlite" | "mysql" | "postgresql" | "mongodb" | "r" | "octave";
 type OutputTab = "output" | "errors";
 
 type RunResult = {
@@ -79,11 +79,33 @@ db.users.insertMany([
 db.users.find({}).forEach(doc => print(JSON.stringify(doc)));
 print("Total users: " + db.users.countDocuments({}));`;
 
+const rCode = `# R 4.0
+values <- c(12, 18, 21, 24, 30)
+summary <- data.frame(
+  count = length(values),
+  mean = mean(values),
+  median = median(values),
+  sd = sd(values)
+)
+
+print(summary)
+cat("Hello from R!\\n")`;
+
+const octaveCode = `% Octave 5.1
+values = [12, 18, 21, 24, 30];
+printf("count: %d\\n", length(values));
+printf("mean: %.2f\\n", mean(values));
+printf("median: %.2f\\n", median(values));
+printf("std: %.2f\\n", std(values));
+printf("Hello from Octave!\\n");`;
+
 const defaultCodeByMode: Record<Mode, string> = {
   sqlite: sqliteCode,
   mysql: mysqlCode,
   postgresql: postgresqlCode,
   mongodb: mongodbCode,
+  r: rCode,
+  octave: octaveCode,
 };
 
 const modeMeta: Record<
@@ -133,6 +155,24 @@ const modeMeta: Record<
     activeClass: "bg-green-600 text-white",
     runButtonClass: "bg-green-600 hover:bg-green-700",
     isDatabase: true,
+  },
+  r: {
+    label: "R",
+    editorLabel: "R Script",
+    runLabel: "Run R",
+    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><rect width="48" height="48" rx="4" fill="#276DC3"/><path d="M14 12h12c4 0 8 2 8 7 0 3.5-2 6-5 7l6 10h-5l-5.5-9.5H19V36h-5V12zm5 5v9.5h6c2.5 0 4-1.5 4-4.5 0-3-1.5-5-4-5h-6z" fill="white"/></svg>,
+    activeClass: "bg-blue-600 text-white",
+    runButtonClass: "bg-blue-600 hover:bg-blue-700",
+    isDatabase: false,
+  },
+  octave: {
+    label: "Octave",
+    editorLabel: "Octave Script",
+    runLabel: "Run Octave",
+    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><rect width="48" height="48" rx="4" fill="#0790C0"/><path d="M24 10c-7.7 0-14 6.3-14 14s6.3 14 14 14 14-6.3 14-14S31.7 10 24 10zm0 22c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z" fill="white"/></svg>,
+    activeClass: "bg-cyan-600 text-white",
+    runButtonClass: "bg-cyan-600 hover:bg-cyan-700",
+    isDatabase: false,
   },
 };
 
@@ -334,6 +374,7 @@ export default function DataRunnerPage() {
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+  const [outputTab, setOutputTab] = useState<OutputTab>("output");
   const currentMode = modeMeta[mode];
 
   useEffect(() => {
@@ -341,6 +382,7 @@ export default function DataRunnerPage() {
     setResult(null);
     setError("");
     setHasRun(false);
+    setOutputTab("output");
   }, [mode]);
 
   const runCode = useCallback(async () => {
@@ -349,6 +391,7 @@ export default function DataRunnerPage() {
     setHasRun(true);
     setResult(null);
     setError("");
+    setOutputTab("output");
 
     try {
       const request =
@@ -378,13 +421,23 @@ export default function DataRunnerPage() {
                       database: "coderunner_scratch",
                     },
                   }
-                : {
-                    url: `${API_BASE}/tools/run-mongodb`,
-                    body: {
-                      code,
-                      database: "coderunner_scratch",
-                    },
-                  };
+                : mode === "mongodb"
+                  ? {
+                      url: `${API_BASE}/tools/run-mongodb`,
+                      body: {
+                        code,
+                        database: "coderunner_scratch",
+                      },
+                    }
+                  : {
+                      url: `${API_BASE}/tools/run-code`,
+                      body: {
+                        language: mode,
+                        version: mode === "r" ? "4.0.0" : "5.1.0",
+                        code,
+                        stdin: "",
+                      },
+                    };
 
       const res = await fetch(request.url, {
         method: "POST",
@@ -411,7 +464,7 @@ export default function DataRunnerPage() {
   }
 
   const stdout = result?.stdout || result?.output || "";
-  const table = stdout.includes("|") ? parseTable(stdout) : null;
+  const table = currentMode.isDatabase && stdout.includes("|") ? parseTable(stdout) : null;
   const queryErrors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
 
   return (
@@ -429,7 +482,7 @@ export default function DataRunnerPage() {
 
         <header className="mt-6">
           <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Data Runner</h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, and MongoDB workflows for data analysis.</p>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, MongoDB, R, and Octave workflows for data analysis.</p>
         </header>
 
         <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -438,6 +491,8 @@ export default function DataRunnerPage() {
             "mysql",
             "postgresql",
             "mongodb",
+            "r",
+            "octave",
           ] as const).map((value) => (
             <button
               key={value}
@@ -457,7 +512,7 @@ export default function DataRunnerPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex min-h-[560px] flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:flex-row">
+        <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
               {currentMode.icon}
@@ -482,7 +537,11 @@ export default function DataRunnerPage() {
               </button>
             </div>
           </section>
-          <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
+          {currentMode.isDatabase ? (
+            <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
+          ) : (
+            <OutputPanel result={result} error={error} outputTab={outputTab} setOutputTab={setOutputTab} />
+          )}
         </div>
       </div>
     </main>
