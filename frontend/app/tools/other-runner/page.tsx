@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, ReactNode, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
@@ -345,7 +346,9 @@ function OutputPanel({
   );
 }
 
-export default function OtherRunnerPage() {
+function OtherRunnerPageContent() {
+  const searchParams = useSearchParams();
+  const langParam = searchParams.get("lang");
   const [activeIndex, setActiveIndex] = useState(0);
   const active = languages[activeIndex];
   const [code, setCode] = useState(active.defaultCode);
@@ -355,6 +358,12 @@ export default function OtherRunnerPage() {
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const [outputTab, setOutputTab] = useState<OutputTab>("output");
+
+  useEffect(() => {
+    if (!langParam) return;
+    const index = languages.findIndex((language) => language.language === langParam);
+    if (index !== -1) setActiveIndex(index);
+  }, [langParam]);
 
   useEffect(() => {
     setCode(active.defaultCode);
@@ -484,5 +493,13 @@ export default function OtherRunnerPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OtherRunnerPage() {
+  return (
+    <Suspense fallback={null}>
+      <OtherRunnerPageContent />
+    </Suspense>
   );
 }

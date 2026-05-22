@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { DragEvent, KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
   ExternalLink,
@@ -12,6 +13,7 @@ import {
   Play,
   RefreshCw,
   Square,
+  Upload,
   X,
 } from "lucide-react";
 import { API_BASE } from "@/lib/api";
@@ -36,6 +38,14 @@ type RunResult = {
 type LintError = { line: number; col: number; message: string; severity: "error" | "warning" };
 type LintResult = { errors: LintError[] };
 type ModalTarget = "html" | "css" | "js" | "ts" | "preview" | null;
+type FileKind = "html" | "css" | "js";
+type UploadTarget = FileKind | "combined";
+type UploadedFile = { name: string; content: string; size: number };
+type UploadGroup = { label: string; kind: FileKind; files: UploadedFile[] };
+
+const MAX_FILES_PER_UPLOAD = 5;
+const MAX_FILES_PER_KIND = 20;
+const MAX_FILE_SIZE_BYTES = 500 * 1024;
 
 const modes: { label: string; value: Mode; icon: JSX.Element }[] = [
   {
@@ -149,6 +159,10 @@ function escapeScript(value: string) {
   return value.replace(/<\/script/gi, "<\\/script");
 }
 
+function escapeStyle(value: string) {
+  return value.replace(/<\/style/gi, "<\\/style");
+}
+
 function ensureDocument(value: string) {
   if (/<html[\s>]/i.test(value)) return value;
   return `<!DOCTYPE html>
@@ -163,9 +177,27 @@ ${value}
 </html>`;
 }
 
+function injectOptionalCssAndJs(html: string, css: string, js: string) {
+  let doc = ensureDocument(html);
+  const cssValue = css.trim();
+  const jsValue = js.trim();
+
+  if (cssValue) {
+    const style = `<style>${escapeStyle(css)}</style>`;
+    doc = /<\/head>/i.test(doc) ? doc.replace(/<\/head>/i, `${style}\n</head>`) : `${style}\n${doc}`;
+  }
+
+  if (jsValue) {
+    const script = `<script>${escapeScript(js)}</script>`;
+    doc = /<\/body>/i.test(doc) ? doc.replace(/<\/body>/i, `${script}\n</body>`) : `${doc}\n${script}`;
+  }
+
+  return doc;
+}
+
 function injectCssAndJs(html: string, css: string, js: string) {
   let doc = ensureDocument(html);
-  const style = `<style>${css}</style>`;
+  const style = `<style>${escapeStyle(css)}</style>`;
   const script = `<script>${escapeScript(js)}</script>`;
 
   doc = /<\/head>/i.test(doc) ? doc.replace(/<\/head>/i, `${style}\n</head>`) : `${style}\n${doc}`;
@@ -174,7 +206,109 @@ function injectCssAndJs(html: string, css: string, js: string) {
 }
 
 function cssDocument(css: string) {
-  return cssDemoHtml.replace("</head>", `<style>${css}</style>\n</head>`);
+  return cssDemoHtml.replace("</head>", `<style>${escapeStyle(css)}</style>\n</head>`);
+}
+
+function fallbackMergeHtmlFiles(files: UploadedFile[]) {
+  return ensureDocument(files.map((file) => file.content).join("\n"));
+}
+
+function mergeHtmlFiles(files: UploadedFile[]): string {
+  if (files.length === 0) return "";
+  if (typeof DOMParser === "undefined") return fallbackMergeHtmlFiles(files);
+
+  const parser = new DOMParser();
+  const parsed = files.map((file) => ({
+    file,
+    doc: parser.parseFromString(file.content, "text/html"),
+  }));
+  const fullDocumentIndex = files.findIndex((file) => /<!doctype\s+html/i.test(file.content) && /<body[\s>]/i.test(file.content));
+  const baseIndex = fullDocumentIndex >= 0 ? fullDocumentIndex : 0;
+  const baseDoc = parser.parseFromString(files[baseIndex].content, "text/html");
+  const baseHead = baseDoc.head;
+  const baseBody = baseDoc.body;
+
+  baseHead.innerHTML = "";
+  baseBody.innerHTML = parsed[baseIndex].doc.body?.innerHTML || files[baseIndex].content;
+
+  const firstTitle = parsed
+    .map(({ doc }) => doc.head?.querySelector("title"))
+    .find((title): title is HTMLTitleElement => Boolean(title));
+  if (firstTitle) baseHead.appendChild(baseDoc.importNode(firstTitle, true));
+
+  const seenHead = new Set<string>();
+  const seenLinks = new Set<string>();
+
+  for (const { doc } of parsed) {
+    const headChildren = Array.from(doc.head?.children || []);
+    for (const node of headChildren) {
+      const tagName = node.tagName.toLowerCase();
+      if (tagName === "title") continue;
+
+      if (tagName === "link") {
+        const link = node as HTMLLinkElement;
+        const key = `${link.rel}|${link.href}`;
+        if (seenLinks.has(key)) continue;
+        seenLinks.add(key);
+        baseHead.appendChild(baseDoc.importNode(node, true));
+        continue;
+      }
+
+      if (tagName !== "style") {
+        const key = node.outerHTML;
+        if (seenHead.has(key)) continue;
+        seenHead.add(key);
+      }
+
+      baseHead.appendChild(baseDoc.importNode(node, true));
+    }
+  }
+
+  parsed.forEach(({ file, doc }, index) => {
+    if (index === baseIndex) return;
+    const bodyNodes = Array.from(doc.body?.childNodes || []);
+    if (bodyNodes.length === 0) return;
+    baseBody.appendChild(baseDoc.createTextNode("\n"));
+    baseBody.appendChild(baseDoc.createComment(` ${file.name} `));
+    baseBody.appendChild(baseDoc.createTextNode("\n"));
+    bodyNodes.forEach((node) => baseBody.appendChild(baseDoc.importNode(node, true)));
+  });
+
+  return `<!DOCTYPE html>\n${baseDoc.documentElement.outerHTML}`;
+}
+
+function mergeCssFiles(files: UploadedFile[]): string {
+  return files
+    .map((file) => `/* --- ${file.name} --- */\n${file.content}`)
+    .join("\n\n");
+}
+
+function mergeJsFiles(files: UploadedFile[]): string {
+  return files
+    .map((file) => `// --- ${file.name} ---\n${file.content}`)
+    .join("\n\n");
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024) return `${size} B`;
+  return `${Math.round(size / 1024)} KB`;
+}
+
+function getFileKind(name: string): FileKind | null {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".html")) return "html";
+  if (lower.endsWith(".css")) return "css";
+  if (lower.endsWith(".js")) return "js";
+  return null;
+}
+
+function readUploadedFile(file: File): Promise<UploadedFile> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ name: file.name, content: String(reader.result || ""), size: file.size });
+    reader.onerror = () => reject(new Error(`Unable to read ${file.name}`));
+    reader.readAsText(file);
+  });
 }
 
 function jsDocument(js: string) {
@@ -487,6 +621,109 @@ function lintJs(js: string): LintResult {
   return { errors };
 }
 
+function UploadZone({
+  accept,
+  prompt,
+  groups,
+  error,
+  onFiles,
+  onRemove,
+}: {
+  accept: string;
+  prompt: string;
+  groups: UploadGroup[];
+  error: string;
+  onFiles: (files: File[]) => void;
+  onRemove: (kind: FileKind, index: number) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const files = groups.flatMap((group) => group.files.map((file, index) => ({ ...file, index, kind: group.kind, label: group.label })));
+
+  function handleDrop(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragging(false);
+    onFiles(Array.from(event.dataTransfer.files));
+  }
+
+  return (
+    <div className="border-b border-zinc-800 bg-zinc-900 p-3">
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        multiple
+        className="hidden"
+        onChange={(event) => {
+          onFiles(Array.from(event.target.files || []));
+          event.currentTarget.value = "";
+        }}
+      />
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={handleDrop}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition ${
+          dragging
+            ? "border-emerald-400 bg-emerald-500/10 text-emerald-200"
+            : "border-zinc-700 bg-zinc-950 text-zinc-400 hover:border-emerald-500 hover:text-zinc-200"
+        }`}
+      >
+        <Upload className="mb-2 h-5 w-5" />
+        <span className="text-sm font-medium">{prompt}</span>
+        <span className="mt-1 text-xs text-zinc-500">Up to {MAX_FILES_PER_UPLOAD} files per upload, {MAX_FILE_SIZE_BYTES / 1024}KB each</span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {groups.map((group) => (
+          <span
+            key={group.kind}
+            className="rounded-full border border-zinc-700 px-2 py-0.5 text-xs font-semibold text-zinc-400"
+          >
+            {groups.length === 1 ? `${group.files.length}/${MAX_FILES_PER_KIND} files` : `${group.label} ${group.files.length}/${MAX_FILES_PER_KIND}`}
+          </span>
+        ))}
+        {error && <span className="text-xs font-medium text-red-400">{error}</span>}
+      </div>
+
+      {files.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {files.map((file) => (
+            <span
+              key={`${file.kind}-${file.index}-${file.name}`}
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300"
+            >
+              {groups.length > 1 && <span className="font-semibold text-zinc-500">{file.label}</span>}
+              <span className="max-w-[12rem] truncate">{file.name}</span>
+              <span className="shrink-0 text-zinc-500">{formatFileSize(file.size)}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${file.name}`}
+                onClick={() => onRemove(file.kind, file.index)}
+                className="rounded-full p-0.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CodeEditor({
   label,
   value,
@@ -494,6 +731,8 @@ function CodeEditor({
   onKeyDown,
   tone,
   lintErrors,
+  readOnly = false,
+  uploadZone,
   onMaximize,
   onNewTab,
 }: {
@@ -503,6 +742,8 @@ function CodeEditor({
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   tone: "html" | "css" | "js" | "ts";
   lintErrors?: LintError[];
+  readOnly?: boolean;
+  uploadZone?: ReactNode;
   onMaximize?: () => void;
   onNewTab?: () => void;
 }) {
@@ -526,6 +767,7 @@ function CodeEditor({
         {warnCount > 0 && (
           <span className="ml-1 rounded bg-yellow-500/20 px-1.5 py-0.5 text-xs text-yellow-400">{warnCount}</span>
         )}
+        {readOnly && <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">merged upload</span>}
         <div className="ml-auto flex items-center gap-1">
           {onMaximize && (
             <button
@@ -549,12 +791,21 @@ function CodeEditor({
           )}
         </div>
       </div>
+      {uploadZone}
       <textarea
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onKeyDown={onKeyDown}
+        onChange={(event) => {
+          if (!readOnly) onChange(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (readOnly && event.key === "Tab") return;
+          onKeyDown(event);
+        }}
+        readOnly={readOnly}
         spellCheck={false}
-        className="min-h-[300px] w-full resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:flex-1"
+        className={`min-h-[300px] w-full resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:flex-1 ${
+          readOnly ? "cursor-default text-zinc-300" : ""
+        }`}
       />
     </section>
   );
@@ -714,7 +965,9 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   );
 }
 
-export default function WebRunnerPage() {
+function WebRunnerPageContent() {
+  const searchParams = useSearchParams();
+  const langParam = searchParams.get("lang");
   const [mode, setMode] = useState<Mode>("combined");
   const [layout, setLayout] = useState<Layout>("horizontal");
   const [html, setHtml] = useState(defaultHtml);
@@ -743,6 +996,29 @@ export default function WebRunnerPage() {
   const [urlInput, setUrlInput] = useState("");
   const [urlLoading, setUrlLoading] = useState(false);
   const [urlError, setUrlError] = useState("");
+  const [htmlFiles, setHtmlFiles] = useState<UploadedFile[]>([]);
+  const [cssFiles, setCssFiles] = useState<UploadedFile[]>([]);
+  const [jsFiles, setJsFiles] = useState<UploadedFile[]>([]);
+  const [uploadErrors, setUploadErrors] = useState<Record<UploadTarget, string>>({
+    html: "",
+    css: "",
+    js: "",
+    combined: "",
+  });
+
+  const effectiveHtml = htmlFiles.length > 0 ? mergeHtmlFiles(htmlFiles) : html;
+  const effectiveCss = cssFiles.length > 0 ? mergeCssFiles(cssFiles) : css;
+  const effectiveJs = jsFiles.length > 0 ? mergeJsFiles(jsFiles) : js;
+  const htmlModeDocument = htmlFiles.length > 0
+    ? injectOptionalCssAndJs(effectiveHtml, cssFiles.length > 0 ? effectiveCss : "", jsFiles.length > 0 ? effectiveJs : "")
+    : html;
+  const htmlLintSource = mode === "html" && htmlFiles.length > 0 ? htmlModeDocument : effectiveHtml;
+
+  useEffect(() => {
+    if (!langParam) return;
+    const selectedMode = modes.find((item) => item.value === langParam);
+    if (selectedMode) setMode(selectedMode.value);
+  }, [langParam]);
 
   useEffect(() => {
     setHasRun(false);
@@ -752,22 +1028,22 @@ export default function WebRunnerPage() {
     if (mode !== "combined" && mode !== "html" && mode !== "css") return;
     if (typeof window === "undefined") return;
     const timer = window.setTimeout(() => {
-      if (mode === "combined") setPreviewDoc(injectCssAndJs(html, css, js));
-      if (mode === "html") setPreviewDoc(html);
-      if (mode === "css") setPreviewDoc(cssDocument(css));
+      if (mode === "combined") setPreviewDoc(injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs));
+      if (mode === "html") setPreviewDoc(htmlModeDocument);
+      if (mode === "css") setPreviewDoc(cssDocument(effectiveCss));
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [css, html, js, mode]);
+  }, [effectiveCss, effectiveHtml, effectiveJs, htmlModeDocument, mode]);
 
   useEffect(() => {
     if (mode !== "javascript") return;
     if (typeof window === "undefined") return;
     const timer = window.setTimeout(() => {
       setConsoleLines([]);
-      setConsoleDoc(jsDocument(js));
+      setConsoleDoc(jsDocument(effectiveJs));
     }, 800);
     return () => window.clearTimeout(timer);
-  }, [js, mode]);
+  }, [effectiveJs, mode]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -784,19 +1060,19 @@ export default function WebRunnerPage() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setHtmlLint(lintHtml(html).errors), 800);
+    const timer = window.setTimeout(() => setHtmlLint(lintHtml(htmlLintSource).errors), 800);
     return () => window.clearTimeout(timer);
-  }, [html]);
+  }, [htmlLintSource]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setCssLint(lintCss(css).errors), 800);
+    const timer = window.setTimeout(() => setCssLint(lintCss(effectiveCss).errors), 800);
     return () => window.clearTimeout(timer);
-  }, [css]);
+  }, [effectiveCss]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setJsLint(lintJs(js).errors), 800);
+    const timer = window.setTimeout(() => setJsLint(lintJs(effectiveJs).errors), 800);
     return () => window.clearTimeout(timer);
-  }, [js]);
+  }, [effectiveJs]);
 
   const runTypeScript = useCallback(async () => {
     if (running) return;
@@ -831,17 +1107,17 @@ export default function WebRunnerPage() {
     setHasRun(true);
 
     if (mode === "combined") {
-      setPreviewDoc(injectCssAndJs(html, css, js));
+      setPreviewDoc(injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs));
       setPreviewKey((key) => key + 1);
     } else if (mode === "html") {
-      setPreviewDoc(html);
+      setPreviewDoc(htmlModeDocument);
       setPreviewKey((key) => key + 1);
     } else if (mode === "css") {
-      setPreviewDoc(cssDocument(css));
+      setPreviewDoc(cssDocument(effectiveCss));
       setPreviewKey((key) => key + 1);
     } else if (mode === "javascript") {
       setConsoleLines([]);
-      setConsoleDoc(jsDocument(js));
+      setConsoleDoc(jsDocument(effectiveJs));
       setConsoleKey((key) => key + 1);
     }
 
@@ -850,7 +1126,7 @@ export default function WebRunnerPage() {
     } else {
       setRunning(false);
     }
-  }, [css, html, js, mode, runTypeScript, running]);
+  }, [effectiveCss, effectiveHtml, effectiveJs, htmlModeDocument, mode, runTypeScript, running]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -876,6 +1152,9 @@ export default function WebRunnerPage() {
       if (data.html) setHtml(data.html);
       if (data.css) setCss(data.css);
       if (data.js) setJs(data.js);
+      setHtmlFiles([]);
+      setCssFiles([]);
+      setJsFiles([]);
       setShowUrlBar(false);
       setUrlInput("");
       setMode("combined");
@@ -885,6 +1164,76 @@ export default function WebRunnerPage() {
       setUrlLoading(false);
     }
   }, [urlInput, urlLoading]);
+
+  const handleUploadFiles = useCallback(async (target: UploadTarget, selectedFiles: File[]) => {
+    const files = selectedFiles.filter(Boolean);
+    const acceptedKinds: FileKind[] = target === "combined" ? ["html", "css", "js"] : [target as FileKind];
+    const currentCounts: Record<FileKind, number> = {
+      html: htmlFiles.length,
+      css: cssFiles.length,
+      js: jsFiles.length,
+    };
+
+    if (files.length === 0) return;
+    if (files.length > MAX_FILES_PER_UPLOAD) {
+      setUploadErrors((current) => ({ ...current, [target]: "Maximum 5 files per upload" }));
+      return;
+    }
+
+    const grouped: Record<FileKind, File[]> = { html: [], css: [], js: [] };
+    const errors: string[] = [];
+
+    for (const file of files) {
+      const kind = getFileKind(file.name);
+      if (!kind || !acceptedKinds.includes(kind)) {
+        errors.push(`Invalid file type: ${file.name}`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        errors.push(`File too large (max 500KB): ${file.name}`);
+        continue;
+      }
+      grouped[kind].push(file);
+    }
+
+    for (const kind of acceptedKinds) {
+      if (currentCounts[kind] + grouped[kind].length > MAX_FILES_PER_KIND) {
+        setUploadErrors((current) => ({ ...current, [target]: "Maximum 20 files total" }));
+        return;
+      }
+    }
+
+    let htmlReads: UploadedFile[] = [];
+    let cssReads: UploadedFile[] = [];
+    let jsReads: UploadedFile[] = [];
+
+    try {
+      [htmlReads, cssReads, jsReads] = await Promise.all([
+        Promise.all(grouped.html.map(readUploadedFile)),
+        Promise.all(grouped.css.map(readUploadedFile)),
+        Promise.all(grouped.js.map(readUploadedFile)),
+      ]);
+    } catch (error) {
+      setUploadErrors((current) => ({
+        ...current,
+        [target]: error instanceof Error ? error.message : "Unable to read file",
+      }));
+      return;
+    }
+
+    if (htmlReads.length > 0) setHtmlFiles((current) => [...current, ...htmlReads]);
+    if (cssReads.length > 0) setCssFiles((current) => [...current, ...cssReads]);
+    if (jsReads.length > 0) setJsFiles((current) => [...current, ...jsReads]);
+
+    setUploadErrors((current) => ({ ...current, [target]: errors.join("; ") }));
+  }, [cssFiles.length, htmlFiles.length, jsFiles.length]);
+
+  function removeUploadedFile(kind: FileKind, index: number) {
+    const removeAt = (files: UploadedFile[]) => files.filter((_, fileIndex) => fileIndex !== index);
+    if (kind === "html") setHtmlFiles(removeAt);
+    if (kind === "css") setCssFiles(removeAt);
+    if (kind === "js") setJsFiles(removeAt);
+  }
 
   function handleEditorKeyDown(
     value: string,
@@ -898,6 +1247,14 @@ export default function WebRunnerPage() {
       return;
     }
     handleTab(value, onChange, event);
+  }
+
+  function handleReadOnlyEditorKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      runPreview();
+    }
   }
 
   function handleStdinKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -928,40 +1285,91 @@ export default function WebRunnerPage() {
     </button>
   );
 
+  const combinedUploadZone = (
+    <UploadZone
+      accept=".html,.css,.js"
+      prompt="Drop .html, .css, or .js files here or click to browse"
+      groups={[
+        { label: "HTML", kind: "html", files: htmlFiles },
+        { label: "CSS", kind: "css", files: cssFiles },
+        { label: "JS", kind: "js", files: jsFiles },
+      ]}
+      error={uploadErrors.combined}
+      onFiles={(files) => void handleUploadFiles("combined", files)}
+      onRemove={removeUploadedFile}
+    />
+  );
+
+  const htmlUploadZone = (
+    <UploadZone
+      accept=".html"
+      prompt="Drop .html files here or click to browse"
+      groups={[{ label: "HTML", kind: "html", files: htmlFiles }]}
+      error={uploadErrors.html}
+      onFiles={(files) => void handleUploadFiles("html", files)}
+      onRemove={removeUploadedFile}
+    />
+  );
+
+  const cssUploadZone = (
+    <UploadZone
+      accept=".css"
+      prompt="Drop .css files here or click to browse"
+      groups={[{ label: "CSS", kind: "css", files: cssFiles }]}
+      error={uploadErrors.css}
+      onFiles={(files) => void handleUploadFiles("css", files)}
+      onRemove={removeUploadedFile}
+    />
+  );
+
+  const jsUploadZone = (
+    <UploadZone
+      accept=".js"
+      prompt="Drop .js files here or click to browse"
+      groups={[{ label: "JS", kind: "js", files: jsFiles }]}
+      error={uploadErrors.js}
+      onFiles={(files) => void handleUploadFiles("js", files)}
+      onRemove={removeUploadedFile}
+    />
+  );
+
   const htmlEditor = (
     <CodeEditor
       label="HTML"
-      value={html}
+      value={effectiveHtml}
       onChange={setHtml}
       tone="html"
-      onKeyDown={(event) => handleEditorKeyDown(html, setHtml, event)}
+      onKeyDown={htmlFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(html, setHtml, event)}
       lintErrors={htmlLint}
+      readOnly={htmlFiles.length > 0}
       onMaximize={() => setModalTarget("html")}
-      onNewTab={() => openInNewTab(html)}
+      onNewTab={() => openInNewTab(effectiveHtml)}
     />
   );
   const cssEditor = (
     <CodeEditor
       label="CSS"
-      value={css}
+      value={effectiveCss}
       onChange={setCss}
       tone="css"
-      onKeyDown={(event) => handleEditorKeyDown(css, setCss, event)}
+      onKeyDown={cssFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(css, setCss, event)}
       lintErrors={cssLint}
+      readOnly={cssFiles.length > 0}
       onMaximize={() => setModalTarget("css")}
-      onNewTab={() => openInNewTab(`<style>${css}</style>${cssDemoHtml}`)}
+      onNewTab={() => openInNewTab(cssDocument(effectiveCss))}
     />
   );
   const jsEditor = (
     <CodeEditor
       label="JS"
-      value={js}
+      value={effectiveJs}
       onChange={setJs}
       tone="js"
-      onKeyDown={(event) => handleEditorKeyDown(js, setJs, event)}
+      onKeyDown={jsFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(js, setJs, event)}
       lintErrors={jsLint}
+      readOnly={jsFiles.length > 0}
       onMaximize={() => setModalTarget("js")}
-      onNewTab={() => openInNewTab(jsDocument(js))}
+      onNewTab={() => openInNewTab(jsDocument(effectiveJs))}
     />
   );
 
@@ -969,6 +1377,7 @@ export default function WebRunnerPage() {
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-950">
       {mode === "combined" && (
         <>
+          {combinedUploadZone}
           {htmlEditor}
           <LintPanel errors={htmlLint} />
           {cssEditor}
@@ -981,13 +1390,15 @@ export default function WebRunnerPage() {
         <>
           <CodeEditor
             label="HTML"
-            value={html}
+            value={htmlFiles.length > 0 ? htmlModeDocument : html}
             onChange={setHtml}
             tone="html"
-            onKeyDown={(event) => handleEditorKeyDown(html, setHtml, event)}
+            onKeyDown={htmlFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(html, setHtml, event)}
             lintErrors={htmlLint}
+            readOnly={htmlFiles.length > 0}
+            uploadZone={htmlUploadZone}
             onMaximize={() => setModalTarget("html")}
-            onNewTab={() => openInNewTab(html)}
+            onNewTab={() => openInNewTab(htmlFiles.length > 0 ? htmlModeDocument : html)}
           />
           <LintPanel errors={htmlLint} />
         </>
@@ -996,13 +1407,15 @@ export default function WebRunnerPage() {
         <>
           <CodeEditor
             label="CSS"
-            value={css}
+            value={effectiveCss}
             onChange={setCss}
             tone="css"
-            onKeyDown={(event) => handleEditorKeyDown(css, setCss, event)}
+            onKeyDown={cssFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(css, setCss, event)}
             lintErrors={cssLint}
+            readOnly={cssFiles.length > 0}
+            uploadZone={cssUploadZone}
             onMaximize={() => setModalTarget("css")}
-            onNewTab={() => openInNewTab(`<style>${css}</style>${cssDemoHtml}`)}
+            onNewTab={() => openInNewTab(cssDocument(effectiveCss))}
           />
           <LintPanel errors={cssLint} />
         </>
@@ -1011,13 +1424,15 @@ export default function WebRunnerPage() {
         <>
           <CodeEditor
             label="JavaScript"
-            value={js}
+            value={effectiveJs}
             onChange={setJs}
             tone="js"
-            onKeyDown={(event) => handleEditorKeyDown(js, setJs, event)}
+            onKeyDown={jsFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(js, setJs, event)}
             lintErrors={jsLint}
+            readOnly={jsFiles.length > 0}
+            uploadZone={jsUploadZone}
             onMaximize={() => setModalTarget("js")}
-            onNewTab={() => openInNewTab(jsDocument(js))}
+            onNewTab={() => openInNewTab(jsDocument(effectiveJs))}
           />
           <LintPanel errors={jsLint} />
         </>
@@ -1203,13 +1618,34 @@ export default function WebRunnerPage() {
       </div>
 
       {modalTarget === "html" && (
-        <ExpandModal title="HTML" tone="html" value={html} onChange={setHtml} onClose={() => setModalTarget(null)} />
+        <ExpandModal
+          title="HTML"
+          tone="html"
+          value={mode === "html" && htmlFiles.length > 0 ? htmlModeDocument : effectiveHtml}
+          onChange={setHtml}
+          onClose={() => setModalTarget(null)}
+          readOnly={htmlFiles.length > 0}
+        />
       )}
       {modalTarget === "css" && (
-        <ExpandModal title="CSS" tone="css" value={css} onChange={setCss} onClose={() => setModalTarget(null)} />
+        <ExpandModal
+          title="CSS"
+          tone="css"
+          value={effectiveCss}
+          onChange={setCss}
+          onClose={() => setModalTarget(null)}
+          readOnly={cssFiles.length > 0}
+        />
       )}
       {modalTarget === "js" && (
-        <ExpandModal title="JavaScript" tone="js" value={js} onChange={setJs} onClose={() => setModalTarget(null)} />
+        <ExpandModal
+          title="JavaScript"
+          tone="js"
+          value={effectiveJs}
+          onChange={setJs}
+          onClose={() => setModalTarget(null)}
+          readOnly={jsFiles.length > 0}
+        />
       )}
       {modalTarget === "ts" && (
         <ExpandModal title="TypeScript" tone="ts" value={ts} onChange={setTs} onClose={() => setModalTarget(null)} />
@@ -1225,12 +1661,14 @@ function ExpandModal({
   value,
   onChange,
   onClose,
+  readOnly = false,
 }: {
   title: string;
   tone: "html" | "css" | "js" | "ts";
   value: string;
   onChange: (value: string) => void;
   onClose: () => void;
+  readOnly?: boolean;
 }) {
   const labelClass = {
     html: "text-orange-400",
@@ -1244,6 +1682,7 @@ function ExpandModal({
       onClose();
       return;
     }
+    if (readOnly && event.key === "Tab") return;
     if (event.key !== "Tab") return;
     event.preventDefault();
     const target = event.currentTarget;
@@ -1267,11 +1706,14 @@ function ExpandModal({
       </div>
       <textarea
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => {
+          if (!readOnly) onChange(event.target.value);
+        }}
         onKeyDown={handleKeyDown}
+        readOnly={readOnly}
         spellCheck={false}
         autoFocus
-        className="flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm text-zinc-100 outline-none"
+        className={`flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm text-zinc-100 outline-none ${readOnly ? "text-zinc-300" : ""}`}
       />
     </div>
   );
@@ -1305,5 +1747,13 @@ function PreviewModal({ doc, onClose }: { doc: string; onClose: () => void }) {
         className="flex-1 border-0"
       />
     </div>
+  );
+}
+
+export default function WebRunnerPage() {
+  return (
+    <Suspense fallback={null}>
+      <WebRunnerPageContent />
+    </Suspense>
   );
 }

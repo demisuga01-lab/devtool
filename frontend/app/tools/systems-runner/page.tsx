@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
@@ -106,7 +107,9 @@ function parseError(data: unknown, fallback: string) {
   return fallback;
 }
 
-export default function SystemsRunnerPage() {
+function SystemsRunnerPageContent() {
+  const searchParams = useSearchParams();
+  const langParam = searchParams.get("lang");
   const [activeIndex, setActiveIndex] = useState(0);
   const active = languages[activeIndex];
   const [code, setCode] = useState(active.defaultCode);
@@ -118,6 +121,12 @@ export default function SystemsRunnerPage() {
   const [tab, setTab] = useState<"stdout" | "stderr">("stdout");
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const lineRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!langParam) return;
+    const index = languages.findIndex((language) => language.language === langParam);
+    if (index !== -1) setActiveIndex(index);
+  }, [langParam]);
 
   useEffect(() => {
     setCode(active.defaultCode);
@@ -274,4 +283,12 @@ function Banner({ tone, children }: { tone: "red" | "orange"; children: ReactNod
 
 function Stat({ label, value }: { label: string; value: string }) {
   return <span className="rounded-lg bg-zinc-100 px-2 py-1 dark:bg-zinc-800">{label}: {value}</span>;
+}
+
+export default function SystemsRunnerPage() {
+  return (
+    <Suspense fallback={null}>
+      <SystemsRunnerPageContent />
+    </Suspense>
+  );
 }

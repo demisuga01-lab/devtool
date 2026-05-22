@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { KeyboardEvent, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { KeyboardEvent, Suspense, useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
@@ -245,6 +246,14 @@ function OutputPanel({
   );
 }
 
+export default function DataRunnerPage() {
+  return (
+    <Suspense fallback={null}>
+      <DataRunnerPageContent />
+    </Suspense>
+  );
+}
+
 function DatabaseResultsPanel({
   hasRun,
   result,
@@ -327,7 +336,9 @@ function DatabaseResultsPanel({
   );
 }
 
-export default function DataRunnerPage() {
+function DataRunnerPageContent() {
+  const searchParams = useSearchParams();
+  const langParam = searchParams.get("lang");
   const [mode, setMode] = useState<Mode>("sqlite");
   const [code, setCode] = useState(sqliteCode);
   const [result, setResult] = useState<RunResult | null>(null);
@@ -335,6 +346,12 @@ export default function DataRunnerPage() {
   const [running, setRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
   const currentMode = modeMeta[mode];
+
+  useEffect(() => {
+    if (langParam === "sqlite" || langParam === "mysql" || langParam === "postgresql" || langParam === "mongodb") {
+      setMode(langParam);
+    }
+  }, [langParam]);
 
   useEffect(() => {
     setCode(defaultCodeByMode[mode]);
