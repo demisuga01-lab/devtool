@@ -114,7 +114,7 @@ export default function AboutPage() {
           Star the repo, report issues, or contribute new tools.
         </p>
         <Link
-          href="https://github.com/demisuga01-lab/devtool"
+          href="https://github.com"
           target="_blank"
           className="mt-6 inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
         >

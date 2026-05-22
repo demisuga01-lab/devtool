@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
+const GITHUB_URL = "https://github.com";
 
 const productLinks = [
   { label: "Dev Tools", href: "/tools" },

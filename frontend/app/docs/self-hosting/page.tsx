@@ -77,7 +77,7 @@ export default function SelfHostingDocsPage() {
           <li>Copy and edit the backend environment file.</li>
           <li>Install and build the frontend.</li>
         </ol>
-        <CodeBlock>{`git clone https://github.com/demisuga01-lab/devtool.git
+        <CodeBlock>{`git clone https://github.com/your-org/devtool.git
 cd devtool/backend
 python3 -m venv venv
 source venv/bin/activate

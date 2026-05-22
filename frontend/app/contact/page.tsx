@@ -11,7 +11,7 @@ const cards = [
     iconClass: "text-red-500 bg-red-50 dark:bg-red-950/30",
     text: "Found something broken? Open a GitHub issue with steps to reproduce.",
     links: [
-      { label: "Open GitHub Issue →", href: "https://github.com/demisuga01-lab/devtool/issues" },
+      { label: "Open GitHub Issue →", href: "https://github.com" },
       { label: "Email support →", href: "mailto:support@wellfriend.online" },
     ],
   },
@@ -21,7 +21,7 @@ const cards = [
     iconClass: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30",
     text: "Have an idea for a new tool or improvement? We would love to hear it.",
     links: [
-      { label: "GitHub Discussions →", href: "https://github.com/demisuga01-lab/devtool/discussions" },
+      { label: "GitHub Discussions →", href: "https://github.com" },
       { label: "Join Discord →", href: "https://discord.gg/ZQFmYaQbVu" },
     ],
   },

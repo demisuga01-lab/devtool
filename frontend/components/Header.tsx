@@ -18,7 +18,7 @@ import { allTools } from "@/lib/tools";
 import type { Tool } from "@/lib/tools";
 import { authChangedEvent, clearAuth, isAuthenticated } from "@/lib/auth";
 
-const GITHUB_URL = "https://github.com/demisuga01-lab/devtool";
+const GITHUB_URL = "https://github.com";
 
 const mainLinks = [
   { name: "Pricing", href: "/pricing" },
