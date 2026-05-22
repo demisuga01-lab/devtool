@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Binary,
   BookOpen,
+  Box,
   Braces,
   Calendar,
   ChevronDown,
@@ -20,6 +21,7 @@ import {
   Eye,
   FileText,
   Fingerprint,
+  GitBranch,
   GitCompare,
   Github,
   Globe,
@@ -32,6 +34,8 @@ import {
   Palette,
   QrCode,
   Search,
+  Server,
+  Settings,
   Shield,
   ShieldCheck,
   Terminal,
@@ -102,6 +106,7 @@ const categoryIcons: Record<string, LucideIcon> = {
   "XML & Data": Database,
   Escape: Braces,
   "Reference & Utils": BookOpen,
+  DevOps: Server,
   "More Tools": Wrench,
 };
 
@@ -125,18 +130,28 @@ const toolIcons: Record<string, LucideIcon> = {
   "hash-generator": Hash,
   "uuid-generator": Fingerprint,
   "password-generator": Lock,
+  "ulid-generator": Fingerprint,
+  "nanoid-generator": Hash,
+  "random-token-generator": Key,
+  "passphrase-generator": BookOpen,
   "hmac-generator": Key,
   "bcrypt-generator": Lock,
   "jwt-builder": Key,
+  "blake2-generator": Hash,
+  "hash-verifier": ShieldCheck,
+  "jwt-verifier": Key,
   timestamp: Clock,
   "cron-parser": Timer,
   "quartz-cron": Timer,
   "date-diff": Calendar,
+  "timezone-converter": Globe,
+  "duration-calculator": Timer,
   "hex-encoder": Binary,
   "binary-converter": Binary,
   "csv-to-json": Database,
   "json-to-csv": ArrowLeftRight,
   "file-encoding": FileText,
+  "unicode-escape": ArrowLeftRight,
   "xml-formatter": Code2,
   "xml-validator": ShieldCheck,
   "xml-to-json": ArrowLeftRight,
@@ -146,6 +161,9 @@ const toolIcons: Record<string, LucideIcon> = {
   "xpath-tester": Search,
   "xsd-generator": Database,
   "xslt-transformer": ArrowLeftRight,
+  "toml-formatter": FileText,
+  "toml-validator": ShieldCheck,
+  "toml-to-json": ArrowLeftRight,
   "html-escape": Braces,
   "xml-escape": Braces,
   "js-escape": Code,
@@ -168,6 +186,8 @@ const toolIcons: Record<string, LucideIcon> = {
   "string-utilities": Layers,
   "qr-generator": QrCode,
   "url-parser": LinkIcon,
+  "url-query-builder": LinkIcon,
+  "recent-pastes": Clock,
   "html-entities": Braces,
   "mime-types": FileText,
   "sql-formatter": Database,
@@ -181,11 +201,25 @@ const toolIcons: Record<string, LucideIcon> = {
   "color-picker": Palette,
   "css-gradient": Palette,
   "css-box-shadow": Layers,
+  "hex-rgb-hsl-converter": Palette,
+  "contrast-checker": Eye,
+  "css-clamp-calculator": Code2,
+  "duplicate-line-remover": Layers,
+  "case-converter": Type,
+  "regex-replace": Search,
+  "regex-escape": Braces,
+  "jsonpath-tester": Search,
+  "json-tree-viewer": GitBranch,
+  "yaml-diff": GitCompare,
+  "code-diff": GitCompare,
   "unit-converter": ArrowLeftRight,
   "age-calculator": Calendar,
   "gitignore-generator": FileText,
   "cron-builder": Timer,
   "totp-generator": Lock,
+  "docker-compose-validator": Box,
+  "nginx-config-checker": Server,
+  "systemd-unit-generator": Settings,
 };
 
 const toolDescriptions: Record<string, string> = {
@@ -208,18 +242,28 @@ const toolDescriptions: Record<string, string> = {
   "hash-generator": "Generate MD5, SHA256 and more",
   "uuid-generator": "Create version 1, 4 and 5 UUIDs",
   "password-generator": "Secure passwords with entropy scoring",
+  "ulid-generator": "Generate sortable unique identifiers",
+  "nanoid-generator": "Generate compact unique ID strings",
+  "random-token-generator": "Generate secure random tokens",
+  "passphrase-generator": "Generate memorable word passphrases",
   "hmac-generator": "Sign messages with keyed hashes",
   "bcrypt-generator": "Hash and verify bcrypt passwords",
   "jwt-builder": "Build and preview signed JWTs",
+  "blake2-generator": "Generate BLAKE2b and BLAKE2s hashes",
+  "hash-verifier": "Verify file and text hash values",
+  "jwt-verifier": "Verify JWT signature and claims",
   timestamp: "Convert timestamps across common formats",
   "cron-parser": "Parse expressions with next run times",
   "quartz-cron": "Explain Quartz cron schedule syntax",
   "date-diff": "Compare dates and add durations",
+  "timezone-converter": "Convert time across all timezones",
+  "duration-calculator": "Add and subtract date durations",
   "hex-encoder": "Convert text to hexadecimal bytes",
   "binary-converter": "Convert text and binary bytes",
   "csv-to-json": "Convert CSV rows into JSON",
   "json-to-csv": "Flatten JSON arrays into CSV",
   "file-encoding": "Detect encodings and line endings",
+  "unicode-escape": "Escape and unescape Unicode characters",
   "xml-formatter": "Format and validate XML documents",
   "xml-validator": "Check XML well-formedness quickly",
   "xml-to-json": "Convert XML documents to JSON",
@@ -229,6 +273,9 @@ const toolDescriptions: Record<string, string> = {
   "xpath-tester": "Evaluate XPath queries against XML",
   "xsd-generator": "Generate schemas from XML samples",
   "xslt-transformer": "Transform XML with XSLT stylesheets",
+  "toml-formatter": "Format and prettify TOML files",
+  "toml-validator": "Validate TOML syntax and structure",
+  "toml-to-json": "Convert between TOML and JSON",
   "html-escape": "Escape and unescape HTML entities",
   "xml-escape": "Escape XML special characters safely",
   "js-escape": "Escape JavaScript string content",
@@ -251,6 +298,8 @@ const toolDescriptions: Record<string, string> = {
   "string-utilities": "Transform strings across useful formats",
   "qr-generator": "Create downloadable QR codes",
   "url-parser": "Inspect URL parts and parameters",
+  "url-query-builder": "Build and parse URL query strings",
+  "recent-pastes": "View your recently created pastes",
   "html-entities": "Browse named HTML character entities",
   "mime-types": "Find MIME types by extension",
   "sql-formatter": "Format SQL queries for readability",
@@ -264,11 +313,25 @@ const toolDescriptions: Record<string, string> = {
   "color-picker": "Pick and convert color formats",
   "css-gradient": "Build CSS gradients visually",
   "css-box-shadow": "Design layered CSS box shadows",
+  "hex-rgb-hsl-converter": "Convert between HEX, RGB and HSL",
+  "contrast-checker": "Check WCAG color contrast ratios",
+  "css-clamp-calculator": "Generate CSS clamp() functions",
+  "duplicate-line-remover": "Remove duplicate lines from text",
+  "case-converter": "Convert text between all cases",
+  "regex-replace": "Find and replace with regex",
+  "regex-escape": "Escape special regex characters",
+  "jsonpath-tester": "Test JSONPath expressions on JSON",
+  "json-tree-viewer": "Visualize JSON as interactive tree",
+  "yaml-diff": "Compare two YAML documents",
+  "code-diff": "Compare code with syntax highlighting",
   "unit-converter": "Convert common engineering units",
   "age-calculator": "Calculate exact age from dates",
   "gitignore-generator": "Generate ignore files by stack",
   "cron-builder": "Build cron expressions visually",
   "totp-generator": "Generate TOTP codes from secrets",
+  "docker-compose-validator": "Validate Docker Compose files",
+  "nginx-config-checker": "Validate and inspect Nginx configs",
+  "systemd-unit-generator": "Generate systemd service unit files",
 };
 
 function isActive(pathname: string, href: string) {
@@ -278,6 +341,12 @@ function isActive(pathname: string, href: string) {
 
 function toolsFor(slug: string): Tool[] {
   return toolGroups.find((group) => group.slug === slug)?.tools ?? [];
+}
+
+function toolsBySlug(slugs: string[]): Tool[] {
+  return slugs
+    .map((slug) => allTools.find((tool) => tool.slug === slug))
+    .filter((tool): tool is Tool => Boolean(tool));
 }
 
 function navTool(tool: Tool): NavTool {
@@ -298,11 +367,28 @@ function navGroup(name: string, tools: Tool[]): NavGroup {
 
 const textTools = toolsFor("text");
 const referenceTools = toolsFor("reference");
+const textFormatTools = toolsBySlug([
+  "json-formatter",
+  "json-validator",
+  "jwt-decoder",
+  "base64",
+  "url-encoder",
+  "html-formatter",
+  "css-formatter",
+  "text-diff",
+  "duplicate-line-remover",
+  "case-converter",
+  "regex-replace",
+  "regex-escape",
+  "jsonpath-tester",
+  "json-tree-viewer",
+]);
+const moreFormatterTools = textTools.filter((tool) => !textFormatTools.some((primary) => primary.slug === tool.slug));
 
 const navColumns: NavGroup[][] = [
   [
-    navGroup("Text & Format", textTools.slice(0, 8)),
-    navGroup("More Formatters", textTools.slice(8)),
+    navGroup("Text & Format", textFormatTools),
+    navGroup("More Formatters", moreFormatterTools),
   ],
   [
     navGroup("Crypto & Hash", toolsFor("crypto")),
@@ -316,6 +402,7 @@ const navColumns: NavGroup[][] = [
   [
     navGroup("Web & Network", toolsFor("web")),
     navGroup("Reference & Utils", referenceTools.slice(0, 8)),
+    navGroup("DevOps", toolsFor("devops")),
     navGroup("More Tools", referenceTools.slice(8)),
   ],
 ].map((column) => column.filter((group) => group.tools.length > 0));
