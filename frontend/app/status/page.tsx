@@ -298,7 +298,7 @@ export default function StatusPage() {
                   <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                     <div className="relative space-y-4 pl-5">
                       <div className="absolute left-[7px] top-1 h-[calc(100%-8px)] w-px bg-zinc-200 dark:bg-zinc-800" />
-                      {incident.updates.map((update, index) => (
+                      {incident.updates.map((update) => (
                         <div key={update.id} className="relative flex gap-3">
                           <span className={`absolute -left-5 mt-1 h-3 w-3 rounded-full border-2 border-white dark:border-zinc-900 ${
                             update.status === "resolved" ? "bg-emerald-500"

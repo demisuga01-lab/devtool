@@ -181,6 +181,7 @@ function parseTable(value: string): TableData | null {
   return { headers: rows[0], rows: rows.slice(1) };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function OutputPanel({
   result,
   error,

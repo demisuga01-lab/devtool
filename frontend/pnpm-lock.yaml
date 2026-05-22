@@ -57,6 +57,9 @@ importers:
         specifier: ^15.8.0
         version: 15.8.0
     devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.3.5
+        version: 3.3.5
       '@types/diff':
         specifier: ^6.0.0
         version: 6.0.0

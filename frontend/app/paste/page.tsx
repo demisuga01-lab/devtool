@@ -322,7 +322,7 @@ function PasteHomeContent() {
               </div>
               <ResultRow label="Paste URL" value={created.url} />
               <ResultRow label="Raw URL" value={`${created.url}/raw`} />
-              <p className="mt-4 text-xs font-medium">Save your delete token - it won't be shown again.</p>
+              <p className="mt-4 text-xs font-medium">Save your delete token - it won&apos;t be shown again.</p>
               <div className="mt-2 flex items-center gap-2 rounded-xl border border-emerald-200 bg-white p-2 dark:border-emerald-800 dark:bg-zinc-950">
                 <code className="flex-1 break-all font-mono text-xs">{created.delete_token}</code>
                 <CopyButton value={created.delete_token} />

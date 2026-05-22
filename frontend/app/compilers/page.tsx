@@ -211,7 +211,7 @@ export default function CompilersPage() {
         </div>
         {filtered.length === 0 && (
           <div className="py-16 text-center text-zinc-500">
-            No languages found for "{search}"
+            No languages found for &quot;{search}&quot;
           </div>
         )}
       </section>

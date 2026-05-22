@@ -6,8 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Activity,
   AlertCircle,
-  AlertTriangle,
-  Bell,
   CheckCircle2,
   Clipboard,
   Edit3,
@@ -24,7 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import { API_BASE } from "@/lib/api";
-import { authHeaders, clearAuth, getUser, StatusUser } from "@/lib/auth";
+import { authHeaders, clearAuth, getUser } from "@/lib/auth";
 import { useToast } from "./toast";
 
 type Section = "dashboard" | "monitors" | "incidents" | "maintenance" | "alerts" | "settings";
@@ -164,9 +162,6 @@ const primaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-emerald-500 dark:hover:bg-emerald-400";
 const secondaryButton =
   "inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800";
-const dangerButton =
-  "inline-flex items-center justify-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700";
-
 const defaultMonitorForm: MonitorForm = {
   name: "",
   url: "https://",

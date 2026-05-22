@@ -28,6 +28,7 @@
     "sql-formatter": "^15.8.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@types/diff": "^6.0.0",
     "@types/dompurify": "^3.0.5",
     "@types/js-beautify": "^1.14.3",

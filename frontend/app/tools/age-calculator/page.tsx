@@ -9,7 +9,7 @@ function dateInput(date: Date) {
 }
 function diffParts(a: Date, b: Date) {
   const sign = b >= a ? 1 : -1;
-  let start = sign === 1 ? new Date(a) : new Date(b);
+  const start = sign === 1 ? new Date(a) : new Date(b);
   const end = sign === 1 ? new Date(b) : new Date(a);
   let years = end.getFullYear() - start.getFullYear();
   start.setFullYear(start.getFullYear() + years);

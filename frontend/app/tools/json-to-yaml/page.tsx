@@ -63,7 +63,7 @@ export default function JsonToYamlPage() {
               <Badge variant="info">YAML indentation: {indent}</Badge>
               <Badge variant="success">JSON parsed successfully</Badge>
             </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">YAML can infer types from plain scalars. Quote values like "yes", "no", and leading-zero strings when consumers must preserve exact text.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">YAML can infer types from plain scalars. Quote values like &quot;yes&quot;, &quot;no&quot;, and leading-zero strings when consumers must preserve exact text.</p>
           </Panel>
         )}
         {output && <div className="space-y-2"><div className="flex items-center justify-between"><Label>YAML</Label><CopyButton value={output} /></div><CodeBlock value={output} /></div>}
