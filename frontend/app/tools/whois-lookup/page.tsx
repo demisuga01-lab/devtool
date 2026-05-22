@@ -6,6 +6,7 @@ import type { ToolError } from "@/lib/toolErrors";
 import { RefreshCw } from "lucide-react";
 import { Button, CopyButton, ToolInput, Label, ToolHeader, ToolShell, Panel } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isIpAddress, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
 type Result = {
@@ -103,7 +104,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default function WhoisLookupPage() {
-  const [domain, setDomain] = useState("");
+  const [domain, setDomain] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -155,6 +156,7 @@ export default function WhoisLookupPage() {
         });
       }
       setResult(data);
+      saveRequestHistory({ tool: "WHOIS Lookup", input: normalized.domain, summary: `${raw.length.toLocaleString()} WHOIS characters returned` });
     } catch (e) {
       setError(errorFromUnknown(e, "whois_no_match"));
     } finally {

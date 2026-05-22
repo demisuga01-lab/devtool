@@ -7,6 +7,7 @@ import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
 import { ToolShell, Panel } from "@/components/tool-ui";
 import { Button, ToolInput, Label, CopyButton } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidUrl, normalizeUrl } from "@/lib/toolErrors";
 
 type Result = {
@@ -78,7 +79,7 @@ function truncate(value: string, max = 60) {
 }
 
 export default function HttpHeadersPage() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -115,6 +116,7 @@ export default function HttpHeadersPage() {
     try {
       const data = await apiGet<Result>("/tools/http-headers", { url: normalized.url });
       setResult(data);
+      saveRequestHistory({ tool: "HTTP Headers", input: normalized.url, summary: `${data.status_code} in ${data.elapsed_ms}ms with ${Object.keys(data.headers).length} headers` });
     } catch (e) {
       setError(errorFromUnknown(e, "network_error"));
     } finally {

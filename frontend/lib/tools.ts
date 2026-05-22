@@ -46,6 +46,10 @@ export const toolGroups: ToolGroup[] = [
       { name: "CSS Clamp Calculator", slug: "css-clamp-calculator", description: "Generate responsive CSS clamp functions from viewport limits.", href: "/tools/css-clamp-calculator", implemented: true },
       { name: "YAML Diff", slug: "yaml-diff", description: "Compare YAML documents with line and key-level diffs.", href: "/tools/yaml-diff", implemented: true },
       { name: "Code Diff", slug: "code-diff", description: "Compare code snippets with language-aware diff metrics.", href: "/tools/code-diff", implemented: true },
+      { name: "stdin/Test Cases Runner", slug: "testcase-runner", description: "Run code against multiple test cases.", href: "/tools/testcase-runner", implemented: true },
+      { name: "Code Sharing", slug: "code-share", description: "Share runnable code snippets with a link.", href: "/tools/code-share", implemented: true },
+      { name: "Zero-Knowledge Paste", slug: "zk-paste", description: "Share text with end-to-end encryption.", href: "/tools/zk-paste", implemented: true },
+      { name: "Local Notes", slug: "collab-notes", description: "Write and save markdown notes locally.", href: "/tools/collab-notes", implemented: true },
     ],
   },
   {
@@ -111,6 +115,10 @@ export const toolGroups: ToolGroup[] = [
       { name: "TOML Formatter", slug: "toml-formatter", description: "Format and prettify TOML files.", href: "/tools/toml-formatter", implemented: true },
       { name: "TOML Validator", slug: "toml-validator", description: "Validate TOML syntax and inspect structure.", href: "/tools/toml-validator", implemented: true },
       { name: "TOML to JSON", slug: "toml-to-json", description: "Convert between TOML and JSON.", href: "/tools/toml-to-json", implemented: true },
+      { name: "Swagger/OpenAPI Viewer", slug: "openapi-viewer", description: "Render and browse OpenAPI specifications.", href: "/tools/openapi-viewer", implemented: true },
+      { name: "Redoc Viewer", slug: "redoc-viewer", description: "View API docs in Redoc style layout.", href: "/tools/redoc-viewer", implemented: true },
+      { name: "OpenAPI Validator", slug: "openapi-validator", description: "Validate OpenAPI spec structure and rules.", href: "/tools/openapi-validator", implemented: true },
+      { name: "OpenAPI Schema Explorer", slug: "openapi-schema-explorer", description: "Explore and visualize API schema definitions.", href: "/tools/openapi-schema-explorer", implemented: true },
     ],
   },
   {
@@ -144,6 +152,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "SSL Chain Viewer", slug: "ssl-chain", description: "View the full SSL certificate chain for any domain.", href: "/tools/ssl-chain", implemented: true },
       { name: "Open Graph Preview", slug: "og-preview", description: "Preview how a URL looks when shared on social media.", href: "/tools/og-preview", implemented: true },
       { name: "cURL Builder", slug: "curl-builder", description: "Build cURL commands visually or convert cURL to fetch.", href: "/tools/curl-builder", implemented: true },
+      { name: "Request History", slug: "request-history", description: "Browse your recent HTTP tool requests.", href: "/tools/request-history", implemented: true },
     ],
   },
   {
@@ -174,6 +183,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Git Ignore Generator", slug: "gitignore-generator", description: "Generate .gitignore files for any language or framework.", href: "/tools/gitignore-generator", implemented: true },
       { name: "Cron Builder", slug: "cron-builder", description: "Build cron expressions visually with a human-readable description.", href: "/tools/cron-builder", implemented: true },
       { name: "TOTP Generator", slug: "totp-generator", description: "Generate TOTP/2FA codes from a secret key.", href: "/tools/totp-generator", implemented: true },
+      { name: "Status Badges/Widgets", slug: "status-badges", description: "Generate embeddable status badges and widgets.", href: "/tools/status-badges", implemented: true },
     ],
   },
   {
@@ -184,6 +194,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Docker Compose Validator", slug: "docker-compose-validator", description: "Validate Docker Compose files and inspect services.", href: "/tools/docker-compose-validator", implemented: true },
       { name: "Nginx Config Checker", slug: "nginx-config-checker", description: "Validate and inspect Nginx configuration blocks.", href: "/tools/nginx-config-checker", implemented: true },
       { name: "Systemd Unit Generator", slug: "systemd-unit-generator", description: "Generate systemd service unit files.", href: "/tools/systemd-unit-generator", implemented: true },
+      { name: "Environment Variables Manager", slug: "env-manager", description: "Manage and format environment variables.", href: "/tools/env-manager", implemented: true },
     ],
   },
   {

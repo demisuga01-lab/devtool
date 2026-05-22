@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
 import { Badge, Button, CodeBlock, CopyButton, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain, type ToolError } from "@/lib/toolErrors";
 
 type Result = {
@@ -88,7 +89,7 @@ function Section({
 }
 
 export default function SpfCheckerPage() {
-  const [domain, setDomain] = useState("");
+  const [domain, setDomain] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -119,7 +120,9 @@ export default function SpfCheckerPage() {
     setError(null);
     setResult(null);
     try {
-      setResult(await apiGet<Result>("/tools/spf-checker", { domain: normalized.domain }));
+      const data = await apiGet<Result>("/tools/spf-checker", { domain: normalized.domain });
+      setResult(data);
+      saveRequestHistory({ tool: "SPF Checker", input: normalized.domain, summary: `${data.spf.length} SPF, ${data.dmarc.length} DMARC, ${data.dkim.length} DKIM records` });
     } catch (err) {
       setError(errorFromUnknown(err, "dns_error"));
     } finally {

@@ -7,6 +7,7 @@ import { ArrowDown, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
 import { ToolShell, Panel } from "@/components/tool-ui";
 import { Button, ToolInput, Label, CopyButton } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, WarningBanner, errorFromUnknown, isValidUrl, normalizeUrl } from "@/lib/toolErrors";
 
 type Hop = {
@@ -85,7 +86,7 @@ function resultBadge(result: Result) {
 }
 
 export default function RedirectCheckerPage() {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -128,6 +129,7 @@ export default function RedirectCheckerPage() {
         return;
       }
       setResult(data);
+      saveRequestHistory({ tool: "Redirect Checker", input: normalized.url, summary: `${data.total_hops} hop${data.total_hops === 1 ? "" : "s"} to ${data.final_url}` });
     } catch (e) {
       setError(errorFromUnknown(e, "network_error"));
     } finally {

@@ -7,6 +7,7 @@ import { RefreshCw } from "lucide-react";
 import { ToolShell, Panel } from "@/components/tool-ui";
 import { Button, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
 type DnsType = "A" | "AAAA" | "MX" | "NS" | "TXT" | "CNAME" | "SOA";
@@ -46,7 +47,7 @@ function parseSoa(record: string) {
 }
 
 export default function DnsLookupPage() {
-  const [domain, setDomain] = useState("");
+  const [domain, setDomain] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [type, setType] = useState<DnsType | "All">("All");
   const [results, setResults] = useState<Result[] | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
@@ -97,6 +98,8 @@ export default function DnsLookupPage() {
         })
       );
       setResults(data);
+      const recordCount = data.reduce((sum, item) => sum + item.records.length, 0);
+      saveRequestHistory({ tool: "DNS Lookup", input: normalized.domain, summary: `${recordCount} records across ${data.length} lookup type${data.length === 1 ? "" : "s"}` });
       const everyEmpty = data.every((item) => item.records.length === 0 && !item.error);
       if (everyEmpty && type === "All") {
         setError({

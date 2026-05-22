@@ -7,6 +7,7 @@ import { AlertTriangle, CheckCircle2, RefreshCw, Search, XCircle } from "lucide-
 import { ToolShell, Panel } from "@/components/tool-ui";
 import { Button, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
 type Result = {
@@ -73,7 +74,7 @@ function AssessmentRow({ passed, neutral = false, label }: { passed: boolean; ne
 }
 
 export default function SslCheckerPage() {
-  const [domain, setDomain] = useState("");
+  const [domain, setDomain] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -117,6 +118,7 @@ export default function SslCheckerPage() {
     try {
       const data = await apiGet<Result>("/tools/ssl-checker", { domain: normalized.domain });
       setResult(data);
+      saveRequestHistory({ tool: "SSL Checker", input: normalized.domain, summary: `${data.valid ? "Valid" : "Invalid"} certificate, ${data.days_remaining} days remaining` });
     } catch (e) {
       const message = e instanceof Error ? e.message.toLowerCase() : "";
       setError(message.includes("not found") || message.includes("resolve") ? ERROR_MESSAGES.dns_error : errorFromUnknown(e, "ssl_error"));

@@ -5,6 +5,7 @@ import { MapPin, RefreshCw } from "lucide-react";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
 import { Button, CopyButton, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
+import { saveRequestHistory } from "@/lib/request-history";
 import { InlineError, LoadingSkeleton, errorFromUnknown, type ToolError } from "@/lib/toolErrors";
 
 type Result = {
@@ -36,7 +37,7 @@ function Field({ label, value }: { label: string; value: string | number | undef
 }
 
 export default function IpLookupPage() {
-  const [ip, setIp] = useState("");
+  const [ip, setIp] = useState(() => typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("input") ?? "" : "");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,7 +48,9 @@ export default function IpLookupPage() {
     setError(null);
     setResult(null);
     try {
-      setResult(await apiGet<Result>("/tools/ip-lookup", { ip: value.trim() }));
+      const data = await apiGet<Result>("/tools/ip-lookup", { ip: value.trim() });
+      setResult(data);
+      saveRequestHistory({ tool: "IP Lookup", input: value.trim(), summary: `${data.city || "-"}, ${data.country_name || "-"} ${data.asn || ""}`.trim() });
     } catch (err) {
       setError(errorFromUnknown(err, "network_error"));
     } finally {
