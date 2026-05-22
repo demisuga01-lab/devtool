@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ToolShell } from "@/components/tool-ui";
-import { Button, CopyButton, Label, Panel, ToolInput } from "@/components/tool-ui";
+import { Button, CopyButton, Label, Panel } from "@/components/tool-ui";
 
 type Field = { mode: "every" | "specific" | "range" | "step"; values: number[]; from: number; to: number; step: number; min: number; max: number };
 const configs = [
@@ -11,7 +11,7 @@ const configs = [
 const presets: Record<string, string> = { "@hourly": "0 * * * *", "@daily": "0 0 * * *", "@weekly": "0 0 * * 0", "@monthly": "0 0 1 * *", "@yearly": "0 0 1 1 *" };
 
 function makeField(min: number, max: number): Field {
-  return { mode: "every", values: [], from: min, to: max, step: 5, min, max };
+  return { mode: "every", values: [], from: min, to: max, step: 1, min, max };
 }
 function fieldText(field: Field) {
   if (field.mode === "specific") return field.values.sort((a, b) => a - b).join(",") || "*";
@@ -40,8 +40,9 @@ export default function CronBuilderPage() {
   const [fields, setFields] = useState<Record<string, Field>>(Object.fromEntries(configs.map(([name, min, max]) => [name, makeField(min, max)])) as Record<string, Field>);
   const expr = useMemo(() => configs.map(([name]) => fieldText(fields[name])).join(" "), [fields]);
   const description = expr === "*/5 * * * *" ? "Every 5 minutes" : expr === "0 9 * * 1-5" ? "At 9:00 AM every weekday" : `Cron expression: ${expr}`;
-  const setField = (name: string, update: Partial<Field>) =>
-    setFields((prev) => ({ ...prev, [name]: { ...prev[name], ...update } }));
+  function setField(name: string, update: Partial<Field>) {
+    setFields(prev => ({ ...prev, [name]: { ...prev[name], ...update } }));
+  }
   const applyPreset = (value: string) => {
     const parts = value.split(" ");
     setFields(Object.fromEntries(configs.map(([name, min, max], index) => {
@@ -62,10 +63,47 @@ export default function CronBuilderPage() {
           return (
             <Panel noPadding key={name} className="p-4">
               <h2 className="mb-3 text-sm font-semibold capitalize">{name}</h2>
-              <div className="flex flex-wrap gap-2">{(["every", "specific", "range", "step"] as const).map((mode) => <Button key={mode} variant={field.mode === mode ? "primary" : "secondary"} onClick={() => setField(name, { ...fields[name], mode })}>{mode}</Button>)}</div>
+              <div className="flex flex-wrap gap-2">{(["every", "specific", "range", "step"] as const).map((mode) => <Button key={mode} variant={field.mode === mode ? "primary" : "secondary"} onClick={() => setField(name, { mode })}>{mode}</Button>)}</div>
               {field.mode === "specific" && <div className="mt-3 grid grid-cols-10 gap-2">{Array.from({ length: field.max - field.min + 1 }, (_, i) => i + field.min).map((n) => <label key={n} className="text-xs"><input type="checkbox" checked={field.values.includes(n)} onChange={(event) => setField(name, { values: event.target.checked ? [...field.values, n] : field.values.filter((v) => v !== n) })} /> {n}</label>)}</div>}
-              {field.mode === "range" && <div className="mt-3 grid gap-3 sm:grid-cols-2"><ToolInput label="From" type="number" min={field.min} max={field.max} value={field.from} onChange={(event) => setField(name, { from: Number(event.target.value) })} /><ToolInput label="To" type="number" min={field.min} max={field.max} value={field.to} onChange={(event) => setField(name, { to: Number(event.target.value) })} /></div>}
-              {field.mode === "step" && <div className="mt-3"><ToolInput label="Every n" type="number" min={1} max={field.max} value={field.step} onChange={(event) => setField(name, { step: Number(event.target.value) })} /></div>}
+              {field.mode === "range" && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-zinc-500 mb-1 block">From</label>
+                    <input
+                      type="number"
+                      min={field.min ?? 0}
+                      max={field.max ?? 59}
+                      value={field.from ?? field.min ?? 0}
+                      onChange={e => setField(name, { from: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-zinc-500 mb-1 block">To</label>
+                    <input
+                      type="number"
+                      min={field.min ?? 0}
+                      max={field.max ?? 59}
+                      value={field.to ?? field.max ?? 59}
+                      onChange={e => setField(name, { to: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
+              {field.mode === "step" && (
+                <div className="mt-3">
+                  <label className="text-xs text-zinc-500 mb-1 block">Every N</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={field.max ?? 59}
+                    value={field.step ?? 1}
+                    onChange={e => setField(name, { step: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                  />
+                </div>
+              )}
             </Panel>
           );
         })}
