@@ -886,7 +886,7 @@ async def ip_lookup(ip: str = Query(..., max_length=45)) -> dict:
         raise HTTPException(status_code=400, detail="IP address is required.")
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
-            resp = await client.get(f"https://ipapi.co/{ip}/json/")
+            resp = await client.get(f"http://ip-api.com/json/{ip}")
             if not resp.is_success:
                 raise HTTPException(status_code=502, detail="IP lookup failed.")
             return resp.json()
