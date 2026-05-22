@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { DragEvent, KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Download,
   ExternalLink,
   Link2,
@@ -13,13 +14,14 @@ import {
   Square,
   Upload,
   X,
+  XCircle,
 } from "lucide-react";
 import { RunButton, TabBar, ToolHeader, ToolShell } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
 type Mode = "combined" | "html" | "css" | "javascript" | "typescript";
 type Layout = "horizontal" | "vertical" | "bottom";
-type ConsoleLine = { id: number; type: "log" | "warn" | "error"; text: string };
+type ConsoleLine = { id: number; type: "log" | "warn" | "error"; text: string; timestamp: string };
 
 type RunResult = {
   stdout: string;
@@ -658,6 +660,12 @@ function lintJs(js: string): LintResult {
   return { errors };
 }
 
+const FILE_KIND_TEXT: Record<FileKind, string> = {
+  html: "text-orange-400",
+  css: "text-blue-400",
+  js: "text-yellow-400",
+};
+
 function UploadZone({
   accept,
   prompt,
@@ -684,7 +692,7 @@ function UploadZone({
   }
 
   return (
-    <div className="border-b border-zinc-800 bg-zinc-900/70 p-2">
+    <div className="border-b border-zinc-800 bg-zinc-900/70 px-2 py-1.5">
       <input
         ref={inputRef}
         type="file"
@@ -696,59 +704,63 @@ function UploadZone({
           event.currentTarget.value = "";
         }}
       />
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
+      <div className="flex items-center justify-between gap-2">
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => inputRef.current?.click()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              inputRef.current?.click();
+            }
+          }}
+          onDragOver={(event) => {
             event.preventDefault();
-            inputRef.current?.click();
-          }
-        }}
-        onDragOver={(event) => {
-          event.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={handleDrop}
-        className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed px-3 py-2 text-center transition-all duration-200 ${
-          dragging
-            ? "border-emerald-400 bg-emerald-500/10 text-emerald-200"
-            : "border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-emerald-500 hover:bg-emerald-950/20 hover:text-zinc-200"
-        }`}
-      >
-        <Upload className="h-4 w-4 shrink-0" />
-        <span className="truncate text-sm font-medium">{prompt}</span>
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-dashed px-2.5 py-1 text-xs transition-all duration-200 ${
+            dragging
+              ? "border-emerald-400 bg-emerald-500/10 text-emerald-200"
+              : "border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-emerald-500 hover:bg-emerald-950/20 hover:text-zinc-200"
+          }`}
+          title={prompt}
+        >
+          <Upload className="h-3 w-3 shrink-0" />
+          <span className="truncate font-medium">Upload</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {groups.map((group) => (
+            <span
+              key={group.kind}
+              className="inline-flex items-center gap-1 rounded-full border border-emerald-900/60 bg-emerald-950/30 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300"
+            >
+              <span className={FILE_KIND_TEXT[group.kind]}>{group.label}</span>
+              <span>{group.files.length}/{MAX_FILES_PER_KIND}</span>
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        {groups.map((group) => (
-          <span
-            key={group.kind}
-            className="rounded-full border border-emerald-900/60 bg-emerald-950/30 px-2 py-0.5 text-xs font-semibold text-emerald-300"
-          >
-            {groups.length === 1 ? `${group.files.length}/${MAX_FILES_PER_KIND} files` : `${group.label} ${group.files.length}/${MAX_FILES_PER_KIND}`}
-          </span>
-        ))}
-        {error && <span className="text-xs font-medium text-red-400">{error}</span>}
-      </div>
+      {error && <div className="mt-1 text-[11px] font-medium text-red-400">{error}</div>}
 
       {files.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="mt-1 flex gap-1.5 overflow-x-auto scrollbar-hide py-1">
           {files.map((file) => (
             <span
               key={`${file.kind}-${file.index}-${file.name}`}
-              className="inline-flex max-w-full items-center gap-2 rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300 shadow-sm"
+              className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-zinc-700 bg-zinc-800 px-2 py-0.5 text-[11px] text-zinc-300"
             >
-              {groups.length > 1 && <span className="font-semibold text-zinc-500">{file.label}</span>}
-              <span className="max-w-[12rem] truncate">{file.name}</span>
-              <span className="shrink-0 text-zinc-500">{formatFileSize(file.size)}</span>
+              <span className={`mr-0.5 text-[10px] font-bold ${FILE_KIND_TEXT[file.kind]}`}>{file.label}</span>
+              <span className="max-w-[80px] truncate">{file.name}</span>
+              <span className="text-zinc-500">{formatFileSize(file.size)}</span>
               <button
                 type="button"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => onRemove(file.kind, file.index)}
-                className="rounded-full p-0.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100"
+                className="ml-0.5 text-zinc-600 transition-colors duration-200 hover:text-red-400"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -768,7 +780,6 @@ function CodeEditor({
   tone,
   lintErrors,
   readOnly = false,
-  fill = false,
   uploadZone,
   onMaximize,
   onNewTab,
@@ -780,7 +791,6 @@ function CodeEditor({
   tone: "html" | "css" | "js" | "ts";
   lintErrors?: LintError[];
   readOnly?: boolean;
-  fill?: boolean;
   uploadZone?: ReactNode;
   onMaximize?: () => void;
   onNewTab?: () => void;
@@ -792,24 +802,13 @@ function CodeEditor({
     ts: "text-sky-400",
   }[tone];
 
-  const errorCount = (lintErrors || []).filter((e) => e.severity === "error").length;
-  const warnCount = (lintErrors || []).filter((e) => e.severity === "warning").length;
-  const textareaClass = fill
-    ? "flex-1 min-h-0 w-full resize-none border-0 outline-none bg-zinc-950 text-zinc-100 font-mono text-[13px] leading-relaxed p-4"
-    : "min-h-[120px] w-full resize-none border-0 outline-none bg-zinc-950 text-zinc-100 font-mono text-[13px] leading-relaxed p-4";
-
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-zinc-950">
-      <div className="flex items-center border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs font-semibold">
+      <div className="flex items-center border-b border-zinc-700 bg-zinc-800/50 px-4 py-1.5 text-xs font-semibold">
         <span className={labelClass}>{label}</span>
-        {errorCount > 0 && (
-          <span className="ml-2 rounded bg-red-500/20 px-1.5 py-0.5 text-xs text-red-400">{errorCount}</span>
-        )}
-        {warnCount > 0 && (
-          <span className="ml-1 rounded bg-yellow-500/20 px-1.5 py-0.5 text-xs text-yellow-400">{warnCount}</span>
-        )}
         {readOnly && <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">merged upload</span>}
         <div className="ml-auto flex items-center gap-1">
+          {lintErrors && <LintIndicator errors={lintErrors} />}
           {onMaximize && (
             <button
               type="button"
@@ -844,41 +843,55 @@ function CodeEditor({
         }}
         readOnly={readOnly}
         spellCheck={false}
-        className={`${textareaClass} ${readOnly ? "cursor-default text-zinc-300" : ""}`}
+        className={`flex-1 min-h-0 w-full resize-none border-0 outline-none bg-zinc-950 text-zinc-100 font-mono text-[13px] leading-relaxed p-4 ${readOnly ? "cursor-default text-zinc-300" : ""}`}
       />
     </section>
   );
 }
 
-function LintPanel({ errors }: { errors: LintError[] }) {
-  if (errors.length === 0) {
-    return (
-      <div className="border-t border-zinc-800 bg-zinc-900 px-4 py-2 text-xs text-emerald-400">
-        ✓ No issues found
-      </div>
-    );
-  }
-
+function LintIndicator({ errors }: { errors: LintError[] }) {
+  const [open, setOpen] = useState(false);
   const errorCount = errors.filter((e) => e.severity === "error").length;
   const warnCount = errors.filter((e) => e.severity === "warning").length;
 
+  if (errorCount === 0 && warnCount === 0) {
+    return (
+      <span title="No lint issues" className="inline-flex h-6 w-6 items-center justify-center">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      </span>
+    );
+  }
+
+  const isError = errorCount > 0;
+  const count = isError ? errorCount : warnCount;
+  const Icon = isError ? XCircle : AlertTriangle;
+  const iconClass = isError ? "text-red-400" : "text-amber-400";
+
   return (
-    <div className="border-t border-zinc-800 bg-zinc-900">
-      <div className="flex items-center gap-3 px-4 py-2 text-xs text-zinc-400">
-        {errorCount > 0 && <span className="text-red-400">{errorCount} error{errorCount !== 1 ? "s" : ""}</span>}
-        {warnCount > 0 && <span className="text-yellow-400">{warnCount} warning{warnCount !== 1 ? "s" : ""}</span>}
-      </div>
-      <div className="max-h-[120px] overflow-auto">
-        {errors.map((err, index) => (
-          <div
-            key={index}
-            className={`flex items-start gap-2 px-4 py-1 text-xs ${err.severity === "error" ? "text-red-400" : "text-yellow-400"}`}
-          >
-            <span className="shrink-0">Line {err.line}:{err.col}</span>
-            <span>{err.message}</span>
+    <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className={`inline-flex items-center gap-1 rounded-lg p-1 transition-colors duration-200 hover:bg-zinc-800 ${iconClass}`}
+        title={`${count} lint ${isError ? "error" : "warning"}${count !== 1 ? "s" : ""}`}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        <span className="text-[11px] font-semibold">{count}</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 max-w-xs rounded-xl border border-zinc-700 bg-zinc-800 p-3 shadow-xl">
+          <div className="flex flex-col gap-1">
+            {errors.map((err, index) => (
+              <div
+                key={index}
+                className={`text-xs font-mono ${err.severity === "error" ? "text-red-400" : "text-amber-400"}`}
+              >
+                <span className="opacity-70">{err.line}:{err.col}</span> {err.message}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -978,14 +991,17 @@ function ConsolePanel({
           <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>
         ) : (
           <div className="space-y-1">
-            {consoleLines.map((line) => (
-              <div
-                key={line.id}
-                className={line.type === "error" ? "text-red-400" : line.type === "warn" ? "text-yellow-400" : "text-zinc-100"}
-              >
-                [{line.type}] {line.text}
-              </div>
-            ))}
+            {consoleLines.map((line) => {
+              const prefixClass =
+                line.type === "error" ? "text-red-400" : line.type === "warn" ? "text-amber-400" : "text-zinc-300";
+              return (
+                <div key={line.id} className="flex items-start gap-2">
+                  <span className="shrink-0 text-zinc-600">{line.timestamp}</span>
+                  <span className={`shrink-0 ${prefixClass}`}>[{line.type}]</span>
+                  <span className={prefixClass}>{line.text}</span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1142,8 +1158,10 @@ function WebRunnerPageContent() {
       if (data.source !== "web-runner-console") return;
       const type = data.type === "warn" || data.type === "error" ? data.type : "log";
       const text = Array.isArray(data.args) ? data.args.join(" ") : "";
+      const now = new Date();
+      const timestamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
       consoleIdRef.current += 1;
-      setConsoleLines((current) => [...current, { id: consoleIdRef.current, type, text }]);
+      setConsoleLines((current) => [...current, { id: consoleIdRef.current, type, text, timestamp }]);
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
@@ -1469,66 +1487,51 @@ function WebRunnerPageContent() {
         <>
           {combinedUploadZone}
           {htmlEditor}
-          <LintPanel errors={htmlLint} />
           {cssEditor}
-          <LintPanel errors={cssLint} />
           {jsEditor}
-          <LintPanel errors={jsLint} />
         </>
       )}
       {mode === "html" && (
-        <>
-          <CodeEditor
-            label="HTML"
-            value={htmlFiles.length > 0 ? htmlModeDocument : html}
-            onChange={setHtml}
-            tone="html"
-            onKeyDown={htmlFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(html, setHtml, event)}
-            lintErrors={htmlLint}
-            readOnly={htmlFiles.length > 0}
-            fill
-            uploadZone={htmlUploadZone}
-            onMaximize={() => setModalTarget("html")}
-            onNewTab={() => openInNewTab(htmlFiles.length > 0 ? htmlModeDocument : html)}
-          />
-          <LintPanel errors={htmlLint} />
-        </>
+        <CodeEditor
+          label="HTML"
+          value={htmlFiles.length > 0 ? htmlModeDocument : html}
+          onChange={setHtml}
+          tone="html"
+          onKeyDown={htmlFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(html, setHtml, event)}
+          lintErrors={htmlLint}
+          readOnly={htmlFiles.length > 0}
+          uploadZone={htmlUploadZone}
+          onMaximize={() => setModalTarget("html")}
+          onNewTab={() => openInNewTab(htmlFiles.length > 0 ? htmlModeDocument : html)}
+        />
       )}
       {mode === "css" && (
-        <>
-          <CodeEditor
-            label="CSS"
-            value={effectiveCss}
-            onChange={setCss}
-            tone="css"
-            onKeyDown={cssFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(css, setCss, event)}
-            lintErrors={cssLint}
-            readOnly={cssFiles.length > 0}
-            fill
-            uploadZone={cssUploadZone}
-            onMaximize={() => setModalTarget("css")}
-            onNewTab={() => openInNewTab(cssDocument(effectiveCss))}
-          />
-          <LintPanel errors={cssLint} />
-        </>
+        <CodeEditor
+          label="CSS"
+          value={effectiveCss}
+          onChange={setCss}
+          tone="css"
+          onKeyDown={cssFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(css, setCss, event)}
+          lintErrors={cssLint}
+          readOnly={cssFiles.length > 0}
+          uploadZone={cssUploadZone}
+          onMaximize={() => setModalTarget("css")}
+          onNewTab={() => openInNewTab(cssDocument(effectiveCss))}
+        />
       )}
       {mode === "javascript" && (
-        <>
-          <CodeEditor
-            label="JavaScript"
-            value={effectiveJs}
-            onChange={setJs}
-            tone="js"
-            onKeyDown={jsFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(js, setJs, event)}
-            lintErrors={jsLint}
-            readOnly={jsFiles.length > 0}
-            fill
-            uploadZone={jsUploadZone}
-            onMaximize={() => setModalTarget("js")}
-            onNewTab={() => openInNewTab(jsDocument(effectiveJs))}
-          />
-          <LintPanel errors={jsLint} />
-        </>
+        <CodeEditor
+          label="JavaScript"
+          value={effectiveJs}
+          onChange={setJs}
+          tone="js"
+          onKeyDown={jsFiles.length > 0 ? handleReadOnlyEditorKeyDown : (event) => handleEditorKeyDown(js, setJs, event)}
+          lintErrors={jsLint}
+          readOnly={jsFiles.length > 0}
+          uploadZone={jsUploadZone}
+          onMaximize={() => setModalTarget("js")}
+          onNewTab={() => openInNewTab(jsDocument(effectiveJs))}
+        />
       )}
       {mode === "typescript" && (
         <>
@@ -1538,7 +1541,6 @@ function WebRunnerPageContent() {
             onChange={setTs}
             tone="ts"
             onKeyDown={(event) => handleEditorKeyDown(ts, setTs, event)}
-            fill
             onMaximize={() => setModalTarget("ts")}
             onNewTab={() => openInNewTab(`<pre>${ts}</pre>`)}
           />
@@ -1678,9 +1680,9 @@ function WebRunnerPageContent() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-5 sm:px-6 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
+      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-3 sm:px-6 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
         {layout === "horizontal" && (
-          <div className="flex flex-col gap-4 lg:flex-row h-[calc(100vh-16rem)] min-h-[600px]">
+          <div className="flex flex-col gap-4 lg:flex-row h-[calc(100vh-12rem)] min-h-[500px]">
             {editorPane}
             {outputPane}
           </div>
