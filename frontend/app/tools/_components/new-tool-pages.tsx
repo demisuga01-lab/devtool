@@ -270,6 +270,26 @@ function metric(label: string, value: string, variant: "default" | "success" | "
   return <ResultCard label={label} value={value} variant={variant} />;
 }
 
+function deferCompute(setLoading: (value: boolean) => void, compute: () => void) {
+  setLoading(true);
+  setTimeout(() => {
+    try {
+      compute();
+    } finally {
+      setLoading(false);
+    }
+  }, 0);
+}
+
+function LoadingBadge({ label = "Computing..." }: { label?: string }) {
+  return (
+    <Badge variant="info" className="gap-2">
+      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      {label}
+    </Badge>
+  );
+}
+
 function SimpleOutput({ label, value, rows = 8 }: { label: string; value: string; rows?: number }) {
   return (
     <Panel noPadding className="p-4">
@@ -285,18 +305,22 @@ function SimpleOutput({ label, value, rows = 8 }: { label: string; value: string
 function UlidGenerator() {
   const [count, setCount] = useState(5);
   const [items, setItems] = useState<string[]>(() => [generateUlid()]);
+  const [loading, setLoading] = useState(false);
   const first = items[0] ? decodeUlid(items[0]) : null;
 
   function generate() {
-    setItems(Array.from({ length: count }, () => generateUlid()));
+    deferCompute(setLoading, () => {
+      setItems(Array.from({ length: count }, () => generateUlid()));
+    });
   }
 
   return (
     <ToolFrame slug="ulid-generator">
       <div className="flex flex-wrap items-end gap-3">
         <ToolInput label="Bulk count" type="number" min={1} max={100} value={count} onChange={(event) => setCount(clampNumber(event.target.value, 1, 100))} />
-        <Button variant="primary" onClick={generate}>Generate ULIDs</Button>
+        <Button variant="primary" onClick={generate} disabled={loading}>{loading ? "Generating..." : "Generate ULIDs"}</Button>
         <CopyButton value={items.join("\n")} label="Copy all" />
+        {loading && <LoadingBadge label="Generating ULIDs..." />}
       </div>
       {first && (
         <div className="grid gap-3 md:grid-cols-3">
@@ -353,12 +377,15 @@ function NanoidGenerator() {
   const [alphabet, setAlphabet] = useState(URL_ALPHABET);
   const [count, setCount] = useState(5);
   const [items, setItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
   const entropy = size * Math.log2(Math.max(1, new Set(alphabet).size));
   const collision = count > 1 ? (count * (count - 1)) / (2 * 2 ** Math.min(entropy, 1024)) : 0;
 
   function generate() {
-    const chars = Array.from(new Set(alphabet.split("")));
-    setItems(Array.from({ length: count }, () => Array.from({ length: size }, () => chars[randomInt(chars.length)] ?? "").join("")));
+    deferCompute(setLoading, () => {
+      const chars = Array.from(new Set(alphabet.split("")));
+      setItems(Array.from({ length: count }, () => Array.from({ length: size }, () => chars[randomInt(chars.length)] ?? "").join("")));
+    });
   }
 
   return (
@@ -374,8 +401,9 @@ function NanoidGenerator() {
         {metric("Collision chance", collision < 1e-12 ? "< 1e-12" : collision.toExponential(3))}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={generate} disabled={!alphabet}>Generate NanoIDs</Button>
+        <Button variant="primary" onClick={generate} disabled={!alphabet || loading}>{loading ? "Generating..." : "Generate NanoIDs"}</Button>
         <CopyButton value={items.join("\n")} label="Copy all" />
+        {loading && <LoadingBadge label="Generating NanoIDs..." />}
       </div>
       <SimpleList items={items} />
     </ToolFrame>
@@ -387,6 +415,7 @@ function RandomTokenGenerator() {
   const [format, setFormat] = useState("base64url");
   const [count, setCount] = useState(5);
   const [items, setItems] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   function tokenFromBytes(value: Uint8Array) {
     if (format === "hex") return bytesToHex(value);
@@ -401,7 +430,9 @@ function RandomTokenGenerator() {
   }
 
   function generate() {
-    setItems(Array.from({ length: count }, () => tokenFromBytes(randomBytes(Math.max(bytes, 16)))));
+    deferCompute(setLoading, () => {
+      setItems(Array.from({ length: count }, () => tokenFromBytes(randomBytes(Math.max(bytes, 16)))));
+    });
   }
 
   return (
@@ -422,8 +453,9 @@ function RandomTokenGenerator() {
         {metric("Generated", String(items.length))}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={generate}>Generate tokens</Button>
+        <Button variant="primary" onClick={generate} disabled={loading}>{loading ? "Generating..." : "Generate tokens"}</Button>
         <CopyButton value={items.join("\n")} label="Copy all" />
+        {loading && <LoadingBadge label="Generating tokens..." />}
       </div>
       <SimpleList items={items} />
     </ToolFrame>
@@ -435,6 +467,7 @@ function PassphraseGenerator() {
   const [separator, setSeparator] = useState("hyphen");
   const [capitalize, setCapitalize] = useState(false);
   const [phrases, setPhrases] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
   const entropy = words * Math.log2(COMMON_WORDS.length);
   const crackSeconds = 2 ** Math.min(entropy, 200) / 1e10;
 
@@ -447,14 +480,16 @@ function PassphraseGenerator() {
   }
 
   function generate() {
-    setPhrases(
-      Array.from({ length: 10 }, () =>
-        Array.from({ length: words }, (_, index) => {
-          const word = COMMON_WORDS[randomInt(COMMON_WORDS.length)] ?? "word";
-          return (capitalize ? word[0].toUpperCase() + word.slice(1) : word) + (index < words - 1 ? sep(index) : "");
-        }).join(""),
-      ),
-    );
+    deferCompute(setLoading, () => {
+      setPhrases(
+        Array.from({ length: 10 }, () =>
+          Array.from({ length: words }, (_, index) => {
+            const word = COMMON_WORDS[randomInt(COMMON_WORDS.length)] ?? "word";
+            return (capitalize ? word[0].toUpperCase() + word.slice(1) : word) + (index < words - 1 ? sep(index) : "");
+          }).join(""),
+        ),
+      );
+    });
   }
 
   return (
@@ -476,8 +511,9 @@ function PassphraseGenerator() {
         {metric("Crack time", formatDuration(crackSeconds))}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={generate}>Generate passphrases</Button>
+        <Button variant="primary" onClick={generate} disabled={loading}>{loading ? "Generating..." : "Generate passphrases"}</Button>
         <CopyButton value={phrases.join("\n")} label="Copy all" />
+        {loading && <LoadingBadge label="Generating passphrases..." />}
       </div>
       <SimpleList items={phrases} />
     </ToolFrame>
@@ -821,12 +857,14 @@ function Blake2Generator() {
   const [text, setText] = useState("DevTools");
   const [fileName, setFileName] = useState("");
   const [bytes, setBytes] = useState<Uint8Array | null>(null);
-  const data = bytes ?? encoder.encode(text);
-  const hashes = useMemo(() => ({
-    b2b256: blake2b(data, 32),
-    b2b512: blake2b(data, 64),
-    b2s256: blake2s(data, 32),
-  }), [data]);
+  const [loading, setLoading] = useState(false);
+  const [hashes, setHashes] = useState(() => computeBlake2Hashes(encoder.encode("DevTools")));
+
+  function computeHashes(inputBytes = bytes ?? encoder.encode(text)) {
+    deferCompute(setLoading, () => {
+      setHashes(computeBlake2Hashes(inputBytes));
+    });
+  }
 
   async function onFile(file: File | null) {
     if (!file) {
@@ -834,8 +872,10 @@ function Blake2Generator() {
       setFileName("");
       return;
     }
+    const next = new Uint8Array(await file.arrayBuffer());
     setFileName(file.name);
-    setBytes(new Uint8Array(await file.arrayBuffer()));
+    setBytes(next);
+    computeHashes(next);
   }
 
   return (
@@ -844,7 +884,11 @@ function Blake2Generator() {
         <ToolTextarea label="Text input" value={text} onChange={(event) => { setText(event.target.value); setBytes(null); setFileName(""); }} rows={6} />
         <ToolInput label="File input" type="file" onChange={(event) => void onFile(event.target.files?.[0] ?? null)} />
       </Panel>
-      {fileName && <Badge variant="info">Hashing file: {fileName}</Badge>}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" onClick={() => computeHashes()} disabled={loading}>{loading ? "Computing..." : "Compute hashes"}</Button>
+        {fileName && <Badge variant="info">Hashing file: {fileName}</Badge>}
+        {loading && <LoadingBadge label="Computing BLAKE2 hashes..." />}
+      </div>
       <div className="grid gap-3">
         <ResultCard label="BLAKE2b-256" value={hashes.b2b256} copyable mono />
         <ResultCard label="BLAKE2b-512" value={hashes.b2b512} copyable mono />
@@ -852,6 +896,14 @@ function Blake2Generator() {
       </div>
     </ToolFrame>
   );
+}
+
+function computeBlake2Hashes(data: Uint8Array) {
+  return {
+    b2b256: blake2b(data, 32),
+    b2b512: blake2b(data, 64),
+    b2s256: blake2s(data, 32),
+  };
 }
 
 function HashVerifier() {
@@ -1011,14 +1063,26 @@ function JsonTreeViewer() {
 function YamlDiff() {
   const [left, setLeft] = useState("name: devtools\nversion: 1\nfeatures:\n  - tools");
   const [right, setRight] = useState("name: devtools\nversion: 2\nfeatures:\n  - tools\n  - paste");
-  const changes = diffLines(left, right);
-  const keyDiff = diffKeys(parseYamlObject(left), parseYamlObject(right));
+  const [changes, setChanges] = useState<Change[]>(() => diffLines("name: devtools\nversion: 1\nfeatures:\n  - tools", "name: devtools\nversion: 2\nfeatures:\n  - tools\n  - paste"));
+  const [keyDiff, setKeyDiff] = useState<string[]>(() => diffKeys(parseYamlObject("name: devtools\nversion: 1\nfeatures:\n  - tools"), parseYamlObject("name: devtools\nversion: 2\nfeatures:\n  - tools\n  - paste")));
+  const [loading, setLoading] = useState(false);
+
+  function compare() {
+    deferCompute(setLoading, () => {
+      setChanges(diffLines(left, right));
+      setKeyDiff(diffKeys(parseYamlObject(left), parseYamlObject(right)));
+    });
+  }
 
   return (
     <ToolFrame slug="yaml-diff">
       <div className="grid gap-4 lg:grid-cols-2">
         <ToolTextarea label="YAML A" value={left} onChange={(event) => setLeft(event.target.value)} rows={12} />
         <ToolTextarea label="YAML B" value={right} onChange={(event) => setRight(event.target.value)} rows={12} />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" onClick={compare} disabled={loading}>{loading ? "Comparing..." : "Compare YAML"}</Button>
+        {loading && <LoadingBadge label="Computing YAML diff..." />}
       </div>
       <DiffStats changes={changes} />
       <DiffView changes={changes} />
@@ -1034,7 +1098,14 @@ function CodeDiff() {
   const [left, setLeft] = useState("const value = 1;\nconsole.log(value);");
   const [right, setRight] = useState("const value = 2;\nconsole.log({ value });");
   const [language, setLanguage] = useState("JavaScript");
-  const changes = diffLines(left, right);
+  const [changes, setChanges] = useState<Change[]>(() => diffLines("const value = 1;\nconsole.log(value);", "const value = 2;\nconsole.log({ value });"));
+  const [loading, setLoading] = useState(false);
+
+  function compare() {
+    deferCompute(setLoading, () => {
+      setChanges(diffLines(left, right));
+    });
+  }
 
   return (
     <ToolFrame slug="code-diff">
@@ -1044,6 +1115,10 @@ function CodeDiff() {
       <div className="grid gap-4 lg:grid-cols-2">
         <ToolTextarea label="Original code" value={left} onChange={(event) => setLeft(event.target.value)} rows={12} />
         <ToolTextarea label="Modified code" value={right} onChange={(event) => setRight(event.target.value)} rows={12} />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" onClick={compare} disabled={loading}>{loading ? "Comparing..." : "Compare code"}</Button>
+        {loading && <LoadingBadge label="Computing code diff..." />}
       </div>
       <DiffStats changes={changes} />
       <DiffView changes={changes} />
