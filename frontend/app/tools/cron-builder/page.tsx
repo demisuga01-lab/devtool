@@ -20,20 +20,42 @@ function fieldText(field: Field) {
   return "*";
 }
 function nextRuns(expression: string) {
-  const [min, hour] = expression.split(" ");
-  const minutes = min === "*" ? null : Number(min.split(",")[0].split("/").pop());
-  const hours = hour === "*" ? null : Number(hour.split(",")[0]);
-  const out: string[] = [];
-  const date = new Date();
-  date.setSeconds(0, 0);
-  while (out.length < 5) {
-    date.setMinutes(date.getMinutes() + 1);
-    if (minutes !== null && date.getMinutes() !== minutes && !min.startsWith("*/")) continue;
-    if (min.startsWith("*/") && date.getMinutes() % Number(min.slice(2)) !== 0) continue;
-    if (hours !== null && date.getHours() !== hours) continue;
-    out.push(date.toLocaleString());
+  try {
+    const [min, hour] = expression.split(" ");
+    const out: string[] = [];
+    const date = new Date();
+    date.setSeconds(0, 0);
+    let iterations = 0;
+    while (out.length < 5 && iterations < 10000) {
+      iterations++;
+      date.setMinutes(date.getMinutes() + 1);
+      if (min !== "*") {
+        if (min.startsWith("*/")) {
+          const step = Number(min.slice(2));
+          if (step > 0 && date.getMinutes() % step !== 0) continue;
+        } else if (min.includes("-")) {
+          const [from, to] = min.split("-").map(Number);
+          if (date.getMinutes() < from || date.getMinutes() > to) continue;
+        } else {
+          const minutes = Number(min.split(",")[0]);
+          if (date.getMinutes() !== minutes) continue;
+        }
+      }
+      if (hour !== "*") {
+        if (hour.startsWith("*/")) {
+          const step = Number(hour.slice(2));
+          if (step > 0 && date.getHours() % step !== 0) continue;
+        } else {
+          const hours = Number(hour.split(",")[0]);
+          if (date.getHours() !== hours) continue;
+        }
+      }
+      out.push(date.toLocaleString());
+    }
+    return out;
+  } catch {
+    return [];
   }
-  return out;
 }
 
 export default function CronBuilderPage() {
