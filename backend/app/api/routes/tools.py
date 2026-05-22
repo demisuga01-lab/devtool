@@ -579,7 +579,7 @@ JUDGE0_LANGUAGE_MAP: dict[str, int] = {
     "bash": 46,
     "sh": 46,
     "lua": 64,
-    "dart": 90,
+    "dart": 0,  # not available in judge0 v1.13.1
     "scala": 81,
     "perl": 85,
     "csharp": 51,
@@ -589,7 +589,8 @@ JUDGE0_LANGUAGE_MAP: dict[str, int] = {
     "swift": 83,
     "r": 80,
     "rscript": 80,
-    "julia": 91,
+    "julia": 0,  # not available in judge0 v1.13.1
+    "octave": 66,
     "sqlite3": 82,
     "sql": 82,
     "d": 56,
@@ -641,8 +642,8 @@ async def run_code(payload: RunCodeRequest) -> dict:
     if language_id is None:
         # Try to match by version string for Piston compatibility
         language_id = JUDGE0_LANGUAGE_MAP.get(language.split()[0])
-    if language_id is None:
-        raise HTTPException(status_code=400, detail=f"Language '{language}' is not supported.")
+    if language_id is None or language_id == 0:
+        raise HTTPException(status_code=400, detail=f"Language '{language}' is not available in this environment.")
 
     request_body: dict = {
         "source_code": code,
