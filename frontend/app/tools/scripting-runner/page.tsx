@@ -136,45 +136,66 @@ function ScriptingRunnerPageContent() {
   const errors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
+    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-6 sm:px-6 sm:py-10">
         <Breadcrumb title="Scripting Runner" />
         <header className="mt-6">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Scripting Runner</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Scripting Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run Python, Ruby, PHP, Perl, Bash, and Lua scripts instantly.</p>
         </header>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="mt-6 flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
           {languages.map((language, index) => (
-            <button key={language.label} type="button" onClick={() => setActiveIndex(index)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"}`}>
-              <span className="mr-2 inline-flex">{language.icon}</span>{language.label}
+            <button
+              key={language.label}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                index === activeIndex
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              }`}
+            >
+              {language.icon}
+              <span>{language.label}</span>
+              {index === activeIndex && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90">{language.version}</span>}
             </button>
           ))}
         </div>
 
         <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[300px] w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 lg:flex-1" />
-            <label className="mt-4 block text-sm font-medium text-zinc-700 dark:text-zinc-300">stdin</label>
-            <textarea
-              value={stdin}
-              onChange={(event) => setStdin(event.target.value)}
-              onKeyDown={(event) => {
-                if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-                  event.preventDefault();
-                  runCode();
-                }
-              }}
-              className="mt-1 min-h-[80px] w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 outline-none dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-            />
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <button type="button" onClick={runCode} disabled={running} className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white ${active.color} disabled:cursor-not-allowed disabled:opacity-60`}>{running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}{running ? "Running..." : `Run ${active.label}`}</button>
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                {active.icon}
+                <span>{active.label}</span>
+                <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">{active.version}</span>
+              </div>
+              <span className="text-xs text-zinc-500">{active.language}</span>
+            </div>
+            <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[300px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:bg-zinc-950 lg:min-h-0" />
+            <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
+              <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
+              <textarea
+                value={stdin}
+                onChange={(event) => setStdin(event.target.value)}
+                onKeyDown={(event) => {
+                  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+                    event.preventDefault();
+                    runCode();
+                  }
+                }}
+                className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </details>
+            <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
+              <button type="button" onClick={runCode} disabled={running} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">{running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}<span className="hidden sm:inline">{running ? "Running..." : "Run"}</span></button>
               <span className="text-xs text-zinc-400 dark:text-zinc-600">Ctrl+Enter to run</span>
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="font-semibold text-zinc-100">Output</div>
               <div className="flex items-center gap-2">
                 {(["output", "errors"] as const).map((tab) => (
@@ -182,14 +203,13 @@ function ScriptingRunnerPageContent() {
                     key={tab}
                     type="button"
                     onClick={() => setOutputTab(tab)}
-                    className={`rounded-xl px-2 py-1 text-xs font-semibold ${outputTab === tab ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"}`}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${outputTab === tab ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}
                   >
                     {tab === "output" ? "Output" : "Errors"}
                   </button>
                 ))}
-                <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-400">{active.label} {active.version}</span>
-                <button type="button" onClick={() => typeof navigator !== "undefined" && navigator.clipboard?.writeText(stdout)} className="text-xs text-zinc-400 hover:text-zinc-200">Copy output</button>
-                <button type="button" onClick={() => { setResult(null); setError(""); setHasRun(false); setOutputTab("output"); }} className="text-xs text-zinc-400 hover:text-zinc-200">Clear</button>
+                <button type="button" onClick={() => typeof navigator !== "undefined" && navigator.clipboard?.writeText(stdout)} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">Copy</button>
+                <button type="button" onClick={() => { setResult(null); setError(""); setHasRun(false); setOutputTab("output"); }} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">Clear</button>
               </div>
             </div>
             {result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0 && (
@@ -202,8 +222,8 @@ function ScriptingRunnerPageContent() {
                 Killed by signal {result.signal}
               </div>
             )}
-            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap p-4 font-mono text-sm">
-              {!hasRun && <span className="text-zinc-600">{">>>"} Run your script to see output</span>}
+            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap p-4 font-mono text-sm leading-relaxed text-zinc-200">
+              {!hasRun && <span className="flex h-full items-center justify-center text-zinc-600">{">>>"} Run code to see output</span>}
               {hasRun && outputTab === "output" && stdout && stdout.split("\n").map((line, index) => <span key={index} className="block text-zinc-100">&gt; {line}</span>)}
               {hasRun && outputTab === "output" && !stdout && result?.exit_code === 0 && <span className="text-zinc-400">Program exited with no output.</span>}
               {hasRun && outputTab === "errors" && errors && errors.split("\n").map((line, index) => <span key={`e-${index}`} className="block text-red-400">x {line}</span>)}

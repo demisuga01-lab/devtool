@@ -258,7 +258,7 @@ languages.each { name ->
 ];
 
 const editorClass =
-  "w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
+  "w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -298,17 +298,17 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
-      <div className="mb-4 flex flex-wrap gap-2">
+    <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+      <div className="-m-4 mb-4 flex flex-wrap gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         {(["output", "errors"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setOutputTab(tab)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
               outputTab === tab
-                ? "bg-emerald-600 text-white"
-                : "border border-zinc-200 text-zinc-600 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
+                ? "bg-emerald-600 text-white shadow shadow-emerald-600/20"
+                : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
             }`}
           >
             {tab === "output" ? "Output" : "Errors"}
@@ -330,7 +330,7 @@ function OutputPanel({
           Killed by signal {result.signal}
         </div>
       )}
-      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap font-mono text-sm text-zinc-800 dark:text-zinc-200">
+      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
         {!hasRun
           ? "Select a language and run code to see output."
           : outputTab === "output"
@@ -338,7 +338,7 @@ function OutputPanel({
             : errors || <span className="text-zinc-400">No errors.</span>}
       </pre>
       {result && (
-        <div className="mt-3 text-xs text-zinc-400">
+        <div className="mt-3 border-t border-zinc-800 pt-3 text-xs text-zinc-500">
           CPU: {result.cpu_time ?? "-"}ms · Wall: {result.wall_time ?? "-"}ms · Memory: {memoryKb}KB
         </div>
       )}
@@ -415,8 +415,8 @@ function OtherRunnerPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-3 py-8 dark:bg-zinc-950 sm:px-6">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <main className="min-h-screen bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] px-3 py-6 dark:bg-zinc-950 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -428,33 +428,34 @@ function OtherRunnerPageContent() {
         </nav>
 
         <header>
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Other Languages</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Other Languages</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run additional compiled, functional, scientific, and JVM languages.</p>
         </header>
 
-        <section className="flex flex-wrap gap-2">
+        <section className="flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800 lg:flex-wrap">
           {languages.map((language, index) => (
             <button
               key={language.label}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                 index === activeIndex
-                  ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300"
-                  : "border-zinc-200 bg-white text-zinc-700 hover:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
               }`}
             >
               {language.icon}
               <span>{language.label}</span>
+              {index === activeIndex && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90">{language.version}</span>}
             </button>
           ))}
         </section>
 
         <div className="flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{active.label} Editor</h2>
-              <span className="text-xs text-zinc-500">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100">{active.icon}<span>{active.label}</span></h2>
+              <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
                 {active.language} {active.version}
               </span>
             </div>
@@ -463,27 +464,29 @@ function OtherRunnerPageContent() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className={`${editorClass} min-h-[320px] resize-y rounded-none border-x-0 lg:min-h-0 lg:flex-1 lg:resize-none`}
+              className="min-h-[300px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0"
             />
 
-            <label className="mb-1.5 mt-4 block px-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">Standard Input (stdin)</label>
-            <textarea
-              value={stdin}
-              onChange={(event) => setStdin(event.target.value)}
-              onKeyDown={handleStdinKeyDown}
-              placeholder="Optional input for your program..."
-              className={`${editorClass} mx-4 min-h-[80px] w-auto resize-y`}
-            />
+            <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
+              <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
+              <textarea
+                value={stdin}
+                onChange={(event) => setStdin(event.target.value)}
+                onKeyDown={handleStdinKeyDown}
+                placeholder="Optional input for your program..."
+                className={`${editorClass} mt-3 min-h-[90px] resize-y`}
+              />
+            </details>
 
-            <div className="mt-4 flex flex-wrap items-center gap-3 px-4 pb-4">
+            <div className="flex flex-wrap items-center gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
               <button
                 type="button"
                 onClick={runCode}
                 disabled={running}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {running ? "Running..." : "Run"}
+                <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
               </button>
               <span className="text-xs text-zinc-400 dark:text-zinc-600">Ctrl+Enter to run</span>
             </div>

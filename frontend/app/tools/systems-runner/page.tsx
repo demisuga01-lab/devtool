@@ -184,33 +184,34 @@ function SystemsRunnerPageContent() {
   const dotClass = !hasRun ? "bg-zinc-400" : success ? "bg-emerald-500" : "bg-red-500";
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
+    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-6 sm:px-6 sm:py-10">
         <Breadcrumb title="Systems Runner" />
         <header className="mt-6">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Systems Runner</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Systems Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Compile and run C, C++, Rust, and Go code with full compiler output.</p>
         </header>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="mt-6 flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
           {languages.map((language, index) => (
             <button
               key={language.label}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold ${index === activeIndex ? `${language.color} text-white` : "border border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400"}`}
+              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${index === activeIndex ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"}`}
             >
               <span className="flex items-center gap-1.5">
                 {language.icon}
                 {language.label}
+                {index === activeIndex && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90">{language.version}</span>}
               </span>
             </button>
           ))}
         </div>
 
         <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="border-b border-zinc-200 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
+            <div className="border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs text-zinc-300">
               {active.label} · {active.compiler} {active.version}
             </div>
             <div className="flex min-h-0 flex-1 overflow-hidden bg-zinc-950">
@@ -224,11 +225,11 @@ function SystemsRunnerPageContent() {
                 onKeyDown={insertTab}
                 onScroll={syncLines}
                 spellCheck={false}
-                className="min-h-[300px] min-w-0 flex-1 resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:flex-1"
+                className="min-h-[300px] min-w-0 flex-1 resize-y bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1"
               />
             </div>
-            <div className="space-y-3 p-4">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">stdin</label>
+            <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
+              <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
               <textarea
                 value={stdin}
                 onChange={(event) => setStdin(event.target.value)}
@@ -238,34 +239,37 @@ function SystemsRunnerPageContent() {
                     runCode();
                   }
                 }}
-                className="min-h-[60px] w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 outline-none dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
-              <button type="button" onClick={runCode} disabled={running} className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-white ${active.color} disabled:cursor-not-allowed disabled:opacity-60`}>
+            </details>
+            <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
+              <button type="button" onClick={runCode} disabled={running} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">
                 {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                {running ? "Running..." : `Run ${active.label}`}
+                <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
               </button>
+              <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+            <div className="-m-4 mb-4 flex items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
-                <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">Output</h2>
+                <h2 className="font-semibold text-zinc-100">Output</h2>
               </div>
               {result && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${success ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"}`}>exit {result.exit_code ?? "-"}</span>}
             </div>
             <div className="mb-3 flex gap-2">
-              <button type="button" onClick={() => setTab("stdout")} className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${tab === "stdout" ? "bg-emerald-600 text-white" : "border border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"}`}>stdout</button>
-              <button type="button" onClick={() => setTab("stderr")} className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${tab === "stderr" ? "bg-emerald-600 text-white" : "border border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"}`}>stderr+compile</button>
+              <button type="button" onClick={() => setTab("stdout")} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${tab === "stdout" ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>stdout</button>
+              <button type="button" onClick={() => setTab("stderr")} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${tab === "stderr" ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>stderr+compile</button>
             </div>
             {error && <Banner tone="red">{error}</Banner>}
             {result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0 && <Banner tone="red">Process exited with code {result.exit_code}</Banner>}
             {result?.signal && <Banner tone="orange">Killed by signal {result.signal}</Banner>}
-            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-950 p-4 font-mono text-sm text-zinc-100">
-              {hasRun ? (tab === "stdout" ? stdout || (success ? "Program exited with no output." : "") : stderr || "No errors.") : active.hint}
+            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
+              {hasRun ? (tab === "stdout" ? stdout || (success ? "Program exited with no output." : "") : stderr || "No errors.") : "Run code to see output"}
             </pre>
-            {result && <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500 dark:text-zinc-500"><Stat label="CPU" value={`${result.cpu_time ?? "-"}ms`} /><Stat label="Wall" value={`${result.wall_time ?? "-"}ms`} /><Stat label="Memory" value={`${result.memory == null ? "-" : Math.round(result.memory / 1000)}KB`} /></div>}
+            {result && <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-500"><Stat label="CPU" value={`${result.cpu_time ?? "-"}ms`} /><Stat label="Wall" value={`${result.wall_time ?? "-"}ms`} /><Stat label="Memory" value={`${result.memory == null ? "-" : Math.round(result.memory / 1000)}KB`} /></div>}
           </section>
         </div>
       </div>
@@ -282,7 +286,7 @@ function Banner({ tone, children }: { tone: "red" | "orange"; children: ReactNod
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
-  return <span className="rounded-lg bg-zinc-100 px-2 py-1 dark:bg-zinc-800">{label}: {value}</span>;
+  return <span className="rounded-lg bg-zinc-800 px-2 py-1">{label}: {value}</span>;
 }
 
 export default function SystemsRunnerPage() {

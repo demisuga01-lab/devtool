@@ -100,7 +100,7 @@ END MODULE`,
 ];
 
 const editorClass =
-  "min-h-[300px] w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 lg:flex-1";
+  "min-h-[300px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:bg-zinc-950 lg:min-h-0";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -198,8 +198,8 @@ function JvmRunnerPageContent() {
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
+    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-6 sm:px-6 sm:py-10">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -211,33 +211,34 @@ function JvmRunnerPageContent() {
         </nav>
 
         <header className="mt-6">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">JVM Runner</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">JVM Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Run Java, Kotlin, Scala, C#, and Basic on the JVM and Mono runtime.
           </p>
         </header>
 
         <div className="mt-6 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <section className="flex min-h-0 flex-1 flex-col lg:basis-[55%]">
+            <div className="flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
               {languages.map((language, index) => (
                 <button
                   key={language.label}
                   type="button"
                   onClick={() => setActiveIndex(index)}
-                  className={`whitespace-nowrap rounded-t-lg border-l border-r border-t px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                     index === activeIndex
-                      ? "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-                      : "border-zinc-200 bg-zinc-50 text-zinc-500 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-500 dark:hover:text-zinc-300"
+                      ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                      : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                   }`}
                 >
-                  <span className="mr-2 inline-flex">{language.icon}</span>
-                  {language.label}
+                  {language.icon}
+                  <span>{language.label}</span>
+                  {index === activeIndex && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90">{language.version}</span>}
                 </button>
               ))}
             </div>
-            <div className="flex min-h-0 flex-1 flex-col rounded-b-2xl rounded-tr-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <div className="mb-3 flex items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-500">
+            <div className="mt-5 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs text-zinc-300">
                 <span>
                   {active.label} · {active.language === "java" ? "jdk" : active.language} {active.version}
                 </span>
@@ -250,33 +251,36 @@ function JvmRunnerPageContent() {
                 spellCheck={false}
                 className={editorClass}
               />
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">stdin:</label>
+              <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
+                <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
                 <textarea
                   value={stdin}
                   onChange={(event) => setStdin(event.target.value)}
                   onKeyDown={handleStdinKeyDown}
                   placeholder="Optional input"
-                  className="min-h-[60px] flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                  className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                 />
+              </details>
+              <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
                 <button
                   type="button"
                   onClick={runCode}
                   disabled={running}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  {running ? "Running..." : "Run"}
+                  <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
                 </button>
+                <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
               </div>
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+            <div className="-m-4 mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-zinc-400 animate-pulse" : successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Build Output</h2>
+                <h2 className="text-sm font-semibold text-zinc-100">Build Output</h2>
               </div>
               {hasRun && !running && (
                 <span
@@ -307,7 +311,7 @@ function JvmRunnerPageContent() {
               </div>
             )}
 
-            {!hasRun && <p className="text-sm text-zinc-500 dark:text-zinc-500">Run a JVM or Mono program to see build output.</p>}
+            {!hasRun && <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-800 text-sm text-zinc-600">Run code to see output</div>}
 
             {hasRun && (
               <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -317,10 +321,10 @@ function JvmRunnerPageContent() {
                       key={tab}
                       type="button"
                       onClick={() => setOutputTab(tab)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
                         outputTab === tab
-                          ? "bg-emerald-600 text-white"
-                          : "border border-zinc-200 text-zinc-600 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
+                          ? "bg-emerald-600 text-white shadow shadow-emerald-600/20"
+                          : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                       }`}
                     >
                       {tab === "output" ? "Output" : "Errors"}
@@ -329,11 +333,11 @@ function JvmRunnerPageContent() {
                 </div>
 
                 {compileOutput && (
-                  <div className="max-h-[200px] overflow-auto rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+                  <div className="max-h-[200px] overflow-auto rounded-xl border border-amber-800 bg-amber-950/20 p-3">
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
                       Compilation
                     </h3>
-                    <pre className="whitespace-pre-wrap font-mono text-sm text-amber-900 dark:text-amber-200">
+                    <pre className="whitespace-pre-wrap font-mono text-sm text-amber-200">
                       {compileOutput}
                     </pre>
                   </div>
@@ -344,7 +348,7 @@ function JvmRunnerPageContent() {
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
                       Runtime Output
                     </h3>
-                    <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-200 bg-white p-4 font-mono text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+                    <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
                       {stdout || (result?.exit_code === 0 ? <span className="text-zinc-400">Program exited with no output.</span> : "")}
                     </pre>
                   </div>
@@ -353,14 +357,14 @@ function JvmRunnerPageContent() {
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
                       Runtime Errors
                     </h3>
-                    <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-red-200 bg-red-50 p-4 font-mono text-sm text-red-700 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300">
+                    <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-red-800 bg-red-950/20 p-4 font-mono text-sm leading-relaxed text-red-300">
                       {errors || <span className="text-zinc-400">No errors.</span>}
                     </pre>
                   </div>
                 )}
 
                 {result && (
-                  <div className="text-xs text-zinc-400">
+                  <div className="border-t border-zinc-800 pt-3 text-xs text-zinc-500">
                     CPU: {result.cpu_time ?? "-"}ms · Wall: {result.wall_time ?? "-"}ms · Memory: {memoryKb}KB
                   </div>
                 )}

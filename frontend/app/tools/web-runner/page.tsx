@@ -205,6 +205,24 @@ function injectCssAndJs(html: string, css: string, js: string) {
   return doc;
 }
 
+function injectPreviewNavigation(html: string) {
+  const script = `<script>
+(() => {
+  document.addEventListener("click", (event) => {
+    const target = event.target instanceof Element ? event.target : event.target && event.target.parentElement;
+    const anchor = target ? target.closest("a") : null;
+    if (!anchor) return;
+    const href = anchor.getAttribute("href");
+    if (!href || href.startsWith("#") || /^(https?:|mailto:|tel:|javascript:)/i.test(href)) return;
+    event.preventDefault();
+    window.parent.postMessage({ source: "web-runner-preview", type: "navigate", href }, "*");
+  });
+})();
+</script>`;
+
+  return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}\n</body>`) : `${html}\n${script}`;
+}
+
 function cssDocument(css: string) {
   return cssDemoHtml.replace("</head>", `<style>${escapeStyle(css)}</style>\n</head>`);
 }
@@ -300,6 +318,26 @@ function getFileKind(name: string): FileKind | null {
   if (lower.endsWith(".css")) return "css";
   if (lower.endsWith(".js")) return "js";
   return null;
+}
+
+function normalizeHtmlHref(value: string) {
+  const decoded = (() => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  })();
+  const withoutHash = decoded.split("#")[0];
+  const withoutQuery = withoutHash.split("?")[0];
+  const parts = withoutQuery.split(/[\\/]/).filter(Boolean);
+  return (parts[parts.length - 1] || withoutQuery).trim().toLowerCase();
+}
+
+function findHtmlFileByHref(files: UploadedFile[], href: string) {
+  const target = normalizeHtmlHref(href);
+  if (!target) return null;
+  return files.find((file) => normalizeHtmlHref(file.name) === target) || null;
 }
 
 function readUploadedFile(file: File): Promise<UploadedFile> {
@@ -647,7 +685,7 @@ function UploadZone({
   }
 
   return (
-    <div className="border-b border-zinc-800 bg-zinc-900 p-2">
+    <div className="border-b border-zinc-800 bg-zinc-900/70 p-2">
       <input
         ref={inputRef}
         type="file"
@@ -675,10 +713,10 @@ function UploadZone({
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-2 text-center transition ${
+        className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed px-3 py-2 text-center transition-all duration-200 ${
           dragging
             ? "border-emerald-400 bg-emerald-500/10 text-emerald-200"
-            : "border-zinc-700 bg-zinc-950 text-zinc-400 hover:border-emerald-500 hover:text-zinc-200"
+            : "border-zinc-700 bg-zinc-900/50 text-zinc-400 hover:border-emerald-500 hover:bg-emerald-950/20 hover:text-zinc-200"
         }`}
       >
         <Upload className="h-4 w-4 shrink-0" />
@@ -689,7 +727,7 @@ function UploadZone({
         {groups.map((group) => (
           <span
             key={group.kind}
-            className="rounded-full border border-zinc-700 px-2 py-0.5 text-xs font-semibold text-zinc-400"
+            className="rounded-full border border-emerald-900/60 bg-emerald-950/30 px-2 py-0.5 text-xs font-semibold text-emerald-300"
           >
             {groups.length === 1 ? `${group.files.length}/${MAX_FILES_PER_KIND} files` : `${group.label} ${group.files.length}/${MAX_FILES_PER_KIND}`}
           </span>
@@ -702,7 +740,7 @@ function UploadZone({
           {files.map((file) => (
             <span
               key={`${file.kind}-${file.index}-${file.name}`}
-              className="inline-flex max-w-full items-center gap-2 rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300"
+              className="inline-flex max-w-full items-center gap-2 rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs text-zinc-300 shadow-sm"
             >
               {groups.length > 1 && <span className="font-semibold text-zinc-500">{file.label}</span>}
               <span className="max-w-[12rem] truncate">{file.name}</span>
@@ -711,7 +749,7 @@ function UploadZone({
                 type="button"
                 aria-label={`Remove ${file.name}`}
                 onClick={() => onRemove(file.kind, file.index)}
-                className="rounded-full p-0.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100"
+                className="rounded-full p-0.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -757,8 +795,8 @@ function CodeEditor({
   const warnCount = (lintErrors || []).filter((e) => e.severity === "warning").length;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col bg-zinc-950">
-      <div className="flex items-center border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-semibold">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-zinc-950">
+      <div className="flex items-center border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs font-semibold">
         <span className={labelClass}>{label}</span>
         {errorCount > 0 && (
           <span className="ml-2 rounded bg-red-500/20 px-1.5 py-0.5 text-xs text-red-400">{errorCount}</span>
@@ -773,7 +811,7 @@ function CodeEditor({
               type="button"
               title="Maximize editor"
               onClick={onMaximize}
-              className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-200"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
@@ -783,7 +821,7 @@ function CodeEditor({
               type="button"
               title="Open in new tab"
               onClick={onNewTab}
-              className="rounded p-1 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200"
+              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-200"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
@@ -802,7 +840,7 @@ function CodeEditor({
         }}
         readOnly={readOnly}
         spellCheck={false}
-        className={`min-h-[300px] w-full resize-none bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none lg:flex-1 ${
+        className={`min-h-[300px] w-full resize-y bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1 ${
           readOnly ? "cursor-default text-zinc-300" : ""
         }`}
       />
@@ -813,7 +851,7 @@ function CodeEditor({
 function LintPanel({ errors }: { errors: LintError[] }) {
   if (errors.length === 0) {
     return (
-      <div className="border-t border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-emerald-400">
+      <div className="border-t border-zinc-800 bg-zinc-900 px-4 py-2 text-xs text-emerald-400">
         ✓ No issues found
       </div>
     );
@@ -824,7 +862,7 @@ function LintPanel({ errors }: { errors: LintError[] }) {
 
   return (
     <div className="border-t border-zinc-800 bg-zinc-900">
-      <div className="flex items-center gap-3 px-3 py-1.5 text-xs text-zinc-400">
+      <div className="flex items-center gap-3 px-4 py-2 text-xs text-zinc-400">
         {errorCount > 0 && <span className="text-red-400">{errorCount} error{errorCount !== 1 ? "s" : ""}</span>}
         {warnCount > 0 && <span className="text-yellow-400">{warnCount} warning{warnCount !== 1 ? "s" : ""}</span>}
       </div>
@@ -832,7 +870,7 @@ function LintPanel({ errors }: { errors: LintError[] }) {
         {errors.map((err, index) => (
           <div
             key={index}
-            className={`flex items-start gap-2 px-3 py-1 text-xs ${err.severity === "error" ? "text-red-400" : "text-yellow-400"}`}
+            className={`flex items-start gap-2 px-4 py-1 text-xs ${err.severity === "error" ? "text-red-400" : "text-yellow-400"}`}
           >
             <span className="shrink-0">Line {err.line}:{err.col}</span>
             <span>{err.message}</span>
@@ -846,20 +884,38 @@ function LintPanel({ errors }: { errors: LintError[] }) {
 function WebPreviewPanel({
   doc,
   previewKey,
+  currentFile,
+  canGoBack,
+  onBack,
   onMaximize,
   onNewTab,
 }: {
   doc: string;
   previewKey: number;
+  currentFile?: string;
+  canGoBack?: boolean;
+  onBack?: () => void;
   onMaximize?: () => void;
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex h-full min-h-[250px] flex-col bg-white lg:min-h-0">
-      <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-3 py-2 text-sm dark:border-zinc-800 dark:bg-zinc-800">
-        <span className="font-semibold text-zinc-700 dark:text-zinc-200">Preview</span>
+    <section className="flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
+      <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
+        <div className="flex min-w-0 items-center gap-2">
+          {onBack && canGoBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-300 transition-colors duration-200 hover:bg-zinc-700"
+            >
+              Back
+            </button>
+          )}
+          <span className="font-semibold text-zinc-100">Preview</span>
+          {currentFile && <span className="truncate rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">{currentFile}</span>}
+        </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="hidden items-center gap-2 text-xs text-zinc-400 sm:flex">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
             Auto-updating
           </span>
@@ -868,7 +924,7 @@ function WebPreviewPanel({
               type="button"
               title="Maximize preview"
               onClick={onMaximize}
-              className="rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
@@ -878,7 +934,7 @@ function WebPreviewPanel({
               type="button"
               title="Open in new tab"
               onClick={onNewTab}
-              className="rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-100"
+              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
@@ -908,16 +964,16 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex h-full min-h-[250px] flex-col bg-zinc-950 lg:min-h-0">
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2">
+    <section className="flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
+      <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
-        <button type="button" onClick={clearConsole} className="text-xs text-zinc-400 hover:text-zinc-200">
+        <button type="button" onClick={clearConsole} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">
           Clear
         </button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100">
         {consoleLines.length === 0 ? (
-          <p className="text-zinc-600">Console output will appear here...</p>
+          <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>
         ) : (
           <div className="space-y-1">
             {consoleLines.map((line) => (
@@ -942,13 +998,13 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex h-full min-h-[250px] flex-col bg-zinc-950 lg:min-h-0">
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900 px-3 py-2 text-sm">
+    <section className="flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
+      <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100">
-        {!hasRun && <p className="text-zinc-600">Run TypeScript to see output.</p>}
+        {!hasRun && <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>}
         {error && <div className="mb-3 rounded-xl border border-red-800 bg-red-950/30 px-3 py-2 text-red-400">{error}</div>}
         {failed && <div className="mb-3 rounded-xl border border-red-800 bg-red-950/30 px-3 py-2 text-red-400">Exited with code {result.exit_code}</div>}
         {hasRun && (
@@ -998,6 +1054,8 @@ function WebRunnerPageContent() {
   const [htmlFiles, setHtmlFiles] = useState<UploadedFile[]>([]);
   const [cssFiles, setCssFiles] = useState<UploadedFile[]>([]);
   const [jsFiles, setJsFiles] = useState<UploadedFile[]>([]);
+  const [currentPreviewFile, setCurrentPreviewFile] = useState<string | null>(null);
+  const [previewHistory, setPreviewHistory] = useState<(string | null)[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Record<UploadTarget, string>>({
     html: "",
     css: "",
@@ -1008,9 +1066,17 @@ function WebRunnerPageContent() {
   const effectiveHtml = htmlFiles.length > 0 ? mergeHtmlFiles(htmlFiles) : html;
   const effectiveCss = cssFiles.length > 0 ? mergeCssFiles(cssFiles) : css;
   const effectiveJs = jsFiles.length > 0 ? mergeJsFiles(jsFiles) : js;
+  const activePreviewHtmlFile = currentPreviewFile ? htmlFiles.find((file) => file.name === currentPreviewFile) || null : null;
+  const previewHtmlContent = activePreviewHtmlFile?.content || effectiveHtml;
+  const shouldRouteUploadedHtml = htmlFiles.length > 1 && (mode === "combined" || mode === "html");
   const htmlModeDocument = htmlFiles.length > 0
-    ? injectOptionalCssAndJs(effectiveHtml, cssFiles.length > 0 ? effectiveCss : "", jsFiles.length > 0 ? effectiveJs : "")
+    ? injectOptionalCssAndJs(previewHtmlContent, cssFiles.length > 0 ? effectiveCss : "", jsFiles.length > 0 ? effectiveJs : "")
     : html;
+  const routedHtmlModeDocument = shouldRouteUploadedHtml ? injectPreviewNavigation(htmlModeDocument) : htmlModeDocument;
+  const combinedHtmlDocument = htmlFiles.length > 0
+    ? injectPreviewNavigation(injectCssAndJs(previewHtmlContent, effectiveCss, effectiveJs))
+    : injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs);
+  const previewFileLabel = activePreviewHtmlFile?.name || (htmlFiles.length > 1 ? "Merged HTML" : htmlFiles[0]?.name);
   const htmlLintSource = mode === "html" && htmlFiles.length > 0 ? htmlModeDocument : effectiveHtml;
 
   useEffect(() => {
@@ -1024,15 +1090,27 @@ function WebRunnerPageContent() {
   }, [mode]);
 
   useEffect(() => {
+    if (htmlFiles.length === 0) {
+      setCurrentPreviewFile(null);
+      setPreviewHistory([]);
+      return;
+    }
+    if (currentPreviewFile && !htmlFiles.some((file) => file.name === currentPreviewFile)) {
+      setCurrentPreviewFile(null);
+    }
+    setPreviewHistory((current) => current.filter((fileName) => fileName === null || htmlFiles.some((file) => file.name === fileName)));
+  }, [currentPreviewFile, htmlFiles]);
+
+  useEffect(() => {
     if (mode !== "combined" && mode !== "html" && mode !== "css") return;
     if (typeof window === "undefined") return;
     const timer = window.setTimeout(() => {
-      if (mode === "combined") setPreviewDoc(injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs));
-      if (mode === "html") setPreviewDoc(htmlModeDocument);
+      if (mode === "combined") setPreviewDoc(combinedHtmlDocument);
+      if (mode === "html") setPreviewDoc(routedHtmlModeDocument);
       if (mode === "css") setPreviewDoc(cssDocument(effectiveCss));
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [effectiveCss, effectiveHtml, effectiveJs, htmlModeDocument, mode]);
+  }, [combinedHtmlDocument, effectiveCss, routedHtmlModeDocument, mode]);
 
   useEffect(() => {
     if (mode !== "javascript") return;
@@ -1048,7 +1126,18 @@ function WebRunnerPageContent() {
     if (typeof window === "undefined") return;
     function handleMessage(event: MessageEvent) {
       const data = event.data;
-      if (!data || typeof data !== "object" || data.source !== "web-runner-console") return;
+      if (!data || typeof data !== "object") return;
+
+      if (data.type === "navigate" && typeof data.href === "string" && shouldRouteUploadedHtml) {
+        const targetFile = findHtmlFileByHref(htmlFiles, data.href);
+        if (!targetFile) return;
+        setPreviewHistory((current) => [...current, currentPreviewFile]);
+        setCurrentPreviewFile(targetFile.name);
+        setHasRun(true);
+        return;
+      }
+
+      if (data.source !== "web-runner-console") return;
       const type = data.type === "warn" || data.type === "error" ? data.type : "log";
       const text = Array.isArray(data.args) ? data.args.join(" ") : "";
       consoleIdRef.current += 1;
@@ -1056,7 +1145,7 @@ function WebRunnerPageContent() {
     }
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [currentPreviewFile, htmlFiles, shouldRouteUploadedHtml]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setHtmlLint(lintHtml(htmlLintSource).errors), 800);
@@ -1106,10 +1195,10 @@ function WebRunnerPageContent() {
     setHasRun(true);
 
     if (mode === "combined") {
-      setPreviewDoc(injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs));
+      setPreviewDoc(combinedHtmlDocument);
       setPreviewKey((key) => key + 1);
     } else if (mode === "html") {
-      setPreviewDoc(htmlModeDocument);
+      setPreviewDoc(routedHtmlModeDocument);
       setPreviewKey((key) => key + 1);
     } else if (mode === "css") {
       setPreviewDoc(cssDocument(effectiveCss));
@@ -1125,7 +1214,7 @@ function WebRunnerPageContent() {
     } else {
       setRunning(false);
     }
-  }, [effectiveCss, effectiveHtml, effectiveJs, htmlModeDocument, mode, runTypeScript, running]);
+  }, [combinedHtmlDocument, effectiveCss, effectiveJs, mode, routedHtmlModeDocument, runTypeScript, running]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1272,15 +1361,23 @@ function WebRunnerPageContent() {
     }
   }
 
+  function goBackPreviewFile() {
+    if (previewHistory.length === 0) return;
+    const previous = previewHistory[previewHistory.length - 1];
+    setCurrentPreviewFile(previous);
+    setPreviewHistory((current) => current.slice(0, -1));
+    setHasRun(true);
+  }
+
   const runButton = (
     <button
       type="button"
       onClick={runPreview}
       disabled={running}
-      className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-      {running ? "Running..." : "Run"}
+      <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
     </button>
   );
 
@@ -1373,7 +1470,7 @@ function WebRunnerPageContent() {
   );
 
   const editorPane = (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-zinc-950">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10">
       {mode === "combined" && (
         <>
           {combinedUploadZone}
@@ -1447,16 +1544,19 @@ function WebRunnerPageContent() {
             onMaximize={() => setModalTarget("ts")}
             onNewTab={() => openInNewTab(`<pre>${ts}</pre>`)}
           />
-          <div className="flex flex-col gap-3 border-t border-zinc-800 bg-zinc-900 p-3 sm:flex-row sm:items-center">
-            <label className="text-xs font-semibold uppercase tracking-wide text-zinc-400">stdin</label>
+          <details className="border-t border-zinc-800 bg-zinc-900 p-4">
+            <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
             <textarea
               value={stdin}
               onChange={(event) => setStdin(event.target.value)}
               onKeyDown={handleStdinKeyDown}
               placeholder="Optional input"
-              className="min-h-[42px] flex-1 resize-none rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none focus:border-emerald-500"
+              className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
+          </details>
+          <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
             {runButton}
+            <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
           </div>
         </>
       )}
@@ -1480,16 +1580,21 @@ function WebRunnerPageContent() {
       <WebPreviewPanel
         doc={previewDoc}
         previewKey={previewKey}
+        currentFile={mode === "combined" || mode === "html" ? previewFileLabel : undefined}
+        canGoBack={previewHistory.length > 0}
+        onBack={goBackPreviewFile}
         onMaximize={() => setModalTarget("preview")}
         onNewTab={() => openInNewTab(previewDoc)}
       />
     );
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="flex items-center justify-between px-3 py-2">
-          <nav className="flex min-w-0 items-center gap-1 overflow-hidden text-xs text-zinc-500">
+    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+      <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <nav className="flex min-w-0 items-center gap-1 overflow-hidden text-xs text-zinc-500">
             <Link href="/tools" className="shrink-0 hover:text-zinc-900 dark:hover:text-zinc-100">
               Tools
             </Link>
@@ -1497,27 +1602,29 @@ function WebRunnerPageContent() {
             <span className="shrink-0">Code Runners</span>
             <span>/</span>
             <span className="truncate">Web Runner</span>
-          </nav>
+              </nav>
+              <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-100">Web Runner</h1>
+            </div>
 
-          <div className="flex items-center gap-2">
-            {runButton}
-            <span className="hidden text-xs text-zinc-400 lg:inline">Ctrl+Enter</span>
+            <div className="flex items-center gap-2">
+              {runButton}
+              <span className="hidden text-xs text-zinc-500 lg:inline">Ctrl+Enter</span>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto px-3 pb-2 scrollbar-hide">
+        <div className="flex items-center gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
           {modes.map((item) => (
             <button
               key={item.value}
               type="button"
               onClick={() => setMode(item.value)}
-              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors ${
+              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                 mode === item.value
-                  ? "bg-emerald-600 font-semibold text-white"
-                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
               }`}
             >
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2">
                 {item.icon}
                 {item.label}
               </span>
@@ -1525,7 +1632,7 @@ function WebRunnerPageContent() {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 border-t border-zinc-200 px-3 py-2 dark:border-zinc-800 lg:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <div className="flex items-center gap-1">
             {layouts.map((item) => {
               const Icon = item.icon;
@@ -1536,10 +1643,10 @@ function WebRunnerPageContent() {
                   aria-label={item.label}
                   title={item.label}
                   onClick={() => setLayout(item.value)}
-                  className={`rounded-lg p-1.5 transition-colors ${
+                  className={`rounded-lg p-2 transition-colors duration-200 ${
                     layout === item.value
-                      ? "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
-                      : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      ? "bg-zinc-800 text-zinc-100"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -1550,16 +1657,17 @@ function WebRunnerPageContent() {
           <button
             type="button"
             onClick={() => setShowUrlBar((value) => !value)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition-colors duration-200 hover:bg-zinc-800"
           >
             <Link2 className="h-3.5 w-3.5" />
             Import URL
           </button>
         </div>
+        </div>
       </header>
 
       {showUrlBar && (
-        <div className="flex items-center gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-900 px-4 py-3">
           <Link2 className="h-4 w-4 shrink-0 text-zinc-400" />
           <input
             type="url"
@@ -1571,13 +1679,13 @@ function WebRunnerPageContent() {
             }}
             placeholder="https://example.com — fetches HTML, extracts inline CSS and JS"
             autoFocus
-            className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+            className="flex-1 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
           />
           <button
             type="button"
             onClick={() => void loadUrl()}
             disabled={urlLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-emerald-500 disabled:opacity-50"
           >
             {urlLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             {urlLoading ? "Loading..." : "Load"}
@@ -1585,7 +1693,7 @@ function WebRunnerPageContent() {
           <button
             type="button"
             onClick={() => setShowUrlBar(false)}
-            className="rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+            className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100"
           >
             <X className="h-4 w-4" />
           </button>
@@ -1593,25 +1701,25 @@ function WebRunnerPageContent() {
         </div>
       )}
 
-      <div className="min-h-[560px] overflow-auto lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
+      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-5 sm:px-6 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
         {layout === "horizontal" && (
-          <div className="flex h-full flex-col lg:flex-row">
-            <div className="flex min-h-[300px] min-w-0 flex-col overflow-hidden border-b border-zinc-200 dark:border-zinc-800 lg:min-h-0 lg:w-1/2 lg:border-b-0 lg:border-r">{editorPane}</div>
-            <div className="flex min-h-[250px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-1/2">{outputPane}</div>
+          <div className="flex h-full flex-col gap-5 lg:flex-row">
+            <div className="flex min-h-[300px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-[55%]">{editorPane}</div>
+            <div className="flex min-h-[250px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-[45%]">{outputPane}</div>
           </div>
         )}
 
         {layout === "vertical" && (
-          <div className="flex h-full flex-col">
-            <div className="h-1/2 min-h-0 overflow-hidden border-b border-zinc-200 dark:border-zinc-800">{editorPane}</div>
+          <div className="flex h-full flex-col gap-5">
+            <div className="h-1/2 min-h-0 overflow-hidden">{editorPane}</div>
             <div className="h-1/2 min-h-0 overflow-hidden">{outputPane}</div>
           </div>
         )}
 
         {layout === "bottom" && (
-          <div className="flex h-full flex-col overflow-auto">
+          <div className="flex h-full flex-col gap-5 overflow-auto">
             <div className="min-h-[300px]">{editorPane}</div>
-            {hasRun && <div className="min-h-[500px] border-t border-zinc-200 dark:border-zinc-800">{outputPane}</div>}
+            {hasRun && <div className="min-h-[500px]">{outputPane}</div>}
           </div>
         )}
       </div>

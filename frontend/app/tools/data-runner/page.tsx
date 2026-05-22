@@ -138,7 +138,7 @@ const modeMeta: Record<
 };
 
 const editorClass =
-  "w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
+  "w-full rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -198,19 +198,19 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className={`flex h-full min-h-[250px] flex-col rounded-2xl border bg-white p-4 shadow-sm dark:bg-zinc-900 lg:min-h-0 ${accent === "purple" ? "border-purple-200 dark:border-purple-900" : "border-zinc-200 dark:border-zinc-800"}`}>
+    <section className={`flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 ${accent === "purple" ? "border-purple-900" : "border-zinc-800"}`}>
       <div className="mb-4 flex flex-wrap gap-2">
         {(["output", "errors"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setOutputTab(tab)}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
               outputTab === tab
                 ? accent === "purple"
                   ? "bg-purple-600 text-white"
                   : "bg-emerald-600 text-white"
-                : "border border-zinc-200 text-zinc-600 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
+                : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
             }`}
           >
             {tab === "output" ? "Output" : "Errors"}
@@ -232,13 +232,13 @@ function OutputPanel({
           Killed by signal {result.signal}
         </div>
       )}
-      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap font-mono text-sm text-zinc-800 dark:text-zinc-200">
+      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
         {outputTab === "output"
           ? stdout || (result?.exit_code === 0 ? <span className="text-zinc-400">Program exited with no output.</span> : "")
           : errors || <span className="text-zinc-400">No errors.</span>}
       </pre>
       {result && (
-        <div className="mt-3 text-xs text-zinc-400">
+        <div className="mt-3 border-t border-zinc-800 pt-3 text-xs text-zinc-500">
           CPU: {result.cpu_time ?? "-"}ms · Wall: {result.wall_time ?? "-"}ms · Memory: {memoryKb}KB
         </div>
       )}
@@ -268,10 +268,12 @@ function DatabaseResultsPanel({
   queryErrors: string;
 }) {
   return (
-    <section className="flex min-h-[250px] flex-1 flex-col rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0">
-      <h2 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-100">Results</h2>
+    <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+      <div className="-m-4 mb-4 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
+        <h2 className="text-sm font-semibold text-zinc-100">Results</h2>
+      </div>
       {!hasRun ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-200 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
+        <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-800 text-sm text-zinc-600">
           Run a query to see results
         </div>
       ) : (
@@ -288,14 +290,14 @@ function DatabaseResultsPanel({
           )}
 
           {table ? (
-            <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-zinc-800">
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr>
                     {table.headers.map((header) => (
                       <th
                         key={header}
-                        className="border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800"
+                        className="sticky top-0 border-b border-zinc-700 bg-zinc-800 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-zinc-300"
                       >
                         {header}
                       </th>
@@ -304,11 +306,11 @@ function DatabaseResultsPanel({
                 </thead>
                 <tbody>
                   {table.rows.map((row, rowIndex) => (
-                    <tr key={`${row.join("-")}-${rowIndex}`} className={rowIndex % 2 === 1 ? "bg-zinc-50 dark:bg-zinc-900/50" : ""}>
+                    <tr key={`${row.join("-")}-${rowIndex}`} className={rowIndex % 2 === 1 ? "bg-zinc-950/40" : "bg-zinc-900"}>
                       {row.map((cell, cellIndex) => (
                         <td
                           key={`${cell}-${cellIndex}`}
-                          className="border-b border-zinc-100 px-4 py-2 text-sm text-zinc-800 dark:border-zinc-800 dark:text-zinc-200"
+                          className="border-b border-zinc-800 px-4 py-2 text-sm text-zinc-200"
                         >
                           {cell}
                         </td>
@@ -319,7 +321,7 @@ function DatabaseResultsPanel({
               </table>
             </div>
           ) : (
-            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap font-mono text-sm text-zinc-800 dark:text-zinc-200">
+            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
               {stdout || (result?.exit_code === 0 ? <span className="text-zinc-400">Program exited with no output.</span> : "")}
             </pre>
           )}
@@ -329,7 +331,7 @@ function DatabaseResultsPanel({
               {queryErrors}
             </pre>
           )}
-          {table && <div className="mt-2 text-xs text-zinc-500">{table.rows.length} rows returned</div>}
+          {table && <div className="mt-2 border-t border-zinc-800 pt-3 text-xs text-zinc-500">{table.rows.length} rows returned</div>}
         </>
       )}
     </section>
@@ -432,8 +434,8 @@ function DataRunnerPageContent() {
   const queryErrors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950">
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-8 sm:px-6 sm:py-12">
+    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-6 sm:px-6 sm:py-10">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -445,11 +447,11 @@ function DataRunnerPageContent() {
         </nav>
 
         <header className="mt-6">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Data Runner</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Data Runner</h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, and MongoDB workflows for data analysis.</p>
         </header>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="mt-6 flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
           {([
             "sqlite",
             "mysql",
@@ -460,10 +462,10 @@ function DataRunnerPageContent() {
               key={value}
               type="button"
               onClick={() => setMode(value)}
-              className={`whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                 mode === value
                   ? modeMeta[value].activeClass
-                  : "border border-zinc-200 text-zinc-600 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-400"
+                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
               }`}
             >
               <span className="flex items-center gap-1.5">
@@ -475,8 +477,8 @@ function DataRunnerPageContent() {
         </div>
 
         <div className="mt-5 flex min-h-[560px] flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
+            <div className="flex items-center gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm font-semibold text-zinc-100">
               {currentMode.icon}
               {currentMode.editorLabel}
             </div>
@@ -485,18 +487,19 @@ function DataRunnerPageContent() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className={`${editorClass} min-h-[300px] resize-none rounded-none border-0 focus:ring-0 lg:flex-1`}
+              className={`${editorClass} min-h-[300px] flex-1 resize-y rounded-none border-0 focus:ring-0 lg:min-h-0`}
             />
-            <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+            <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
               <button
                 type="button"
                 onClick={runCode}
                 disabled={running}
-                className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 ${currentMode.runButtonClass}`}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${currentMode.runButtonClass}`}
               >
                 {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
                 {running ? "Running..." : currentMode.runLabel}
               </button>
+              <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
             </div>
           </section>
           <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
