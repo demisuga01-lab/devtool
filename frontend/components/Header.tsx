@@ -4,49 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
-  ArrowLeftRight,
-  ArrowRight,
-  Binary,
-  BookOpen,
-  Box,
-  Braces,
-  Calendar,
   ChevronDown,
-  Clock,
-  Code,
   Code2,
-  Database,
-  Eye,
-  FileText,
-  Fingerprint,
-  GitBranch,
-  GitCompare,
   Github,
-  Globe,
-  Hash,
-  Key,
-  Layers,
-  Link as LinkIcon,
-  Lock,
   Menu,
-  Palette,
-  QrCode,
   Search,
-  Server,
-  Settings,
-  Shield,
-  ShieldCheck,
-  Terminal,
-  Timer,
-  Type,
-  Wrench,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
-import { allTools, toolGroups } from "@/lib/tools";
+import { allTools } from "@/lib/tools";
 import type { Tool } from "@/lib/tools";
 import { authChangedEvent, clearAuth, isAuthenticated } from "@/lib/auth";
 
@@ -86,140 +54,16 @@ const themeToggleClass =
   "[&>div>button]:rounded-lg [&>div>button]:border-0 [&>div>button]:bg-transparent [&>div>button]:p-2 [&>div>button]:text-zinc-500 [&>div>button]:transition-colors [&>div>button:hover]:bg-zinc-100 [&>div>button:hover]:text-zinc-700 dark:[&>div>button]:text-zinc-500 dark:[&>div>button:hover]:bg-zinc-800 dark:[&>div>button:hover]:text-zinc-300";
 
 type NavTool = Tool & {
-  icon: LucideIcon;
   navDescription: string;
 };
 
-type NavGroup = {
+type IntentIconName = "inspect" | "convert" | "security" | "generate" | "network" | "text";
+
+type IntentGroup = {
   name: string;
-  icon: LucideIcon;
+  accent: string;
+  icon: IntentIconName;
   tools: NavTool[];
-};
-
-const categoryIcons: Record<string, LucideIcon> = {
-  "Text & Format": FileText,
-  "More Formatters": FileText,
-  "Crypto & Hash": Lock,
-  "Encode & Convert": ArrowLeftRight,
-  "Web & Network": Globe,
-  "Date & Time": Clock,
-  "XML & Data": Database,
-  Escape: Braces,
-  "Reference & Utils": BookOpen,
-  DevOps: Server,
-  "More Tools": Wrench,
-};
-
-const toolIcons: Record<string, LucideIcon> = {
-  "json-formatter": Braces,
-  "json-validator": Braces,
-  "jwt-decoder": Key,
-  base64: Binary,
-  "url-encoder": LinkIcon,
-  "html-formatter": Code,
-  "css-formatter": Code2,
-  "text-diff": GitCompare,
-  "markdown-preview": FileText,
-  "word-counter": Type,
-  "slug-generator": Hash,
-  "lorem-ipsum": FileText,
-  "text-case": Type,
-  "line-sorter": Layers,
-  "json-diff": GitCompare,
-  "json-to-typescript": Code2,
-  "hash-generator": Hash,
-  "uuid-generator": Fingerprint,
-  "password-generator": Lock,
-  "ulid-generator": Fingerprint,
-  "nanoid-generator": Hash,
-  "random-token-generator": Key,
-  "passphrase-generator": BookOpen,
-  "hmac-generator": Key,
-  "bcrypt-generator": Lock,
-  "jwt-builder": Key,
-  "blake2-generator": Hash,
-  "hash-verifier": ShieldCheck,
-  "jwt-verifier": Key,
-  timestamp: Clock,
-  "cron-parser": Timer,
-  "quartz-cron": Timer,
-  "date-diff": Calendar,
-  "timezone-converter": Globe,
-  "duration-calculator": Timer,
-  "hex-encoder": Binary,
-  "binary-converter": Binary,
-  "csv-to-json": Database,
-  "json-to-csv": ArrowLeftRight,
-  "file-encoding": FileText,
-  "unicode-escape": ArrowLeftRight,
-  "xml-formatter": Code2,
-  "xml-validator": ShieldCheck,
-  "xml-to-json": ArrowLeftRight,
-  "json-to-xml": ArrowLeftRight,
-  "yaml-to-json": ArrowLeftRight,
-  "json-to-yaml": ArrowLeftRight,
-  "xpath-tester": Search,
-  "xsd-generator": Database,
-  "xslt-transformer": ArrowLeftRight,
-  "toml-formatter": FileText,
-  "toml-validator": ShieldCheck,
-  "toml-to-json": ArrowLeftRight,
-  "html-escape": Braces,
-  "xml-escape": Braces,
-  "js-escape": Code,
-  "json-escape": Braces,
-  "sql-escape": Database,
-  "http-headers": Shield,
-  "redirect-checker": ArrowRight,
-  "ssl-checker": ShieldCheck,
-  "dns-lookup": Globe,
-  "whois-lookup": Search,
-  "regex-tester": Search,
-  "java-regex": Search,
-  "security-headers": ShieldCheck,
-  "ip-lookup": Globe,
-  "dns-propagation": Globe,
-  "spf-checker": ShieldCheck,
-  "ssl-chain": ShieldCheck,
-  "og-preview": Eye,
-  "curl-builder": Terminal,
-  "string-utilities": Layers,
-  "qr-generator": QrCode,
-  "url-parser": LinkIcon,
-  "url-query-builder": LinkIcon,
-  "recent-pastes": Clock,
-  "html-entities": Braces,
-  "mime-types": FileText,
-  "sql-formatter": Database,
-  "js-beautifier": Code2,
-  "i18n-standards": Globe,
-  "number-base": Binary,
-  "morse-code": Terminal,
-  "roman-numerals": Hash,
-  "ascii-table": Binary,
-  "semver-checker": GitCompare,
-  "color-picker": Palette,
-  "css-gradient": Palette,
-  "css-box-shadow": Layers,
-  "hex-rgb-hsl-converter": Palette,
-  "contrast-checker": Eye,
-  "css-clamp-calculator": Code2,
-  "duplicate-line-remover": Layers,
-  "case-converter": Type,
-  "regex-replace": Search,
-  "regex-escape": Braces,
-  "jsonpath-tester": Search,
-  "json-tree-viewer": GitBranch,
-  "yaml-diff": GitCompare,
-  "code-diff": GitCompare,
-  "unit-converter": ArrowLeftRight,
-  "age-calculator": Calendar,
-  "gitignore-generator": FileText,
-  "cron-builder": Timer,
-  "totp-generator": Lock,
-  "docker-compose-validator": Box,
-  "nginx-config-checker": Server,
-  "systemd-unit-generator": Settings,
 };
 
 const toolDescriptions: Record<string, string> = {
@@ -339,10 +183,6 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function toolsFor(slug: string): Tool[] {
-  return toolGroups.find((group) => group.slug === slug)?.tools ?? [];
-}
-
 function toolsBySlug(slugs: string[]): Tool[] {
   return slugs
     .map((slug) => allTools.find((tool) => tool.slug === slug))
@@ -352,79 +192,149 @@ function toolsBySlug(slugs: string[]): Tool[] {
 function navTool(tool: Tool): NavTool {
   return {
     ...tool,
-    icon: toolIcons[tool.slug] ?? Wrench,
     navDescription: toolDescriptions[tool.slug] ?? tool.description,
   };
 }
 
-function navGroup(name: string, tools: Tool[]): NavGroup {
+function intentGroup(name: string, accent: string, icon: IntentIconName, slugs: string[]): IntentGroup {
   return {
     name,
-    icon: categoryIcons[name] ?? Wrench,
-    tools: tools.map(navTool),
+    accent,
+    icon,
+    tools: toolsBySlug(slugs).map(navTool),
   };
 }
 
-const textTools = toolsFor("text");
-const referenceTools = toolsFor("reference");
-const textFormatTools = toolsBySlug([
-  "json-formatter",
-  "json-validator",
-  "jwt-decoder",
-  "base64",
-  "url-encoder",
-  "html-formatter",
-  "css-formatter",
-  "text-diff",
-  "duplicate-line-remover",
-  "case-converter",
-  "regex-replace",
-  "regex-escape",
-  "jsonpath-tester",
-  "json-tree-viewer",
-]);
-const moreFormatterTools = textTools.filter((tool) => !textFormatTools.some((primary) => primary.slug === tool.slug));
+const intentGroups: IntentGroup[] = [
+  intentGroup("Inspect & Validate", "#3b82f6", "inspect", [
+    "json-formatter",
+    "json-validator",
+    "xml-formatter",
+    "xml-validator",
+    "yaml-diff",
+    "html-formatter",
+    "css-formatter",
+    "jwt-decoder",
+    "jwt-verifier",
+    "hash-verifier",
+    "toml-validator",
+    "nginx-config-checker",
+    "docker-compose-validator",
+    "contrast-checker",
+    "file-encoding",
+    "ssl-checker",
+    "security-headers",
+    "spf-checker",
+  ]),
+  intentGroup("Convert & Transform", "#10b981", "convert", [
+    "base64",
+    "url-encoder",
+    "hex-encoder",
+    "binary-converter",
+    "csv-to-json",
+    "json-to-csv",
+    "json-to-yaml",
+    "yaml-to-json",
+    "xml-to-json",
+    "json-to-xml",
+    "toml-to-json",
+    "unicode-escape",
+    "hex-rgb-hsl-converter",
+    "morse-code",
+    "number-base",
+    "roman-numerals",
+    "json-to-typescript",
+    "case-converter",
+    "text-case",
+  ]),
+  intentGroup("Security & Crypto", "#f59e0b", "security", [
+    "hash-generator",
+    "blake2-generator",
+    "hmac-generator",
+    "bcrypt-generator",
+    "password-generator",
+    "jwt-builder",
+    "random-token-generator",
+    "totp-generator",
+  ]),
+  intentGroup("Generate & Build", "#8b5cf6", "generate", [
+    "uuid-generator",
+    "ulid-generator",
+    "nanoid-generator",
+    "passphrase-generator",
+    "qr-generator",
+    "lorem-ipsum",
+    "cron-builder",
+    "quartz-cron",
+    "slug-generator",
+    "gitignore-generator",
+    "systemd-unit-generator",
+    "css-gradient",
+    "css-box-shadow",
+    "css-clamp-calculator",
+    "color-picker",
+  ]),
+  intentGroup("Network & Web", "#f43f5e", "network", [
+    "http-headers",
+    "dns-lookup",
+    "dns-propagation",
+    "whois-lookup",
+    "ssl-chain",
+    "redirect-checker",
+    "ip-lookup",
+    "og-preview",
+    "spf-checker",
+    "curl-builder",
+    "url-parser",
+    "url-query-builder",
+  ]),
+  intentGroup("Text & Code", "#06b6d4", "text", [
+    "text-diff",
+    "code-diff",
+    "word-counter",
+    "line-sorter",
+    "markdown-preview",
+    "regex-tester",
+    "java-regex",
+    "regex-replace",
+    "regex-escape",
+    "text-case",
+    "string-utilities",
+    "jsonpath-tester",
+    "json-tree-viewer",
+    "xpath-tester",
+    "sql-formatter",
+    "js-beautifier",
+    "html-entities",
+    "duplicate-line-remover",
+    "timestamp",
+    "date-diff",
+    "duration-calculator",
+    "age-calculator",
+    "timezone-converter",
+    "cron-parser",
+    "semver-checker",
+    "mime-types",
+    "i18n-standards",
+    "unit-converter",
+    "ascii-table",
+  ]),
+].filter((group) => group.tools.length > 0);
 
-const navColumns: NavGroup[][] = [
-  [
-    navGroup("Text & Format", textFormatTools),
-    navGroup("More Formatters", moreFormatterTools),
-  ],
-  [
-    navGroup("Crypto & Hash", toolsFor("crypto")),
-    navGroup("Date & Time", toolsFor("datetime")),
-  ],
-  [
-    navGroup("Encode & Convert", toolsFor("encode")),
-    navGroup("XML & Data", toolsFor("xml-data")),
-    navGroup("Escape", toolsFor("escape")),
-  ],
-  [
-    navGroup("Web & Network", toolsFor("web")),
-    navGroup("Reference & Utils", referenceTools.slice(0, 8)),
-    navGroup("DevOps", toolsFor("devops")),
-    navGroup("More Tools", referenceTools.slice(8)),
-  ],
-].map((column) => column.filter((group) => group.tools.length > 0));
+const devToolCount = allTools.length;
 
-const devToolCount = navColumns.flatMap((column) => column.flatMap((group) => group.tools)).length;
-
-function filterNavColumns(query: string) {
+function filterIntentGroups(query: string) {
   const normalized = query.trim().toLowerCase();
-  if (!normalized) return navColumns;
-  return navColumns
-    .map((column) =>
-      column
-        .map((group) => ({
-          ...group,
-          tools: group.tools.filter((tool) => {
-            const haystack = `${tool.name} ${tool.navDescription}`.toLowerCase();
-            return haystack.includes(normalized);
-          }),
-        }))
-        .filter((group) => group.tools.length > 0),
-    )
-    .filter((column) => column.length > 0);
+  if (!normalized) return intentGroups;
+  return intentGroups
+    .map((group) => ({
+      ...group,
+      tools: group.tools.filter((tool) => {
+        const haystack = `${tool.name} ${tool.navDescription} ${group.name}`.toLowerCase();
+        return haystack.includes(normalized);
+      }),
+    }))
+    .filter((group) => group.tools.length > 0);
 }
 
 function HeaderSearch({
@@ -482,9 +392,9 @@ export function Header() {
   const toolsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const toolsMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const filteredColumns = useMemo(() => filterNavColumns(toolSearch), [toolSearch]);
-  const filteredMobileGroups = useMemo(() => filteredColumns.flat(), [filteredColumns]);
-  const hasToolResults = filteredColumns.some((column) => column.length > 0);
+  const filteredIntentGroups = useMemo(() => filterIntentGroups(toolSearch), [toolSearch]);
+  const hasToolResults = filteredIntentGroups.some((group) => group.tools.length > 0);
+  const isSearchingTools = toolSearch.trim().length > 0;
 
   useEffect(() => {
     document.body.style.overflow = mobile ? "hidden" : "";
@@ -671,7 +581,7 @@ export function Header() {
             >
               Dev Tools
               <span className="ml-2 rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-                {allTools.length || devToolCount} tools
+                {devToolCount} tools
               </span>
               <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${toolsOpen ? "rotate-180" : ""}`} />
             </button>
@@ -690,21 +600,26 @@ export function Header() {
                   <HeaderSearch value={toolSearch} onChange={setToolSearch} />
 
                   {hasToolResults ? (
-                    <div className="mt-5 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                      {filteredColumns.map((column, index) => (
-                        <div key={index} className="space-y-5">
-                          {column.map((group) => (
-                            <ToolDropdownGroup
-                              key={group.name}
-                              group={group}
-                              pathname={pathname}
-                              query={toolSearch}
-                              onClick={() => setToolsOpen(false)}
-                            />
-                          ))}
-                        </div>
-                      ))}
-                    </div>
+                    isSearchingTools ? (
+                      <IntentSearchResults
+                        groups={filteredIntentGroups}
+                        pathname={pathname}
+                        query={toolSearch}
+                        onClick={() => setToolsOpen(false)}
+                      />
+                    ) : (
+                      <div className="mt-5 grid gap-5 md:grid-cols-3 lg:grid-cols-6">
+                        {filteredIntentGroups.map((group) => (
+                          <IntentDropdownGroup
+                            key={group.name}
+                            group={group}
+                            pathname={pathname}
+                            query={toolSearch}
+                            onClick={() => setToolsOpen(false)}
+                          />
+                        ))}
+                      </div>
+                    )
                   ) : (
                     <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-zinc-400">
                       No tools found for &apos;{toolSearch.trim()}&apos;
@@ -836,7 +751,7 @@ export function Header() {
             onClick={() => setMobile(false)}
           />
           <div
-            className="fixed bottom-0 left-0 top-16 z-[100] w-full max-w-[390px] overflow-y-auto border-r border-neutral-200 bg-white px-4 py-4 shadow-[20px_0_60px_rgba(0,0,0,0.45)] dark:border-white/[0.08] dark:bg-[#161616] md:hidden"
+            className="fixed inset-x-0 bottom-0 top-16 z-[100] w-full overflow-y-auto border-r border-neutral-200 bg-white px-4 py-4 shadow-[20px_0_60px_rgba(0,0,0,0.45)] dark:border-white/[0.08] dark:bg-[#161616] md:hidden"
             style={{ animation: "navDrawerIn 200ms ease-out both" }}
           >
             <div className="space-y-2">
@@ -864,46 +779,38 @@ export function Header() {
                 title="Dev Tools"
                 open={openMobileGroup === "tools"}
                 onToggle={() => setOpenMobileGroup(openMobileGroup === "tools" ? null : "tools")}
-                badge={`${allTools.length || devToolCount} tools`}
+                badge={`${devToolCount} tools`}
               >
                 <div className="sticky top-0 z-10 -mx-2 bg-white px-2 pb-3 pt-1 dark:bg-[#161616]">
                   <HeaderSearch value={toolSearch} onChange={setToolSearch} />
                 </div>
                 {hasToolResults ? (
-                  <div className="space-y-2">
-                    {filteredMobileGroups.map((group) => {
-                      const Icon = group.icon;
-                      const forcedOpen = Boolean(toolSearch.trim());
-                      const categoryOpen = forcedOpen || openMobileToolCategory === group.name;
-                      return (
-                        <div key={group.name} className="rounded-xl border border-neutral-200 bg-neutral-50 dark:border-white/[0.08] dark:bg-white/[0.025]">
-                          <button
-                            type="button"
-                            onClick={() => setOpenMobileToolCategory(categoryOpen && !forcedOpen ? null : group.name)}
-                            className="flex w-full items-center justify-between px-3 py-3 text-left"
-                          >
-                            <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-600 dark:text-emerald-500">
-                              <Icon className="h-4 w-4" />
-                              {group.name}
-                            </span>
-                            <ChevronDown className={`h-4 w-4 text-neutral-500 transition dark:text-zinc-500 ${categoryOpen ? "rotate-180" : ""}`} />
-                          </button>
-                          {categoryOpen && (
-                            <div className="border-t border-neutral-200 px-2 py-2 dark:border-white/[0.08]">
-                              {group.tools.map((tool) => (
-                                <MobileToolLink
-                                  key={tool.slug}
-                                  tool={tool}
-                                  active={isActive(pathname, tool.href)}
-                                  onClick={() => setMobile(false)}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  isSearchingTools ? (
+                    <IntentSearchResults
+                      groups={filteredIntentGroups}
+                      pathname={pathname}
+                      query={toolSearch}
+                      onClick={() => setMobile(false)}
+                      compact
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredIntentGroups.map((group) => {
+                        const categoryOpen = openMobileToolCategory === group.name;
+                        return (
+                          <MobileIntentAccordion
+                            key={group.name}
+                            group={group}
+                            open={categoryOpen}
+                            pathname={pathname}
+                            query={toolSearch}
+                            onToggle={() => setOpenMobileToolCategory(categoryOpen ? null : group.name)}
+                            onClick={() => setMobile(false)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )
                 ) : (
                   <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-6 text-center text-sm text-neutral-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-zinc-400">
                     No tools found for &apos;{toolSearch.trim()}&apos;
@@ -973,28 +880,132 @@ export function Header() {
   );
 }
 
-function ToolDropdownGroup({
+type IntentCssVars = CSSProperties & {
+  "--intent-color": string;
+  "--intent-bg-hover": string;
+  "--intent-bg-hover-dark": string;
+  "--intent-bg-active": string;
+};
+
+function intentStyle(group: IntentGroup): IntentCssVars {
+  return {
+    "--intent-color": group.accent,
+    "--intent-bg-hover": hexToRgba(group.accent, 0.05),
+    "--intent-bg-hover-dark": hexToRgba(group.accent, 0.12),
+    "--intent-bg-active": hexToRgba(group.accent, 0.08),
+  };
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const value = hex.replace("#", "");
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function IntentIcon({ name, className = "" }: { name: IntentIconName; className?: string }) {
+  const props = {
+    className,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+
+  if (name === "inspect") {
+    return (
+      <svg {...props}>
+        <circle cx="10" cy="10" r="7" />
+        <path d="m21 21-4.35-4.35" />
+        <path d="m7 10 2 2 4-4" />
+      </svg>
+    );
+  }
+
+  if (name === "convert") {
+    return (
+      <svg {...props}>
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+        <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+        <path d="m21 3v5h-5" />
+        <path d="m3 21v-5h5" />
+      </svg>
+    );
+  }
+
+  if (name === "security") {
+    return (
+      <svg {...props}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <rect x="9" y="11" width="6" height="5" rx="1" />
+        <path d="M10 11V9a2 2 0 1 1 4 0v2" />
+      </svg>
+    );
+  }
+
+  if (name === "generate") {
+    return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="m13 2-3 7h5l-3 13" />
+      </svg>
+    );
+  }
+
+  if (name === "network") {
+    return (
+      <svg {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M2 12h20" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="m9 13-2 2 2 2" />
+      <path d="m15 13 2 2-2 2" />
+    </svg>
+  );
+}
+
+function IntentHeader({ group }: { group: IntentGroup }) {
+  return (
+    <div
+      className="mb-3 flex items-center gap-2 border-b pb-2 text-xs font-semibold uppercase tracking-[0.08em]"
+      style={{ color: group.accent, borderBottomColor: hexToRgba(group.accent, 0.3) }}
+    >
+      <IntentIcon name={group.icon} className="h-5 w-5 shrink-0" />
+      <span className="leading-tight">{group.name}</span>
+    </div>
+  );
+}
+
+function IntentDropdownGroup({
   group,
   pathname,
   query,
   onClick,
 }: {
-  group: NavGroup;
+  group: IntentGroup;
   pathname: string;
   query: string;
   onClick: () => void;
 }) {
-  const Icon = group.icon;
   return (
-    <section className="border-l-2 border-emerald-600 pl-2 dark:border-emerald-500">
-      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-600 dark:text-emerald-500">
-        <Icon className="h-4 w-4" />
-        {group.name}
-      </div>
+    <section style={intentStyle(group)}>
+      <IntentHeader group={group} />
       <ul className="space-y-1">
         {group.tools.map((tool) => (
           <li key={tool.slug}>
-            <ToolDropdownLink tool={tool} active={isActive(pathname, tool.href)} query={query} onClick={onClick} />
+            <IntentToolLink group={group} tool={tool} active={isActive(pathname, tool.href)} query={query} onClick={onClick} />
           </li>
         ))}
       </ul>
@@ -1002,36 +1013,84 @@ function ToolDropdownGroup({
   );
 }
 
-function ToolDropdownLink({
+function IntentSearchResults({
+  groups,
+  pathname,
+  query,
+  onClick,
+  compact = false,
+}: {
+  groups: IntentGroup[];
+  pathname: string;
+  query: string;
+  onClick: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "mt-3 space-y-3" : "mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3"}>
+      {groups.map((group) => (
+        <section key={group.name} style={intentStyle(group)}>
+          <IntentHeader group={group} />
+          <ul className="space-y-1.5">
+            {group.tools.map((tool) => (
+              <li key={`${group.name}-${tool.slug}`}>
+                <IntentToolLink
+                  group={group}
+                  tool={tool}
+                  active={isActive(pathname, tool.href)}
+                  query={query}
+                  onClick={onClick}
+                  showBadge
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function IntentToolLink({
+  group,
   tool,
   active,
   query,
   onClick,
+  showBadge = false,
 }: {
+  group: IntentGroup;
   tool: NavTool;
   active: boolean;
   query: string;
   onClick: () => void;
+  showBadge?: boolean;
 }) {
-  const Icon = tool.icon;
   return (
     <Link
       href={tool.href}
       onClick={onClick}
-      className={`group relative flex min-h-9 gap-2 rounded-lg border-l-2 px-2 py-1.5 transition duration-150 ease-out ${
+      className={`group relative block rounded-lg border-l-2 px-2 py-1.5 transition duration-150 ease-out hover:border-[var(--intent-color)] hover:bg-[var(--intent-bg-hover)] dark:hover:bg-[var(--intent-bg-hover-dark)] ${
         active
-          ? "border-emerald-600 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-500/[0.08]"
-          : "border-transparent hover:border-emerald-600 hover:bg-emerald-50 dark:hover:border-emerald-500 dark:hover:bg-emerald-500/[0.08]"
+          ? "border-[var(--intent-color)] bg-[var(--intent-bg-active)]"
+          : "border-transparent"
       }`}
     >
-      <Icon className={`mt-0.5 h-4 w-4 shrink-0 transition ${active ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-500 group-hover:text-emerald-600 dark:text-zinc-500 dark:group-hover:text-emerald-400"}`} />
-      <span className="min-w-0">
-        <span className={`flex items-center gap-2 text-sm font-medium leading-5 transition ${active ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-800 group-hover:text-emerald-600 dark:text-neutral-200 dark:group-hover:text-emerald-400"}`}>
-          <span className="truncate"><HighlightMatch text={tool.name} query={query} /></span>
-          {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400" />}
+      <span className="flex min-w-0 items-center gap-2">
+        <span className={`truncate text-sm font-medium leading-5 transition ${active ? "text-[var(--intent-color)]" : "text-neutral-800 group-hover:text-[var(--intent-color)] dark:text-neutral-200"}`}>
+          <HighlightMatch text={tool.name} query={query} />
         </span>
-        <span className="block truncate text-xs leading-4 text-neutral-400 dark:text-neutral-500">{tool.navDescription}</span>
+        {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--intent-color)]" />}
+        {showBadge && (
+          <span
+            className="ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: group.accent, backgroundColor: hexToRgba(group.accent, 0.1) }}
+          >
+            {group.name}
+          </span>
+        )}
       </span>
+      <span className="block truncate text-xs leading-4 text-neutral-400 dark:text-neutral-500">{tool.navDescription}</span>
     </Link>
   );
 }
@@ -1089,29 +1148,83 @@ function MobilePlainLink({
   );
 }
 
-function MobileToolLink({
-  tool,
-  active,
+function MobileIntentAccordion({
+  group,
+  open,
+  pathname,
+  query,
+  onToggle,
   onClick,
 }: {
-  tool: NavTool;
-  active: boolean;
+  group: IntentGroup;
+  open: boolean;
+  pathname: string;
+  query: string;
+  onToggle: () => void;
   onClick: () => void;
 }) {
-  const Icon = tool.icon;
+  return (
+    <div className="rounded-xl border border-neutral-200 bg-neutral-50 dark:border-white/[0.08] dark:bg-white/[0.025]" style={intentStyle(group)}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
+      >
+        <span className="flex min-w-0 items-center gap-2 text-xs font-semibold uppercase leading-5 tracking-[0.08em]" style={{ color: group.accent }}>
+          <IntentIcon name={group.icon} className="h-5 w-5 shrink-0" />
+          <span className="truncate">{group.name}</span>
+        </span>
+        <ChevronDown className={"h-4 w-4 shrink-0 text-neutral-500 transition dark:text-zinc-500 " + (open ? "rotate-180" : "")} />
+      </button>
+      {open && (
+        <div className="space-y-1 border-t border-neutral-200 px-2 py-2 dark:border-white/[0.08]">
+          {group.tools.map((tool) => (
+            <MobileIntentToolLink
+              key={tool.slug}
+              group={group}
+              tool={tool}
+              active={isActive(pathname, tool.href)}
+              query={query}
+              onClick={onClick}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileIntentToolLink({
+  group,
+  tool,
+  active,
+  query,
+  onClick,
+}: {
+  group: IntentGroup;
+  tool: NavTool;
+  active: boolean;
+  query: string;
+  onClick: () => void;
+}) {
   return (
     <Link
       href={tool.href}
       onClick={onClick}
-      className={`flex min-h-11 items-center gap-2 rounded-xl border-l-2 px-3 py-2 text-sm font-medium transition ${
+      className={`group block min-h-11 rounded-xl border-l-2 px-3 py-2 transition hover:border-[var(--intent-color)] hover:bg-[var(--intent-bg-hover)] dark:hover:bg-[var(--intent-bg-hover-dark)] ${
         active
-          ? "border-emerald-600 bg-emerald-50 text-emerald-600 dark:border-emerald-500 dark:bg-emerald-500/[0.08] dark:text-emerald-400"
-          : "border-transparent text-neutral-800 hover:border-emerald-600 hover:bg-emerald-50 hover:text-emerald-600 dark:text-neutral-200 dark:hover:border-emerald-500 dark:hover:bg-emerald-500/[0.08] dark:hover:text-emerald-400"
+          ? "border-[var(--intent-color)] bg-[var(--intent-bg-active)]"
+          : "border-transparent"
       }`}
+      style={intentStyle(group)}
     >
-      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-500 dark:text-zinc-500"}`} />
-      <span className="truncate">{tool.name}</span>
-      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />}
+      <span className="flex min-w-0 items-center gap-2">
+        <span className={`truncate text-sm font-medium leading-5 transition ${active ? "text-[var(--intent-color)]" : "text-neutral-800 group-hover:text-[var(--intent-color)] dark:text-neutral-200"}`}>
+          <HighlightMatch text={tool.name} query={query} />
+        </span>
+        {active && <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--intent-color)]" />}
+      </span>
+      <span className="block truncate text-xs leading-4 text-neutral-400 dark:text-neutral-500">{tool.navDescription}</span>
     </Link>
   );
 }
