@@ -32,8 +32,14 @@ function getTimezones(): string[] {
   return ["UTC", "America/New_York", "America/Los_Angeles", "Europe/London", "Europe/Berlin", "Asia/Tokyo"];
 }
 
+function toDateTimeLocal(date: Date): string {
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
 export default function TimestampPage() {
   const [input, setInput] = useState("");
+  const [dateTimeInput, setDateTimeInput] = useState(() => toDateTimeLocal(new Date()));
   const [parsed, setParsed] = useState<Date | null>(null);
   const [error, setError] = useState<ToolError | null>(null);
   const [scaleWarning, setScaleWarning] = useState<{ seconds: string; milliseconds: string } | null>(null);
@@ -52,7 +58,7 @@ export default function TimestampPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const convert = () => {
+  const convertTimestamp = () => {
     setError(null);
     setScaleWarning(null);
     setParsed(null);
@@ -77,17 +83,30 @@ export default function TimestampPage() {
       setParsed(d);
       return;
     }
-    const d = new Date(trimmed);
+    setError({
+      title: "Invalid timestamp",
+      detail: `Invalid timestamp: "${trimmed}"`,
+      suggestion: "Enter a Unix timestamp in seconds or milliseconds, or use the date/time picker.",
+    });
+  };
+
+  const convertDateTime = () => {
+    setError(null);
+    setScaleWarning(null);
+    const d = new Date(dateTimeInput);
     if (Number.isNaN(d.getTime())) {
       setError(ERROR_MESSAGES.invalid_date);
       return;
     }
+    setInput(String(Math.floor(d.getTime() / 1000)));
     setParsed(d);
   };
 
   const useNow = () => {
-    setParsed(new Date());
-    setInput(String(Math.floor(Date.now() / 1000)));
+    const current = new Date();
+    setParsed(current);
+    setInput(String(Math.floor(current.getTime() / 1000)));
+    setDateTimeInput(toDateTimeLocal(current));
     setError(null);
     setScaleWarning(null);
   };
@@ -130,16 +149,28 @@ export default function TimestampPage() {
           </div>
         </Panel>
 
-        <div>
-          <Label>Timestamp or date string</Label>
-          <ToolInput
-            value={input}
-            onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setParsed(null); setError(null); setScaleWarning(null); } }}
-            placeholder="1700000000 or 2023-11-14T22:13:20Z"
-          />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label>Unix timestamp</Label>
+            <ToolInput
+              inputMode="numeric"
+              value={input}
+              onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setParsed(null); setError(null); setScaleWarning(null); } }}
+              placeholder="1700000000"
+            />
+          </div>
+          <div>
+            <Label>Date and time</Label>
+            <ToolInput
+              type="datetime-local"
+              value={dateTimeInput}
+              onChange={(e) => setDateTimeInput(e.target.value)}
+            />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="primary" onClick={convert} disabled={!input}>Convert</Button>
+          <Button variant="primary" onClick={convertTimestamp} disabled={!input}>Convert timestamp</Button>
+          <Button variant="primary" onClick={convertDateTime} disabled={!dateTimeInput}>Convert date/time</Button>
           <Button onClick={useNow}>Use now</Button>
           <Label>Timezone</Label>
           <ToolSelect value={tz} onChange={(e) => setTz(e.target.value)}>
