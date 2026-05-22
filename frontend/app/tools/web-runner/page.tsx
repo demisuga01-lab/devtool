@@ -4,6 +4,8 @@ import { useSearchParams } from "next/navigation";
 import { DragEvent, KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
   Download,
   ExternalLink,
   Link2,
@@ -224,8 +226,32 @@ function injectPreviewNavigation(html: string) {
   return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}\n</body>`) : `${html}\n${script}`;
 }
 
+function injectErrorHandlers(html: string): string {
+  const script = `<script>
+(() => {
+  window.onerror = (msg, src, line) => {
+    window.parent.postMessage({ source: "web-runner-console", type: "error", args: [String(msg) + " (line " + line + ")"] }, "*");
+  };
+  window.addEventListener("unhandledrejection", (event) => {
+    window.parent.postMessage({ source: "web-runner-console", type: "error", args: [String(event.reason)] }, "*");
+  });
+})();
+</script>`;
+  return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${script}\n</body>`) : `${html}\n${script}`;
+}
+
+function injectBaseTag(html: string): string {
+  if (/<base\s+href/i.test(html)) return html;
+  const tag = `<base href="about:blank">`;
+  return /<head[^>]*>/i.test(html) ? html.replace(/(<head[^>]*>)/i, `$1\n${tag}`) : html;
+}
+
+function enhancePreviewDoc(html: string): string {
+  return injectErrorHandlers(injectBaseTag(html));
+}
+
 function cssDocument(css: string) {
-  return cssDemoHtml.replace("</head>", `<style>${escapeStyle(css)}</style>\n</head>`);
+  return enhancePreviewDoc(cssDemoHtml.replace("</head>", `<style>${escapeStyle(css)}</style>\n</head>`));
 }
 
 function fallbackMergeHtmlFiles(files: UploadedFile[]) {
@@ -896,12 +922,19 @@ function LintIndicator({ errors }: { errors: LintError[] }) {
   );
 }
 
+const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5];
+
 function WebPreviewPanel({
   doc,
   previewKey,
   currentFile,
   canGoBack,
+  canGoForward,
+  zoom,
   onBack,
+  onForward,
+  onZoomChange,
+  onRefresh,
   onMaximize,
   onNewTab,
 }: {
@@ -909,31 +942,67 @@ function WebPreviewPanel({
   previewKey: number;
   currentFile?: string;
   canGoBack?: boolean;
+  canGoForward?: boolean;
+  zoom: number;
   onBack?: () => void;
+  onForward?: () => void;
+  onZoomChange: (zoom: number) => void;
+  onRefresh: () => void;
   onMaximize?: () => void;
   onNewTab?: () => void;
 }) {
   return (
     <section className="flex flex-col min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:basis-[45%] h-full">
-      <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
-        <div className="flex min-w-0 items-center gap-2">
-          {onBack && canGoBack && (
+      <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm gap-2">
+        <div className="flex min-w-0 items-center gap-1">
+          {onBack && (
             <button
               type="button"
+              title="Back"
+              disabled={!canGoBack}
               onClick={onBack}
-              className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-300 transition-colors duration-200 hover:bg-zinc-700"
+              className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
             >
-              Back
+              <ChevronLeft className="h-3.5 w-3.5" />
             </button>
           )}
-          <span className="font-semibold text-zinc-100">Preview</span>
-          {currentFile && <span className="truncate rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">{currentFile}</span>}
+          {onForward && (
+            <button
+              type="button"
+              title="Forward"
+              disabled={!canGoForward}
+              onClick={onForward}
+              className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            title="Refresh preview"
+            onClick={onRefresh}
+            className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+          <span className="ml-1 font-semibold text-zinc-100">Preview</span>
+          {currentFile && (
+            <span className="ml-1 truncate rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300" title={currentFile}>
+              {currentFile}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden items-center gap-2 text-xs text-zinc-400 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Auto-updating
-          </span>
+        <div className="flex shrink-0 items-center gap-1">
+          <select
+            value={zoom}
+            onChange={(event) => onZoomChange(Number(event.target.value))}
+            title="Zoom level"
+            className="cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-[11px] text-zinc-300 outline-none transition-colors duration-200 hover:bg-zinc-800 focus:border-emerald-500"
+          >
+            {ZOOM_LEVELS.map((level) => (
+              <option key={level} value={level}>{Math.round(level * 100)}%</option>
+            ))}
+          </select>
           {onMaximize && (
             <button
               type="button"
@@ -956,13 +1025,21 @@ function WebPreviewPanel({
           )}
         </div>
       </div>
-      <iframe
-        key={previewKey}
-        title="Preview"
-        sandbox="allow-scripts allow-same-origin"
-        srcDoc={doc}
-        className="flex-1 w-full min-h-0 border-0 bg-white"
-      />
+      <div className="relative flex-1 min-h-0 overflow-hidden bg-white">
+        <iframe
+          key={previewKey}
+          title="Preview"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
+          srcDoc={doc}
+          style={{
+            width: `${100 / zoom}%`,
+            height: `${100 / zoom}%`,
+            transform: `scale(${zoom})`,
+            transformOrigin: "top left",
+          }}
+          className="block border-0 bg-white"
+        />
+      </div>
     </section>
   );
 }
@@ -1074,6 +1151,8 @@ function WebRunnerPageContent() {
   const [jsFiles, setJsFiles] = useState<UploadedFile[]>([]);
   const [currentPreviewFile, setCurrentPreviewFile] = useState<string | null>(null);
   const [previewHistory, setPreviewHistory] = useState<(string | null)[]>([]);
+  const [previewForward, setPreviewForward] = useState<(string | null)[]>([]);
+  const [previewZoom, setPreviewZoom] = useState(1);
   const [uploadErrors, setUploadErrors] = useState<Record<UploadTarget, string>>({
     html: "",
     css: "",
@@ -1090,12 +1169,46 @@ function WebRunnerPageContent() {
   const htmlModeDocument = htmlFiles.length > 0
     ? injectOptionalCssAndJs(previewHtmlContent, cssFiles.length > 0 ? effectiveCss : "", jsFiles.length > 0 ? effectiveJs : "")
     : html;
-  const routedHtmlModeDocument = shouldRouteUploadedHtml ? injectPreviewNavigation(htmlModeDocument) : htmlModeDocument;
-  const combinedHtmlDocument = htmlFiles.length > 0
+  const routedHtmlModeDocument = enhancePreviewDoc(shouldRouteUploadedHtml ? injectPreviewNavigation(htmlModeDocument) : htmlModeDocument);
+  const combinedHtmlDocument = enhancePreviewDoc(htmlFiles.length > 0
     ? injectPreviewNavigation(injectCssAndJs(previewHtmlContent, effectiveCss, effectiveJs))
-    : injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs);
+    : injectCssAndJs(effectiveHtml, effectiveCss, effectiveJs));
   const previewFileLabel = activePreviewHtmlFile?.name || (htmlFiles.length > 1 ? "Merged HTML" : htmlFiles[0]?.name);
   const htmlLintSource = mode === "html" && htmlFiles.length > 0 ? htmlModeDocument : effectiveHtml;
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = sessionStorage.getItem("webrunner_state");
+      if (!saved) return;
+      const data = JSON.parse(saved);
+      if (typeof data.html === "string") setHtml(data.html);
+      if (typeof data.css === "string") setCss(data.css);
+      if (typeof data.js === "string") setJs(data.js);
+      if (typeof data.ts === "string") setTs(data.ts);
+      if (Array.isArray(data.htmlFiles)) setHtmlFiles(data.htmlFiles);
+      if (Array.isArray(data.cssFiles)) setCssFiles(data.cssFiles);
+      if (Array.isArray(data.jsFiles)) setJsFiles(data.jsFiles);
+      if (typeof data.mode === "string") setMode(data.mode as Mode);
+    } catch {
+      // ignore corrupt state
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = window.setTimeout(() => {
+      try {
+        sessionStorage.setItem(
+          "webrunner_state",
+          JSON.stringify({ html, css, js, ts, htmlFiles, cssFiles, jsFiles, mode }),
+        );
+      } catch {
+        // ignore quota errors
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [html, css, js, ts, htmlFiles, cssFiles, jsFiles, mode]);
 
   useEffect(() => {
     if (!langParam) return;
@@ -1111,12 +1224,14 @@ function WebRunnerPageContent() {
     if (htmlFiles.length === 0) {
       setCurrentPreviewFile(null);
       setPreviewHistory([]);
+      setPreviewForward([]);
       return;
     }
     if (currentPreviewFile && !htmlFiles.some((file) => file.name === currentPreviewFile)) {
       setCurrentPreviewFile(null);
     }
     setPreviewHistory((current) => current.filter((fileName) => fileName === null || htmlFiles.some((file) => file.name === fileName)));
+    setPreviewForward((current) => current.filter((fileName) => fileName === null || htmlFiles.some((file) => file.name === fileName)));
   }, [currentPreviewFile, htmlFiles]);
 
   useEffect(() => {
@@ -1150,6 +1265,7 @@ function WebRunnerPageContent() {
         const targetFile = findHtmlFileByHref(htmlFiles, data.href);
         if (!targetFile) return;
         setPreviewHistory((current) => [...current, currentPreviewFile]);
+        setPreviewForward([]);
         setCurrentPreviewFile(targetFile.name);
         setHasRun(true);
         return;
@@ -1381,11 +1497,37 @@ function WebRunnerPageContent() {
     }
   }
 
+  function openPreviewInNewTab() {
+    if (typeof window === "undefined") return;
+    const blob = new Blob([previewDoc], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const opened = window.open(url, "_blank");
+    if (!opened) {
+      URL.revokeObjectURL(url);
+      return;
+    }
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  function refreshPreview() {
+    setPreviewKey((key) => key + 1);
+  }
+
   function goBackPreviewFile() {
     if (previewHistory.length === 0) return;
     const previous = previewHistory[previewHistory.length - 1];
+    setPreviewForward((current) => [...current, currentPreviewFile]);
     setCurrentPreviewFile(previous);
     setPreviewHistory((current) => current.slice(0, -1));
+    setHasRun(true);
+  }
+
+  function goForwardPreviewFile() {
+    if (previewForward.length === 0) return;
+    const next = previewForward[previewForward.length - 1];
+    setPreviewHistory((current) => [...current, currentPreviewFile]);
+    setCurrentPreviewFile(next);
+    setPreviewForward((current) => current.slice(0, -1));
     setHasRun(true);
   }
 
@@ -1582,9 +1724,14 @@ function WebRunnerPageContent() {
         previewKey={previewKey}
         currentFile={mode === "combined" || mode === "html" ? previewFileLabel : undefined}
         canGoBack={previewHistory.length > 0}
+        canGoForward={previewForward.length > 0}
+        zoom={previewZoom}
         onBack={goBackPreviewFile}
+        onForward={goForwardPreviewFile}
+        onZoomChange={setPreviewZoom}
+        onRefresh={refreshPreview}
         onMaximize={() => setModalTarget("preview")}
-        onNewTab={() => openInNewTab(previewDoc)}
+        onNewTab={openPreviewInNewTab}
       />
     );
 
