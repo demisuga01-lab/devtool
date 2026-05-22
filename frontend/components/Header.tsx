@@ -351,12 +351,12 @@ function HeaderSearch({
 }) {
   return (
     <label className={`relative block ${className}`}>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500 dark:text-neutral-400" />
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Search tools..."
-        className="h-10 w-full rounded-lg border border-white/[0.08] bg-white/[0.04] pl-9 pr-3 text-sm text-zinc-100 outline-none transition focus:border-emerald-500/70 focus:bg-white/[0.06] focus:ring-2 focus:ring-emerald-500/15 placeholder:text-zinc-500"
+        className="h-10 w-full rounded-lg border border-neutral-300 bg-neutral-100 pl-9 pr-3 text-sm text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-emerald-500/70 focus:bg-white focus:ring-2 focus:ring-emerald-500/15 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:placeholder:text-neutral-500 dark:focus:bg-neutral-800"
       />
     </label>
   );
@@ -370,7 +370,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   return (
     <>
       {text.slice(0, index)}
-      <mark className="rounded bg-emerald-500/20 px-0.5 text-emerald-300">{text.slice(index, index + trimmed.length)}</mark>
+      <mark className="rounded bg-emerald-100 px-0.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">{text.slice(index, index + trimmed.length)}</mark>
       {text.slice(index + trimmed.length)}
     </>
   );
@@ -597,7 +597,7 @@ export function Header() {
                 onMouseLeave={closeToolsMenu}
               >
                 <div
-                  className="scrollbar-thin max-h-[80vh] overflow-y-auto rounded-xl border border-white/[0.08] bg-[#1c1c1c] px-6 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)]"
+                  className="scrollbar-thin max-h-[80vh] overflow-y-auto rounded-xl border border-neutral-200 bg-white px-6 py-5 shadow-[0_20px_60px_rgba(0,0,0,0.5)] dark:border-white/[0.08] dark:bg-[#1c1c1c]"
                   style={{ animation: "navDropdownIn 200ms ease-out both" }}
                 >
                   <HeaderSearch value={toolSearch} onChange={setToolSearch} />
@@ -619,7 +619,7 @@ export function Header() {
                       ))}
                     </div>
                   ) : (
-                    <div className="mt-6 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-8 text-center text-sm text-zinc-400">
+                    <div className="mt-6 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-8 text-center text-sm text-neutral-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-zinc-400">
                       No tools found for &apos;{toolSearch.trim()}&apos;
                     </div>
                   )}
@@ -745,11 +745,11 @@ export function Header() {
           <button
             type="button"
             aria-label="Close menu"
-            className="fixed inset-0 top-16 z-[90] bg-black/55 md:hidden"
+            className="fixed inset-0 top-16 z-[90] bg-neutral-900/20 dark:bg-black/55 md:hidden"
             onClick={() => setMobile(false)}
           />
           <div
-            className="fixed bottom-0 left-0 top-16 z-[100] w-full max-w-[390px] overflow-y-auto border-r border-white/[0.08] bg-[#161616] px-4 py-4 shadow-[20px_0_60px_rgba(0,0,0,0.45)] md:hidden"
+            className="fixed bottom-0 left-0 top-16 z-[100] w-full max-w-[390px] overflow-y-auto border-r border-neutral-200 bg-white px-4 py-4 shadow-[20px_0_60px_rgba(0,0,0,0.45)] dark:border-white/[0.08] dark:bg-[#161616] md:hidden"
             style={{ animation: "navDrawerIn 200ms ease-out both" }}
           >
             <div className="space-y-2">
@@ -764,7 +764,7 @@ export function Header() {
                   <button
                     type="button"
                     onClick={logoutStatus}
-                    className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-zinc-300 hover:bg-white/[0.06] hover:text-white"
+                    className="block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-neutral-800 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:text-neutral-200 dark:hover:bg-emerald-500/[0.08] dark:hover:text-emerald-400"
                   >
                     Logout
                   </button>
@@ -779,7 +779,7 @@ export function Header() {
                 onToggle={() => setOpenMobileGroup(openMobileGroup === "tools" ? null : "tools")}
                 badge={`${allTools.length || devToolCount} tools`}
               >
-                <div className="sticky top-0 z-10 -mx-2 bg-[#161616] px-2 pb-3 pt-1">
+                <div className="sticky top-0 z-10 -mx-2 bg-white px-2 pb-3 pt-1 dark:bg-[#161616]">
                   <HeaderSearch value={toolSearch} onChange={setToolSearch} />
                 </div>
                 {hasToolResults ? (
@@ -789,20 +789,20 @@ export function Header() {
                       const forcedOpen = Boolean(toolSearch.trim());
                       const categoryOpen = forcedOpen || openMobileToolCategory === group.name;
                       return (
-                        <div key={group.name} className="rounded-xl border border-white/[0.08] bg-white/[0.025]">
+                        <div key={group.name} className="rounded-xl border border-neutral-200 bg-neutral-50 dark:border-white/[0.08] dark:bg-white/[0.025]">
                           <button
                             type="button"
                             onClick={() => setOpenMobileToolCategory(categoryOpen && !forcedOpen ? null : group.name)}
                             className="flex w-full items-center justify-between px-3 py-3 text-left"
                           >
-                            <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-400">
+                            <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-600 dark:text-emerald-500">
                               <Icon className="h-4 w-4" />
                               {group.name}
                             </span>
-                            <ChevronDown className={`h-4 w-4 text-zinc-500 transition ${categoryOpen ? "rotate-180" : ""}`} />
+                            <ChevronDown className={`h-4 w-4 text-neutral-500 transition dark:text-zinc-500 ${categoryOpen ? "rotate-180" : ""}`} />
                           </button>
                           {categoryOpen && (
-                            <div className="border-t border-white/[0.08] px-2 py-2">
+                            <div className="border-t border-neutral-200 px-2 py-2 dark:border-white/[0.08]">
                               {group.tools.map((tool) => (
                                 <MobileToolLink
                                   key={tool.slug}
@@ -818,7 +818,7 @@ export function Header() {
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-6 text-center text-sm text-zinc-400">
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-6 text-center text-sm text-neutral-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-zinc-400">
                     No tools found for &apos;{toolSearch.trim()}&apos;
                   </div>
                 )}
@@ -834,8 +834,8 @@ export function Header() {
                     {item.name}
                   </MobilePlainLink>
                 ))}
-                <div className="my-1 border-t border-white/[0.08]" />
-                <div className="flex items-start gap-2 px-3 py-2 text-xs text-zinc-500">
+                <div className="my-1 border-t border-neutral-200 dark:border-white/[0.08]" />
+                <div className="flex items-start gap-2 px-3 py-2 text-xs text-neutral-500 dark:text-zinc-500">
                   <Code2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                   <span>Add /raw to any paste URL for plain text</span>
                 </div>
@@ -849,7 +849,7 @@ export function Header() {
                 {compilerLinks.map((item) => (
                   <MobilePlainLink key={item.href} href={item.href} onClick={() => setMobile(false)}>
                     <span className="block">{item.name}</span>
-                    <span className="block text-xs text-zinc-500">{item.description}</span>
+                    <span className="block text-xs text-neutral-400 dark:text-neutral-500">{item.description}</span>
                   </MobilePlainLink>
                 ))}
               </MobileAccordion>
@@ -864,14 +864,14 @@ export function Header() {
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] px-3 py-2.5 text-sm font-semibold text-zinc-100 transition-colors hover:bg-white/[0.06]"
+                className="flex items-center gap-1.5 rounded-xl border border-neutral-200 px-3 py-2.5 text-sm font-semibold text-neutral-800 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:border-white/[0.08] dark:text-neutral-200 dark:hover:bg-emerald-500/[0.08] dark:hover:text-emerald-400"
               >
                 <Github className="h-4 w-4" />
                 GitHub
               </a>
 
-              <div className="flex items-center justify-between border-t border-white/[0.08] pt-4">
-                <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <div className="flex items-center justify-between border-t border-neutral-200 pt-4 dark:border-white/[0.08]">
+                <span className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-zinc-500">
                   Theme
                 </span>
                 <div className={themeToggleClass}>
@@ -899,8 +899,8 @@ function ToolDropdownGroup({
 }) {
   const Icon = group.icon;
   return (
-    <section className="border-l-2 border-emerald-500 pl-2">
-      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-400">
+    <section className="border-l-2 border-emerald-600 pl-2 dark:border-emerald-500">
+      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-600 dark:text-emerald-500">
         <Icon className="h-4 w-4" />
         {group.name}
       </div>
@@ -933,17 +933,17 @@ function ToolDropdownLink({
       onClick={onClick}
       className={`group relative flex min-h-9 gap-2 rounded-lg border-l-2 px-2 py-1.5 transition duration-150 ease-out ${
         active
-          ? "border-emerald-500 bg-emerald-500/[0.08]"
-          : "border-transparent hover:border-emerald-500 hover:bg-emerald-500/[0.08]"
+          ? "border-emerald-600 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-500/[0.08]"
+          : "border-transparent hover:border-emerald-600 hover:bg-emerald-50 dark:hover:border-emerald-500 dark:hover:bg-emerald-500/[0.08]"
       }`}
     >
-      <Icon className={`mt-0.5 h-4 w-4 shrink-0 transition ${active ? "text-emerald-400" : "text-zinc-500 group-hover:text-emerald-400"}`} />
+      <Icon className={`mt-0.5 h-4 w-4 shrink-0 transition ${active ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-500 group-hover:text-emerald-600 dark:text-zinc-500 dark:group-hover:text-emerald-400"}`} />
       <span className="min-w-0">
-        <span className={`flex items-center gap-2 text-sm font-medium leading-5 transition ${active ? "text-emerald-300" : "text-zinc-200 group-hover:text-emerald-300"}`}>
+        <span className={`flex items-center gap-2 text-sm font-medium leading-5 transition ${active ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-800 group-hover:text-emerald-600 dark:text-neutral-200 dark:group-hover:text-emerald-400"}`}>
           <span className="truncate"><HighlightMatch text={tool.name} query={query} /></span>
-          {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />}
+          {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400" />}
         </span>
-        <span className="block truncate text-xs leading-4 text-zinc-500">{tool.navDescription}</span>
+        <span className="block truncate text-xs leading-4 text-neutral-400 dark:text-neutral-500">{tool.navDescription}</span>
       </span>
     </Link>
   );
@@ -963,19 +963,19 @@ function MobileAccordion({
   badge?: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.025]">
+    <div className="rounded-xl border border-neutral-200 bg-neutral-50 dark:border-white/[0.08] dark:bg-white/[0.025]">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-zinc-100"
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-neutral-800 dark:text-zinc-100"
       >
         <span className="flex items-center gap-2">
           {title}
-          {badge && <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-medium text-zinc-500">{badge}</span>}
+          {badge && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500 dark:bg-white/[0.06] dark:text-zinc-500">{badge}</span>}
         </span>
-        <ChevronDown className={"h-4 w-4 text-zinc-500 transition " + (open ? "rotate-180" : "")} />
+        <ChevronDown className={"h-4 w-4 text-neutral-500 transition dark:text-zinc-500 " + (open ? "rotate-180" : "")} />
       </button>
-      {open && <div className="border-t border-white/[0.08] px-2 py-2">{children}</div>}
+      {open && <div className="border-t border-neutral-200 px-2 py-2 dark:border-white/[0.08]">{children}</div>}
     </div>
   );
 }
@@ -994,7 +994,7 @@ function MobilePlainLink({
   return (
     <Link
       href={href}
-      className={`${bordered ? "border border-white/[0.08]" : ""} block rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-100 transition-colors hover:bg-white/[0.06]`}
+      className={`${bordered ? "border border-neutral-200 dark:border-white/[0.08]" : ""} block rounded-xl px-3 py-2.5 text-sm font-semibold text-neutral-800 transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:text-neutral-200 dark:hover:bg-emerald-500/[0.08] dark:hover:text-emerald-400`}
       onClick={onClick}
     >
       {children}
@@ -1018,13 +1018,13 @@ function MobileToolLink({
       onClick={onClick}
       className={`flex min-h-11 items-center gap-2 rounded-xl border-l-2 px-3 py-2 text-sm font-medium transition ${
         active
-          ? "border-emerald-500 bg-emerald-500/[0.08] text-emerald-300"
-          : "border-transparent text-zinc-300 hover:border-emerald-500 hover:bg-emerald-500/[0.08] hover:text-emerald-300"
+          ? "border-emerald-600 bg-emerald-50 text-emerald-600 dark:border-emerald-500 dark:bg-emerald-500/[0.08] dark:text-emerald-400"
+          : "border-transparent text-neutral-800 hover:border-emerald-600 hover:bg-emerald-50 hover:text-emerald-600 dark:text-neutral-200 dark:hover:border-emerald-500 dark:hover:bg-emerald-500/[0.08] dark:hover:text-emerald-400"
       }`}
     >
-      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-emerald-400" : "text-zinc-500"}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-500 dark:text-zinc-500"}`} />
       <span className="truncate">{tool.name}</span>
-      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />}
     </Link>
   );
 }
