@@ -125,7 +125,7 @@ export function Panel({
       )}
       {...props}
     >
-      {noPadding ? children : <div className="p-5">{children}</div>}
+      {noPadding ? children : <div className="p-4 sm:p-5">{children}</div>}
     </div>
   );
 }
@@ -142,7 +142,7 @@ export function PanelHeader({
   badge?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50/80 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+    <div className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50/80 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-800/60 sm:px-4 sm:py-3">
       <div className="flex min-w-0 items-center gap-2">
         <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</span>
         {badge && (
@@ -517,10 +517,10 @@ export function Badge({ children, variant = "default", className = "" }: { child
 export function SplitLayout({ left, right, className = "" }: { left: ReactNode; right: ReactNode; className?: string }) {
   return (
     <div className={joinClasses("mt-5 flex flex-col gap-2 md:gap-4 lg:h-[calc(100vh-14rem)] lg:min-h-[560px] lg:flex-row", className)}>
-      <div className="flex h-[40vh] min-h-[300px] w-full flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[55%]">
+      <div className="flex h-[40vh] min-h-[300px] w-full flex-1 flex-col overflow-hidden overscroll-contain rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[55%]">
         {left}
       </div>
-      <div className="flex h-[40vh] min-h-[250px] w-full flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[45%]">
+      <div className="flex h-[40vh] min-h-[250px] w-full flex-1 flex-col overflow-hidden overscroll-contain rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[45%]">
         {right}
       </div>
     </div>

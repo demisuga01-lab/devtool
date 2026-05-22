@@ -299,7 +299,7 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[45%]">
       <div className="-m-4 mb-4 flex flex-wrap gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -417,7 +417,7 @@ function OtherRunnerPageContent() {
 
   return (
     <ToolShell className="max-w-none px-0 py-0 sm:px-0 sm:py-0">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-6 sm:gap-6 sm:px-6 sm:py-10">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -441,7 +441,7 @@ function OtherRunnerPageContent() {
         />
 
         <div className="flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[55%]">
+          <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[55%]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100">{active.icon}<span>{active.label}</span></h2>
               <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
@@ -472,12 +472,12 @@ function OtherRunnerPageContent() {
                 type="button"
                 onClick={runCode}
                 disabled={running}
-                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
+                <span>{running ? "Running..." : "Run"}</span>
               </button>
-              <span className="text-xs text-zinc-400 dark:text-zinc-600">Ctrl+Enter to run</span>
+              <span className="hidden text-xs text-zinc-400 dark:text-zinc-600 sm:inline">Ctrl+Enter to run</span>
             </div>
           </section>
 

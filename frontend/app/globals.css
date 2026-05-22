@@ -119,7 +119,29 @@ pre, code {
   color: #d4d4d8;
 }
 
-@media (max-width: 767px) {
+@keyframes navDropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes navDrawerIn {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
   .cm-editor,
   .monaco-editor,
   .monaco-editor .overflow-guard {

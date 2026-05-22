@@ -226,7 +226,7 @@ function JvmRunnerPageContent() {
               onChange={(value) => setActiveIndex(Number(value))}
               className="border-b border-zinc-200 pb-3 dark:border-zinc-800"
             />
-            <div className="mt-2 flex min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 md:mt-5 lg:min-h-0">
+            <div className="mt-2 flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 md:mt-5 lg:h-auto lg:min-h-0">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs text-zinc-300">
                 <span>
                   {active.label} · {active.language === "java" ? "jdk" : active.language} {active.version}
@@ -255,17 +255,17 @@ function JvmRunnerPageContent() {
                   type="button"
                   onClick={runCode}
                   disabled={running}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
+                  <span>{running ? "Running..." : "Run"}</span>
                 </button>
-                <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
+                <span className="hidden text-xs text-zinc-500 sm:inline">Ctrl+Enter to run</span>
               </div>
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+          <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[45%]">
             <div className="-m-4 mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-zinc-400 animate-pulse" : successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />

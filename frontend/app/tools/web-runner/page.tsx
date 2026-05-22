@@ -952,7 +952,7 @@ function WebPreviewPanel({
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex h-auto min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm gap-2">
         <div className="flex min-w-0 items-center gap-1">
           {onBack && (
@@ -1056,7 +1056,7 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex h-auto min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
         <button type="button" onClick={clearConsole} className="min-h-11 min-w-11 rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100 md:min-h-0 md:min-w-0">
@@ -1093,7 +1093,7 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex h-auto min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
@@ -1534,6 +1534,9 @@ function WebRunnerPageContent() {
   const runButton = (
     <RunButton running={running} onClick={runPreview} />
   );
+  const mobileRunButton = (
+    <RunButton running={running} onClick={runPreview} fullWidth />
+  );
 
   const combinedUploadZone = (
     <UploadZone
@@ -1696,14 +1699,14 @@ function WebRunnerPageContent() {
               className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
           </details>
-          <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900/95 px-3 py-2.5 backdrop-blur md:static md:px-4 md:py-3 md:backdrop-blur-none">
+          <div className="hidden items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900/95 px-4 py-3 lg:flex">
             {runButton}
             <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
           </div>
         </>
       )}
       <div className="sticky bottom-0 z-20 border-t border-zinc-800 bg-zinc-900/95 p-3 backdrop-blur lg:hidden">
-        {runButton}
+        {mobileRunButton}
       </div>
     </section>
   );
@@ -1744,7 +1747,7 @@ function WebRunnerPageContent() {
             title="Web Runner"
             description="Run HTML, CSS, and JavaScript with a live preview. Supports combined and solo modes."
             actions={(
-              <div className="flex items-center gap-2">
+              <div className="hidden items-center gap-2 lg:flex">
               {runButton}
               <span className="hidden text-xs text-zinc-500 lg:inline">Ctrl+Enter</span>
               </div>

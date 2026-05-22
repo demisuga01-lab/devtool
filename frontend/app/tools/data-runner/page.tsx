@@ -199,7 +199,7 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className={`flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 ${accent === "purple" ? "border-purple-900" : "border-zinc-800"}`}>
+    <section className={`flex h-[40vh] min-h-[250px] flex-col overflow-hidden rounded-2xl border bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-full lg:min-h-0 ${accent === "purple" ? "border-purple-900" : "border-zinc-800"}`}>
       <div className="mb-4 flex flex-wrap gap-2">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -269,7 +269,7 @@ function DatabaseResultsPanel({
   queryErrors: string;
 }) {
   return (
-    <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[45%]">
       <div className="-m-4 mb-4 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <h2 className="text-sm font-semibold text-zinc-100">Results</h2>
       </div>
@@ -460,7 +460,7 @@ function DataRunnerPageContent() {
         />
 
         <div className="mt-5 flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[55%]">
+          <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[55%]">
             <div className="flex items-center gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm font-semibold text-zinc-100">
               {currentMode.icon}
               {currentMode.editorLabel}
@@ -477,12 +477,12 @@ function DataRunnerPageContent() {
                 type="button"
                 onClick={runCode}
                 disabled={running}
-                className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${currentMode.runButtonClass}`}
+                className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${currentMode.runButtonClass}`}
               >
                 {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
                 {running ? "Running..." : currentMode.runLabel}
               </button>
-              <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
+              <span className="hidden text-xs text-zinc-500 sm:inline">Ctrl+Enter to run</span>
             </div>
           </section>
           <DatabaseResultsPanel hasRun={hasRun} result={result} table={table} stdout={stdout} queryErrors={queryErrors} />
