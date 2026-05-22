@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, Label } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, Label } from "@/components/tool-ui";
 import { InlineError, SuccessBanner, explainJsonError, jsonTypeInfo } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -31,11 +31,12 @@ export default function JsonValidatorPage() {
   };
 
   return (
-    <ToolShell slug="json-validator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "JSON Validator" }]} title="JSON Validator" description="Validate JSON and pinpoint syntax errors." />
       <div className="space-y-5">
         <div>
           <Label>JSON to validate</Label>
-          <Textarea
+          <ToolTextarea
             value={input}
             onChange={(e) => {
               setInput(e.target.value);

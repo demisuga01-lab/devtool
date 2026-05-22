@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Textarea, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolTextarea, Label } from "@/components/tool-ui";
 
 function fmtSeconds(s: number): string {
   if (s < 60) return `${Math.max(1, Math.round(s))}s`;
@@ -40,18 +40,19 @@ export default function WordCounterPage() {
   ];
 
   return (
-    <ToolShell slug="word-counter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Word Counter" }]} title="Word Counter" description="Count characters, words, and reading time." />
       <div className="space-y-5">
         <div>
           <Label>Text</Label>
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={14} />
+          <ToolTextarea value={text} onChange={(e) => setText(e.target.value)} rows={14} />
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {items.map((it) => (
-            <div key={it.label} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding key={it.label} className="p-4">
               <div className="text-xs uppercase tracking-wide text-zinc-500">{it.label}</div>
-              <div className="mt-1 text-xl font-semibold text-zinc-900 dark:text-zinc-100">{it.value}</div>
-            </div>
+              <div className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{it.value}</div>
+            </Panel>
           ))}
         </div>
       </div>

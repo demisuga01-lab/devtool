@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Input, Label, Textarea } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, ToolInput, Label, ToolTextarea } from "@/components/tool-ui";
 
 type Version = { major: number; minor: number; patch: number; pre: string[]; build: string };
 const re = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$/;
@@ -67,11 +67,12 @@ export default function SemverCheckerPage() {
   const ok = satisfies(rangeVersion, range);
 
   return (
-    <ToolShell slug="semver-checker">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Semver Checker" }]} title="Semver Checker" description="Parse and compare semantic version strings." />
       <div className="space-y-5">
-        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="space-y-3 p-4">
           <Label>Parse version</Label>
-          <Input value={parseInput} onChange={(event) => setParseInput(event.target.value)} />
+          <ToolInput value={parseInput} onChange={(event) => setParseInput(event.target.value)} />
           {parsed ? (
             <div className="grid gap-2 text-sm sm:grid-cols-5">
               {Object.entries({ major: parsed.major, minor: parsed.minor, patch: parsed.patch, prerelease: parsed.pre.join(".") || "-", build: parsed.build || "-" }).map(([key, value]) => (
@@ -79,18 +80,18 @@ export default function SemverCheckerPage() {
               ))}
             </div>
           ) : <p className="text-sm text-red-600">Invalid semantic version.</p>}
-        </section>
-        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        </Panel>
+        <Panel noPadding className="space-y-3 p-4">
           <Label>Compare</Label>
-          <div className="grid gap-3 sm:grid-cols-2"><Input value={a} onChange={(event) => setA(event.target.value)} /><Input value={b} onChange={(event) => setB(event.target.value)} /></div>
-          <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{comparison}</p>
-        </section>
-        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="grid gap-3 sm:grid-cols-2"><ToolInput value={a} onChange={(event) => setA(event.target.value)} /><ToolInput value={b} onChange={(event) => setB(event.target.value)} /></div>
+          <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{comparison}</p>
+        </Panel>
+        <Panel noPadding className="space-y-3 p-4">
           <Label>Range check</Label>
-          <div className="grid gap-3 sm:grid-cols-2"><Input value={rangeVersion} onChange={(event) => setRangeVersion(event.target.value)} /><Input value={range} onChange={(event) => setRange(event.target.value)} /></div>
+          <div className="grid gap-3 sm:grid-cols-2"><ToolInput value={rangeVersion} onChange={(event) => setRangeVersion(event.target.value)} /><ToolInput value={range} onChange={(event) => setRange(event.target.value)} /></div>
           <p className={ok ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>{ok ? "✓ Satisfies range" : "✗ Does not satisfy range"}</p>
-        </section>
-        <div className="hidden"><Textarea value={comparison} readOnly /><CopyButton value={comparison} /></div>
+        </Panel>
+        <div className="hidden"><ToolTextarea value={comparison} readOnly /><CopyButton value={comparison} /></div>
       </div>
     </ToolShell>
   );

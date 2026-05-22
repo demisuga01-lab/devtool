@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
+import { CopyButton, TabBar, ToolShell } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
 type Language = { label: string; icon: ReactNode; language: string; version: string; defaultCode: string; color: string };
@@ -136,32 +137,20 @@ function ScriptingRunnerPageContent() {
   const errors = [error, result?.stderr, result?.compile_output, result?.compile_stderr].filter(Boolean).join("\n");
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+    <ToolShell className="flex min-h-screen max-w-none flex-col px-0 py-0 sm:px-0 sm:py-0">
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-3 py-6 sm:px-6 sm:py-10">
         <Breadcrumb title="Scripting Runner" />
         <header className="mt-6">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Scripting Runner</h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run Python, Ruby, PHP, Perl, Bash, and Lua scripts instantly.</p>
+          <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">Scripting Runner</h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Run Python, Ruby, PHP, Perl, Bash, and Lua scripts instantly.</p>
         </header>
 
-        <div className="mt-6 flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
-          {languages.map((language, index) => (
-            <button
-              key={language.label}
-              type="button"
-              onClick={() => setActiveIndex(index)}
-              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                index === activeIndex
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-              }`}
-            >
-              {language.icon}
-              <span>{language.label}</span>
-              {index === activeIndex && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90">{language.version}</span>}
-            </button>
-          ))}
-        </div>
+        <TabBar
+          tabs={languages.map((language, index) => ({ value: String(index), label: language.label, icon: language.icon, badge: index === activeIndex ? language.version : undefined }))}
+          active={String(activeIndex)}
+          onChange={(value) => setActiveIndex(Number(value))}
+          className="mt-6 border-b border-zinc-200 pb-3 dark:border-zinc-800"
+        />
 
         <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
@@ -173,7 +162,7 @@ function ScriptingRunnerPageContent() {
               </div>
               <span className="text-xs text-zinc-500">{active.language}</span>
             </div>
-            <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[300px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:bg-zinc-950 lg:min-h-0" />
+            <textarea value={code} onChange={(event) => setCode(event.target.value)} onKeyDown={handleKeyDown} spellCheck={false} className="min-h-[320px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:bg-zinc-950 lg:min-h-0" />
             <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
               <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
               <textarea
@@ -194,7 +183,7 @@ function ScriptingRunnerPageContent() {
             </div>
           </section>
 
-          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+          <section className="flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="font-semibold text-zinc-100">Output</div>
               <div className="flex items-center gap-2">
@@ -208,7 +197,7 @@ function ScriptingRunnerPageContent() {
                     {tab === "output" ? "Output" : "Errors"}
                   </button>
                 ))}
-                <button type="button" onClick={() => typeof navigator !== "undefined" && navigator.clipboard?.writeText(stdout)} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">Copy</button>
+                <CopyButton value={stdout} label="Copy" />
                 <button type="button" onClick={() => { setResult(null); setError(""); setHasRun(false); setOutputTab("output"); }} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">Clear</button>
               </div>
             </div>
@@ -233,7 +222,7 @@ function ScriptingRunnerPageContent() {
           </section>
         </div>
       </div>
-    </main>
+    </ToolShell>
   );
 }
 

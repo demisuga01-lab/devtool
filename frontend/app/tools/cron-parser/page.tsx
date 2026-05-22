@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import cronstrue from "cronstrue";
-import { ToolShell } from "@/components/ToolShell";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
 import { InlineError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
-import { Input, Label } from "@/components/ui";
+import { ToolInput, Label } from "@/components/tool-ui";
 
 function parseField(field: string, min: number, max: number): number[] {
   const out = new Set<number>();
@@ -106,23 +106,24 @@ export default function CronParserPage() {
   const upcoming = useMemo(() => (parsed ? nextRuns(parsed, new Date(), 10) : []), [parsed]);
 
   return (
-    <ToolShell slug="cron-parser">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Date & Time" }, { label: "Cron Parser" }]} title="Cron Parser" description="Parse cron expressions and preview next runs." />
       <div className="space-y-5">
         <div>
           <Label>Cron expression</Label>
-          <Input value={expr} onChange={(e) => setExpr(e.target.value)} className="font-mono" />
+          <ToolInput value={expr} onChange={(e) => setExpr(e.target.value)} className="font-mono" />
         </div>
         {error && <InlineError error={error} />}
         {description && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
+          <Panel noPadding className="border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
             {description}
-          </div>
+          </Panel>
         )}
         {parsed && (
           <>
             <div>
               <Label>Field breakdown</Label>
-              <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Panel noPadding className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
@@ -147,11 +148,11 @@ export default function CronParserPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Panel>
             </div>
             <div>
               <Label>Next 10 runs (local)</Label>
-              <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Panel noPadding>
                 <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {upcoming.length === 0 ? (
                     <li className="px-4 py-3 text-sm text-zinc-500">No upcoming runs in the search window.</li>
@@ -163,7 +164,7 @@ export default function CronParserPage() {
                     ))
                   )}
                 </ul>
-              </div>
+              </Panel>
             </div>
           </>
         )}

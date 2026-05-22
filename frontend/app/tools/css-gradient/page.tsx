@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label, Select } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label, ToolSelect, CodeBlock } from "@/components/tool-ui";
 
 type Stop = { color: string; pos: number };
 const presets: Stop[][] = [
@@ -29,23 +29,23 @@ export default function CssGradientPage() {
   return (
     <ToolShell slug="css-gradient">
       <div className="space-y-5">
-        <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:grid-cols-2">
-          <div><Label>Type</Label><Select value={type} onChange={(event) => setType(event.target.value)}><option value="linear">Linear</option><option value="radial">Radial</option></Select></div>
-          {type === "linear" && <div><Label>Angle: {angle}deg</Label><Input type="range" min={0} max={360} value={angle} onChange={(event) => setAngle(Number(event.target.value))} /></div>}
-        </div>
+        <Panel noPadding className="grid gap-4 p-4 sm:grid-cols-2">
+          <div><Label>Type</Label><ToolSelect value={type} onChange={(event) => setType(event.target.value)}><option value="linear">Linear</option><option value="radial">Radial</option></ToolSelect></div>
+          {type === "linear" && <div><Label>Angle: {angle}deg</Label><ToolInput type="range" min={0} max={360} value={angle} onChange={(event) => setAngle(Number(event.target.value))} /></div>}
+        </Panel>
         <div className="h-[200px] rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800" style={{ background }} />
-        <div className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="space-y-3 p-4">
           {stops.map((stop, index) => (
             <div key={index} className="grid gap-3 sm:grid-cols-[120px_1fr_80px_auto]">
-              <Input type="color" value={stop.color} onChange={(event) => setStops((items) => items.map((item, i) => i === index ? { ...item, color: event.target.value } : item))} />
-              <Input type="range" min={0} max={100} value={stop.pos} onChange={(event) => setStops((items) => items.map((item, i) => i === index ? { ...item, pos: Number(event.target.value) } : item))} />
-              <Input type="number" min={0} max={100} value={stop.pos} onChange={(event) => setStops((items) => items.map((item, i) => i === index ? { ...item, pos: Number(event.target.value) } : item))} />
+              <ToolInput type="color" value={stop.color} onChange={(event) => setStops((items) => items.map((item, i) => i === index ? { ...item, color: event.target.value } : item))} />
+              <ToolInput type="range" min={0} max={100} value={stop.pos} onChange={(event) => setStops((items) => items.map((item, i) => i === index ? { ...item, pos: Number(event.target.value) } : item))} />
+              <ToolInput type="number" min={0} max={100} value={stop.pos} onChange={(event) => setStops((items) => items.map((item, i) => i === index ? { ...item, pos: Number(event.target.value) } : item))} />
               <Button variant="danger" onClick={() => setStops((items) => items.filter((_, i) => i !== index))} disabled={stops.length <= 2}>Delete</Button>
             </div>
           ))}
           <Button variant="primary" onClick={() => setStops((items) => [...items, { color: "#ffffff", pos: 50 }])}>Add stop</Button>
-        </div>
-        <div className="space-y-2"><div className="flex items-center justify-between"><Label>CSS</Label><CopyButton value={css} /></div><pre className="rounded-2xl border border-zinc-200 bg-white p-4 font-mono text-sm dark:border-zinc-800 dark:bg-zinc-900">{css}</pre></div>
+        </Panel>
+        <div className="space-y-2"><div className="flex items-center justify-between"><Label>CSS</Label><CopyButton value={css} /></div><CodeBlock value={css} /></div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {presets.map((preset, index) => {
             const bg = `linear-gradient(135deg, ${preset.map((stop) => `${stop.color} ${stop.pos}%`).join(", ")})`;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolInput, Label } from "@/components/tool-ui";
 
 function dateInput(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -60,18 +60,19 @@ export default function AgeCalculatorPage() {
   ];
 
   return (
-    <ToolShell slug="age-calculator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Age Calculator" }]} title="Age Calculator" description="Calculate exact age and time since or until any date." />
       <div className="space-y-5">
-        <div className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:grid-cols-2">
-          <div><Label>Date of birth</Label><Input type="date" value={birth} onChange={(event) => setBirth(event.target.value)} /></div>
-          <div><Label>Target date</Label><Input type="date" value={target} onChange={(event) => setTarget(event.target.value)} /></div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{cards.map(([label, value]) => <div key={label} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"><p className="text-xs uppercase text-zinc-500">{label}</p><p className="mt-1 font-semibold text-zinc-900 dark:text-zinc-100">{value}</p></div>)}</div>
-        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <h2 className="text-sm font-semibold">Compare two dates</h2>
-          <div className="grid gap-3 sm:grid-cols-2"><Input type="date" value={a} onChange={(event) => setA(event.target.value)} /><Input type="date" value={b} onChange={(event) => setB(event.target.value)} /></div>
-          <p className="font-mono">{compare.years} years, {compare.months} months, {compare.days} days</p>
-        </section>
+        <Panel noPadding className="grid gap-4 p-4 sm:grid-cols-2">
+          <div><Label>Date of birth</Label><ToolInput type="date" value={birth} onChange={(event) => setBirth(event.target.value)} /></div>
+          <div><Label>Target date</Label><ToolInput type="date" value={target} onChange={(event) => setTarget(event.target.value)} /></div>
+        </Panel>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{cards.map(([label, value]) => <Panel noPadding key={label} className="p-4"><p className="text-xs uppercase text-zinc-500">{label}</p><p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{value}</p></Panel>)}</div>
+        <Panel noPadding className="space-y-3 p-4">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Compare two dates</h2>
+          <div className="grid gap-3 sm:grid-cols-2"><ToolInput type="date" value={a} onChange={(event) => setA(event.target.value)} /><ToolInput type="date" value={b} onChange={(event) => setB(event.target.value)} /></div>
+          <p className="font-mono text-[13px] text-zinc-900 dark:text-zinc-100">{compare.years} years, {compare.months} months, {compare.days} days</p>
+        </Panel>
       </div>
     </ToolShell>
   );

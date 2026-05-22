@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CodeBlock, CopyButton, Label, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, CodeBlock, CopyButton, Label, ToolTextarea } from "@/components/tool-ui";
 import { InlineError, SuccessBanner, explainXmlError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -60,11 +60,12 @@ export default function XmlFormatterPage() {
   };
 
   return (
-    <ToolShell slug="xml-formatter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "XML & Data" }, { label: "XML Formatter" }]} title="XML Formatter" description="Format and validate XML documents." />
       <div className="space-y-5">
         <div>
           <Label>XML</Label>
-          <Textarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); setSuccess(""); } }} rows={12} />
+          <ToolTextarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); setSuccess(""); } }} rows={12} />
           {error && <InlineError error={error} />}
         </div>
         <div className="flex flex-wrap gap-2">

@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import type { ReactNode } from "react";
 import type { ToolError } from "@/lib/toolErrors";
 import { ArrowDown, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, Label, CopyButton } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, ToolInput, Label, CopyButton } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, WarningBanner, errorFromUnknown, isValidUrl, normalizeUrl } from "@/lib/toolErrors";
 
@@ -23,8 +23,6 @@ type Result = {
   total_hops: number;
 };
 
-const cardClass =
-  "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 const sectionHeadingClass =
   "text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3";
 const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
@@ -145,7 +143,7 @@ export default function RedirectCheckerPage() {
       <div className="space-y-5">
         <div>
           <Label>URL</Label>
-          <Input
+          <ToolInput
             type="url"
             value={url}
             onChange={(e) => { setUrl(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
@@ -184,7 +182,7 @@ export default function RedirectCheckerPage() {
               <h2 className={sectionHeadingClass}>Summary</h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                 <SummaryCard label="Total Hops">
-                  <span className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+                  <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                     {result.total_hops}
                   </span>
                 </SummaryCard>
@@ -213,7 +211,7 @@ export default function RedirectCheckerPage() {
                         <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700" />
                       )}
                     </div>
-                    <div className={`${cardClass} mb-3 p-4`}>
+                    <Panel noPadding className="mb-3 p-4">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
@@ -234,7 +232,7 @@ export default function RedirectCheckerPage() {
                           </span>
                         </div>
                       )}
-                    </div>
+                    </Panel>
                   </div>
                 ))}
               </div>
@@ -249,7 +247,7 @@ export default function RedirectCheckerPage() {
               </div>
             </section>
 
-            <section className={`${cardClass} p-4`}>
+            <Panel noPadding className="p-4">
               <h2 className={sectionHeadingClass}>Analysis</h2>
               <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
                 <AnalysisRow
@@ -282,7 +280,7 @@ export default function RedirectCheckerPage() {
                   <span className={redirects > 0 ? yellowBadge : greenBadge}>{redirects}</span>
                 </div>
               </div>
-            </section>
+            </Panel>
           </div>
         )}
       </div>
@@ -292,10 +290,10 @@ export default function RedirectCheckerPage() {
 
 function SummaryCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={`${cardClass} p-4`}>
+    <Panel noPadding className="p-4">
       <div className={fieldLabelClass}>{label}</div>
       <div className="mt-2 min-w-0">{children}</div>
-    </div>
+    </Panel>
   );
 }
 

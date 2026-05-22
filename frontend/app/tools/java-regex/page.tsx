@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
+import { ToolShell } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { InlineError, LoadingSkeleton } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
-import { Button, Checkbox, Label, Textarea, Input } from "@/components/ui";
+import { Button, Checkbox, Label, ToolTextarea, ToolInput } from "@/components/tool-ui";
 
 type RegexMatch = { start: number; end: number; value: string; groups: (string | null)[] };
 type RegexResult = { total_matches: number; matches: RegexMatch[]; truncated?: boolean };
@@ -27,7 +27,7 @@ function Highlighted({ text, matches }: { text: string; matches: RegexMatch[] })
     return output;
   }, [matches, text]);
   return (
-    <pre className="min-h-32 whitespace-pre-wrap rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-mono text-xs text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+    <pre className="min-h-32 whitespace-pre-wrap rounded-xl bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100">
       {parts.map((part, idx) => (
         <Fragment key={idx}>{part.hit ? <span className="rounded bg-emerald-100 dark:bg-emerald-900">{part.text}</span> : part.text}</Fragment>
       ))}
@@ -93,14 +93,14 @@ export default function JavaRegexPage() {
       <div className="space-y-5">
         <div>
           <Label>Regex pattern</Label>
-          <Input value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="\\d+" disabled={loading} />
+          <ToolInput value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="\\d+" disabled={loading} />
         </div>
         <div className="flex flex-wrap gap-4">
           {flagOptions.map((flag) => <Checkbox key={flag} label={flag} checked={flags.includes(flag)} onChange={(checked) => toggleFlag(flag, checked)} />)}
         </div>
         <div>
           <Label>Test string</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} disabled={loading} />
+          <ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} disabled={loading} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={run} disabled={!pattern || !input || loading}>{loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Testing...</> : "Test"}</Button>

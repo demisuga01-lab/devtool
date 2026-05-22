@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { ToolShell } from "@/components/ToolShell";
-import { Textarea, Label } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Panel, ToolTextarea, Label } from "@/components/tool-ui";
 
 const SAMPLE = `# Hello
 
@@ -29,18 +29,21 @@ export default function MarkdownPreviewPage() {
   }, [text]);
 
   return (
-    <ToolShell slug="markdown-preview">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Markdown Preview" }]} title="Markdown Preview" description="Render Markdown to sanitized HTML." />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
           <Label>Markdown</Label>
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={20} />
+          <ToolTextarea value={text} onChange={(e) => setText(e.target.value)} rows={20} />
         </div>
         <div>
           <Label>Preview</Label>
-          <div
-            className="markdown-preview rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+          <Panel noPadding>
+            <div
+              className="markdown-preview p-4 text-zinc-900 dark:text-zinc-100"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          </Panel>
         </div>
       </div>
     </ToolShell>

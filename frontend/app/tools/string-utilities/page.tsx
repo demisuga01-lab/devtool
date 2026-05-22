@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton, Label, Textarea } from "@/components/ui";
-import { ToolShell } from "@/components/ToolShell";
+import { Label, ToolTextarea, ResultCard } from "@/components/tool-ui";
+import { ToolShell } from "@/components/tool-ui";
 
 function words(s: string) { return s.toLowerCase().match(/[a-z0-9]+/g) || []; }
 function title(s: string) { return words(s).map((w) => w[0].toUpperCase() + w.slice(1)).join(" "); }
@@ -21,5 +21,5 @@ export default function StringUtilitiesPage() {
       ["Characters", String(input.length)], ["Words", String(w.length)], ["Lines", String(input ? lines.length : 0)], ["Unique words", String(new Set(w).size)],
     ];
   }, [input]);
-  return <ToolShell slug="string-utilities"><div className="space-y-5"><div><Label>Text</Label><Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} /></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{items.map(([label, value]) => <div key={label} className="relative rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900"><div className="mb-1 pr-16 text-xs uppercase text-zinc-500">{label}</div><div className="whitespace-pre-wrap break-words font-mono text-sm text-zinc-800 dark:text-zinc-200">{value}</div><div className="absolute right-2 top-2"><CopyButton value={value} /></div></div>)}</div></div></ToolShell>;
+  return <ToolShell slug="string-utilities"><div className="space-y-5"><div><Label>Text</Label><ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} /></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{items.map(([label, value]) => <ResultCard key={label} label={label} value={value} mono copyable />)}</div></div></ToolShell>;
 }

@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, CodeBlock, CopyButton, Label } from "@/components/ui";
+import { ToolShell } from "@/components/tool-ui";
+import { Button, ToolTextarea, CodeBlock, CopyButton, Label } from "@/components/tool-ui";
 import { InlineError, WarningBanner } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -134,7 +134,7 @@ export default function JwtDecoderPage() {
         </div>
         <div>
           <Label>JWT token</Label>
-          <Textarea
+          <ToolTextarea
             value={token}
             onChange={(e) => {
               setToken(e.target.value);
@@ -178,9 +178,7 @@ function Section({ title, value, mono }: { title: string; value: string; mono?: 
         <CopyButton value={value} />
       </div>
       {mono ? (
-        <div className="break-all rounded-xl border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
-          {value}
-        </div>
+        <CodeBlock value={value} />
       ) : (
         <CodeBlock value={value} />
       )}

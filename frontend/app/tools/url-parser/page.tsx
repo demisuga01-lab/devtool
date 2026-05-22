@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton, Input, Label } from "@/components/ui";
-import { ToolShell } from "@/components/ToolShell";
+import { CopyButton, ToolInput, Label, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolShell } from "@/components/tool-ui";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, isValidUrl, normalizeUrl } from "@/lib/toolErrors";
 
 export default function UrlParserPage() {
@@ -43,11 +43,12 @@ export default function UrlParserPage() {
     : [];
 
   return (
-    <ToolShell slug="url-parser">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "URL Parser" }]} title="URL Parser" description="Parse and inspect URL components." />
       <div className="space-y-5">
         <div>
           <Label>URL</Label>
-          <Input
+          <ToolInput
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -71,17 +72,17 @@ export default function UrlParserPage() {
 
         {parsed.url && (
           <>
-            <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding>
               {rows.map(([k, v]) => (
                 <div key={k} className="flex border-b border-zinc-100 px-4 py-2 last:border-b-0 dark:border-zinc-800">
                   <div className="w-32 text-xs uppercase text-zinc-500">{k}</div>
                   <div className="flex-1 break-all font-mono text-xs">{v || "(empty)"}</div>
                 </div>
               ))}
-            </div>
+            </Panel>
             <div>
               <Label>Query Parameters</Label>
-              <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Panel noPadding>
                 {Array.from(parsed.url.searchParams.entries()).length === 0 ? (
                   <div className="px-4 py-3 text-sm text-zinc-500 dark:text-zinc-400">No query parameters.</div>
                 ) : (
@@ -93,7 +94,7 @@ export default function UrlParserPage() {
                     </div>
                   ))
                 )}
-              </div>
+              </Panel>
             </div>
           </>
         )}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Input, Label, Toggle } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, ToolInput, Label, TabBar } from "@/components/tool-ui";
 
 const table: [number, string][] = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]];
 
@@ -45,19 +45,20 @@ export default function RomanNumeralsPage() {
   }, [converted, mode, numberValue]);
 
   return (
-    <ToolShell slug="roman-numerals">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Roman Numerals" }]} title="Roman Numerals" description="Convert between Roman numerals and decimal numbers." />
       <div className="space-y-5">
-        <Toggle value={mode} onChange={setMode} options={[{ label: "Number to Roman", value: "to" }, { label: "Roman to Number", value: "from" }]} />
+        <TabBar active={mode} onChange={setMode} tabs={[{ label: "Number to Roman", value: "to" }, { label: "Roman to Number", value: "from" }]} />
         {mode === "to" ? (
-          <div><Label>Number (1-3999)</Label><Input type="number" min={1} max={3999} value={number} onChange={(event) => setNumber(event.target.value)} /></div>
+          <div><Label>Number (1-3999)</Label><ToolInput type="number" min={1} max={3999} value={number} onChange={(event) => setNumber(event.target.value)} /></div>
         ) : (
-          <div><Label>Roman numeral</Label><Input value={roman} onChange={(event) => setRoman(event.target.value.toUpperCase())} /></div>
+          <div><Label>Roman numeral</Label><ToolInput value={roman} onChange={(event) => setRoman(event.target.value.toUpperCase())} /></div>
         )}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-4">
           <div className="flex items-center justify-between"><Label>Output</Label><CopyButton value={String(converted ?? "")} /></div>
-          <p className="break-all font-mono text-2xl text-zinc-900 dark:text-zinc-100">{converted || "Invalid input"}</p>
+          <p className="break-all font-mono text-sm text-zinc-900 dark:text-zinc-100">{converted || "Invalid input"}</p>
           {breakdown && <p className="mt-3 text-sm text-zinc-500">{breakdown}</p>}
-        </div>
+        </Panel>
       </div>
     </ToolShell>
   );

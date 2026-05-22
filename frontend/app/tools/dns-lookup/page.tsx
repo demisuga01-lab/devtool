@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { ToolError } from "@/lib/toolErrors";
 import { RefreshCw } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, Label, Select } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
@@ -21,8 +21,6 @@ type Result = {
 
 const TYPES: DnsType[] = ["A", "AAAA", "MX", "NS", "TXT", "CNAME", "SOA"];
 
-const cardClass =
-  "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 const sectionHeadingClass =
   "text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3";
 const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
@@ -133,7 +131,7 @@ export default function DnsLookupPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
           <div>
             <Label>Domain</Label>
-            <Input
+            <ToolInput
               value={domain}
               onChange={(e) => { setDomain(e.target.value); if (!e.target.value.trim()) { setResults(null); setError(null); setFixApplied(null); } }}
               placeholder="example.com"
@@ -145,7 +143,7 @@ export default function DnsLookupPage() {
           </div>
           <div>
             <Label>Record type</Label>
-            <Select
+            <ToolSelect
               value={type}
               onChange={(e) => setType(e.target.value as DnsType | "All")}
               className="w-full sm:w-36"
@@ -155,7 +153,7 @@ export default function DnsLookupPage() {
               {TYPES.map((recordType) => (
                 <option key={recordType}>{recordType}</option>
               ))}
-            </Select>
+            </ToolSelect>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -179,9 +177,9 @@ export default function DnsLookupPage() {
         {results && (
           <div className="space-y-4">
             {visibleSections.length === 0 && (
-              <div className={`${cardClass} px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400`}>
+              <Panel noPadding className="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
                 {selectedTypeEmpty ? `No ${type} records found for this domain.` : "No DNS records found for the selected lookup."}
-              </div>
+              </Panel>
             )}
 
             {failedSections.map((item) => (
@@ -288,10 +286,10 @@ export default function DnsLookupPage() {
 
 function RecordSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className={`${cardClass} p-4`}>
+    <Panel noPadding className="p-4">
       <h2 className={sectionHeadingClass}>{title}</h2>
       {children}
-    </section>
+    </Panel>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { ToolShell } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
 type Runtime = {
@@ -233,14 +234,15 @@ export default function CodeRunnerPage() {
   }
 
   return (
+    <ToolShell className="max-w-none px-0 py-0 sm:px-0 sm:py-0">
     <main className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-6xl space-y-6">
         <header>
           <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Code Runner</p>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+          <h1 className="mt-2 text-[1.65rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
             Run Code
           </h1>
-          <p className="mt-2 max-w-3xl text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
             Write and execute code through the configured Piston runtime service.
           </p>
         </header>
@@ -375,5 +377,6 @@ export default function CodeRunnerPage() {
         </section>
       </div>
     </main>
+    </ToolShell>
   );
 }

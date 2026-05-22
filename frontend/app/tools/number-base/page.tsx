@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, ToolInput, Label } from "@/components/tool-ui";
 
 type Base = "dec" | "bin" | "oct" | "hex";
 
@@ -54,21 +54,22 @@ export default function NumberBasePage() {
   ] as const;
 
   return (
-    <ToolShell slug="number-base">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Number Base Converter" }]} title="Number Base Converter" description="Convert numbers between binary, octal, decimal, and hexadecimal." />
       <div className="space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           {fields.map(([label, base, value]) => (
-            <div key={base} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding key={base} className="p-4">
               <div className="flex items-center justify-between"><Label>{label}</Label><CopyButton value={value} /></div>
-              <Input value={value} onChange={(event) => update(event.target.value, base)} className="font-mono" />
-            </div>
+              <ToolInput value={value} onChange={(event) => update(event.target.value, base)} className="font-mono" />
+            </Panel>
           ))}
         </div>
-        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        {error && <Panel noPadding className="border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{error}</Panel>}
+        <Panel noPadding className="p-4 text-sm">
           <p className="font-medium text-zinc-900 dark:text-zinc-100">Bit length: {size}</p>
           <p className="mt-2 break-all font-mono text-xs text-zinc-700 dark:text-zinc-300">Two&apos;s complement: {groupBits(twos)}</p>
-        </div>
+        </Panel>
       </div>
     </ToolShell>
   );

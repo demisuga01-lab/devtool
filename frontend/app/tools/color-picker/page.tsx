@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, Label, ToolInput } from "@/components/tool-ui";
 
 const names: Record<string, string> = { "#000000": "black", "#ffffff": "white", "#ff0000": "red", "#0000ff": "blue", "#008000": "green", "#ffff00": "yellow", "#ffa500": "orange", "#800080": "purple", "#808080": "gray", "#ffc0cb": "pink" };
 
@@ -67,18 +67,19 @@ export default function ColorPickerPage() {
   const white = contrast(rgb, "white");
 
   return (
-    <ToolShell slug="color-picker">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Color Picker" }]} title="Color Picker" description="Pick colors and convert between HEX, RGB, HSL, and CMYK." />
       <div className="space-y-5">
         <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding className="p-4">
             <Label>Pick color</Label>
-            <input type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-32 w-full cursor-pointer rounded-xl" />
-          </div>
+            <ToolInput type="color" value={color} onChange={(event) => setColor(event.target.value)} className="h-32 w-full cursor-pointer rounded-xl p-1" />
+          </Panel>
           <div className="min-h-32 rounded-2xl border border-zinc-200 p-6 shadow-sm dark:border-zinc-800" style={{ backgroundColor: color }}>
-            <p className="text-3xl font-bold" style={{ color: black >= white ? "#000" : "#fff" }}>{color.toUpperCase()}</p>
+            <p className="text-sm font-bold" style={{ color: black >= white ? "#000" : "#fff" }}>{color.toUpperCase()}</p>
           </div>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="overflow-hidden">
           {data.map(([label, value]) => (
             <div key={label} className="grid grid-cols-[140px_1fr_auto] items-center gap-3 border-b border-zinc-100 px-4 py-3 text-sm last:border-0 dark:border-zinc-800">
               <span className="font-medium text-zinc-600 dark:text-zinc-300">{label}</span>
@@ -86,11 +87,11 @@ export default function ColorPickerPage() {
               <CopyButton value={value === "-" ? "" : value} />
             </div>
           ))}
-        </div>
+        </Panel>
         <div className="grid gap-4 sm:grid-cols-2">
           {[["Black text", black], ["White text", white]].map(([label, ratio]) => (
             <div key={label as string} className="rounded-2xl border border-zinc-200 p-4 shadow-sm dark:border-zinc-800" style={{ backgroundColor: color, color: label === "Black text" ? "#000" : "#fff" }}>
-              <p className="text-xl font-semibold">{label}</p>
+              <p className="text-sm font-semibold">{label}</p>
               <p>Contrast {(ratio as number).toFixed(2)}:1 - {(ratio as number) >= 7 ? "AAA" : (ratio as number) >= 4.5 ? "AA" : "Fail"}</p>
             </div>
           ))}

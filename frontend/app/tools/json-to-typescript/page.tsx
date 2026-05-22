@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Checkbox, CopyButton, Input, Label, Textarea, Toggle } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Checkbox, CopyButton, ErrorCard, ToolInput, Label, ToolTextarea, TabBar } from "@/components/tool-ui";
 
 function cleanName(value: string) {
   const name = value.replace(/[^A-Za-z0-9_]/g, " ").replace(/(?:^|\s)(\w)/g, (_, c: string) => c.toUpperCase()).replace(/\s/g, "");
@@ -74,21 +74,22 @@ export default function JsonToTypescriptPage() {
   }, [exported, json, kind, name, optional]);
 
   return (
-    <ToolShell slug="json-to-typescript">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "JSON to TypeScript" }]} title="JSON to TypeScript" description="Generate TypeScript interfaces from a JSON object." />
       <div className="space-y-5">
         <div className="grid gap-5 lg:grid-cols-[1fr_260px]">
-          <div><Label>JSON</Label><Textarea value={json} onChange={(event) => setJson(event.target.value)} rows={14} /></div>
-          <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <div><Label>Interface name</Label><Input value={name} onChange={(event) => setName(event.target.value)} /></div>
-            <Toggle value={kind} onChange={setKind} options={[{ label: "interface", value: "interface" }, { label: "type", value: "type" }]} />
+          <div><Label>JSON</Label><ToolTextarea value={json} onChange={(event) => setJson(event.target.value)} rows={14} /></div>
+          <Panel noPadding className="space-y-4 p-4">
+            <div><Label>Interface name</Label><ToolInput value={name} onChange={(event) => setName(event.target.value)} /></div>
+            <TabBar active={kind} onChange={setKind} tabs={[{ label: "interface", value: "interface" }, { label: "type", value: "type" }]} />
             <Checkbox checked={optional} onChange={setOptional} label="Optional properties" />
             <Checkbox checked={exported} onChange={setExported} label="Export keyword" />
-          </div>
+          </Panel>
         </div>
-        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
+        {error && <ErrorCard>{error}</ErrorCard>}
         <div className="space-y-2">
           <div className="flex items-center justify-between"><Label>TypeScript</Label><CopyButton value={output} /></div>
-          <Textarea value={output} readOnly rows={14} />
+          <ToolTextarea value={output} readOnly rows={14} />
         </div>
       </div>
     </ToolShell>

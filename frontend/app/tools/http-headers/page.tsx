@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { ToolError } from "@/lib/toolErrors";
 import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, Label, CopyButton } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, ToolInput, Label, CopyButton } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidUrl, normalizeUrl } from "@/lib/toolErrors";
 
@@ -21,8 +21,6 @@ type SecurityCheck = {
   keys: string[];
 };
 
-const cardClass =
-  "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 const sectionHeadingClass =
   "text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3";
 const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
@@ -151,7 +149,7 @@ export default function HttpHeadersPage() {
       <div className="space-y-5">
         <div>
           <Label>URL</Label>
-          <Input
+          <ToolInput
             type="url"
             value={url}
             onChange={(e) => { setUrl(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
@@ -187,26 +185,26 @@ export default function HttpHeadersPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <SummaryCard label="Status Code">
                   <div className="flex items-end gap-2">
-                    <span className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+                    <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                       {result.status_code}
                     </span>
                     <span className={status.className}>{status.label}</span>
                   </div>
                 </SummaryCard>
                 <SummaryCard label="Response Time">
-                  <div className={`text-3xl font-bold ${responseClass(result.elapsed_ms)}`}>
+                  <div className={`text-sm font-bold ${responseClass(result.elapsed_ms)}`}>
                     {result.elapsed_ms}ms
                   </div>
                 </SummaryCard>
                 <SummaryCard label="Headers Count">
-                  <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+                  <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                     {Object.keys(result.headers).length}
                   </div>
                 </SummaryCard>
               </div>
             </section>
 
-            <section className={`${cardClass} p-4`}>
+            <Panel noPadding className="p-4">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className={sectionHeadingClass}>Security Headers Analysis</h2>
@@ -247,9 +245,9 @@ export default function HttpHeadersPage() {
                   );
                 })}
               </div>
-            </section>
+            </Panel>
 
-            <section className={`${cardClass} overflow-hidden`}>
+            <Panel noPadding className="overflow-hidden">
               <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <h2 className={sectionHeadingClass}>All Headers</h2>
@@ -261,7 +259,7 @@ export default function HttpHeadersPage() {
                     label="Copy all"
                   />
                 </div>
-                <Input
+                <ToolInput
                   value={headerFilter}
                   onChange={(e) => setHeaderFilter(e.target.value)}
                   placeholder="Filter headers..."
@@ -301,7 +299,7 @@ export default function HttpHeadersPage() {
                   </div>
                 )}
               </div>
-            </section>
+            </Panel>
           </div>
         )}
       </div>
@@ -311,10 +309,10 @@ export default function HttpHeadersPage() {
 
 function SummaryCard({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={`${cardClass} p-4`}>
+    <Panel noPadding className="p-4">
       <div className={fieldLabelClass}>{label}</div>
       <div className={`mt-2 ${fieldValueClass}`}>{children}</div>
-    </div>
+    </Panel>
   );
 }
 

@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Label, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, Label, ToolTextarea } from "@/components/tool-ui";
 import { InlineError, SuccessBanner, explainXmlError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -30,11 +30,12 @@ export default function XmlValidatorPage() {
   };
 
   return (
-    <ToolShell slug="xml-validator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "XML & Data" }, { label: "XML Validator" }]} title="XML Validator" description="Check if XML is well-formed." />
       <div className="space-y-5">
         <div>
           <Label>XML</Label>
-          <Textarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setError(null); setValid(false); } }} rows={14} />
+          <ToolTextarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setError(null); setValid(false); } }} rows={14} />
           {error && <InlineError error={error} />}
         </div>
         <div className="flex gap-2"><Button variant="primary" onClick={validate} disabled={!input}>Validate</Button><Button variant="ghost" onClick={() => { setInput(""); setError(null); setValid(false); }}>Clear</Button></div>

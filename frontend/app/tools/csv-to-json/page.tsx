@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Papa from "papaparse";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, CopyButton, Label, Toggle, Checkbox, CodeBlock } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, CopyButton, Label, TabBar, Checkbox, CodeBlock } from "@/components/tool-ui";
 import { InlineError, WarningBanner } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -45,16 +45,17 @@ export default function CsvToJsonPage() {
   };
 
   return (
-    <ToolShell slug="csv-to-json">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Encode & Convert" }, { label: "CSV to JSON" }]} title="CSV to JSON" description="Convert CSV data into structured JSON." />
       <div className="space-y-5">
         <div>
           <Label>CSV</Label>
-          <Textarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); setWarnings([]); } }} rows={10} />
+          <ToolTextarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); setWarnings([]); } }} rows={10} />
           {error && <InlineError error={error} />}
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Checkbox checked={header} onChange={setHeader} label="Has header row" />
-          <Toggle value={delimiter} onChange={setDelimiter} options={DELIMITERS} />
+          <TabBar active={delimiter} onChange={setDelimiter} tabs={DELIMITERS} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={convert} disabled={!input}>Convert</Button>

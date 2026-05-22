@@ -2,8 +2,8 @@
 
 import { ChangeEvent, useState } from "react";
 import { Download } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, ErrorCard, Label, Select, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, Checkbox, CopyButton, ErrorCard, Label, ToolInput, ToolSelect, ToolTextarea } from "@/components/tool-ui";
 
 const encodings = [
   ["utf-8", "UTF-8"],
@@ -54,39 +54,37 @@ export default function FileEncodingPage() {
   };
 
   return (
-    <ToolShell slug="file-encoding">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Encode & Convert" }, { label: "File Encoding" }]} title="File Encoding" description="Convert text files between encodings." />
       <div className="space-y-5">
         <div>
           <Label>Upload file</Label>
-          <input
+          <ToolInput
             type="file"
             accept=".txt,.csv,.xml,.json,.html,.js,.css,.md,.log"
             onChange={loadFile}
-            className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-xl file:border file:border-zinc-200 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium dark:text-zinc-400 dark:file:border-zinc-800 dark:file:bg-zinc-900 dark:file:text-zinc-100"
+            className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-xl file:border file:border-zinc-200 file:bg-zinc-50 file:px-3 file:py-2 file:text-sm file:font-medium dark:text-zinc-400 dark:file:border-zinc-800 dark:file:bg-zinc-950 dark:file:text-zinc-100"
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label>Source encoding</Label>
-            <Select value={sourceEncoding} onChange={(e) => setSourceEncoding(e.target.value)}>
+            <ToolSelect value={sourceEncoding} onChange={(e) => setSourceEncoding(e.target.value)}>
               <option value="utf-8">Auto-detect / UTF-8</option>
               {encodings.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </Select>
+            </ToolSelect>
           </div>
           <div>
             <Label>Target encoding</Label>
-            <Select value={targetEncoding} onChange={(e) => setTargetEncoding(e.target.value)}>
+            <ToolSelect value={targetEncoding} onChange={(e) => setTargetEncoding(e.target.value)}>
               {encodings.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </Select>
+            </ToolSelect>
           </div>
         </div>
-        <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-          <input type="checkbox" checked={bom} onChange={(e) => setBom(e.target.checked)} className="h-4 w-4 rounded border-zinc-300 text-emerald-600" />
-          Add BOM
-        </label>
+        <Checkbox checked={bom} onChange={setBom} label="Add BOM" />
         <div>
           <Label>Text input</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} placeholder="Paste text directly..." />
+          <ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} placeholder="Paste text directly..." />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={convert} disabled={!input}>Convert</Button>
@@ -96,7 +94,7 @@ export default function FileEncodingPage() {
         {output && (
           <div className="space-y-2">
             <div className="flex items-center justify-between"><Label>Preview</Label><div className="flex gap-2"><CopyButton value={output} /><Button onClick={download}><Download className="h-3.5 w-3.5" />Download converted file</Button></div></div>
-            <Textarea value={output} onChange={(e) => setOutput(e.target.value)} rows={10} />
+            <ToolTextarea value={output} onChange={(e) => setOutput(e.target.value)} rows={10} />
           </div>
         )}
         <p className="text-xs text-zinc-500 dark:text-zinc-500">TextEncoder only supports UTF-8 output. For other encodings, the file is decoded from the source and displayed as UTF-8.</p>

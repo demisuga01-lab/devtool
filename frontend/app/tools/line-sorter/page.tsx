@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Checkbox, CopyButton, Label, Textarea, Toggle } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, Checkbox, CopyButton, Label, ToolTextarea, TabBar } from "@/components/tool-ui";
 
 type SortType = "alpha" | "numeric" | "length";
 type SortOrder = "asc" | "desc";
@@ -38,19 +38,20 @@ export default function LineSorterPage() {
   }, [dedupe, ignoreCase, input, order, trim, type]);
 
   return (
-    <ToolShell slug="line-sorter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Line Sorter" }]} title="Line Sorter" description="Sort lines alphabetically, numerically, or by length. Remove duplicates." />
       <div className="space-y-5">
         <div>
           <Label>Lines</Label>
-          <Textarea value={input} onChange={(event) => setInput(event.target.value)} rows={10} />
+          <ToolTextarea value={input} onChange={(event) => setInput(event.target.value)} rows={10} />
         </div>
-        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <Toggle value={order} onChange={(value) => setOrder(value as SortOrder)} options={[{ label: "A-Z", value: "asc" }, { label: "Z-A", value: "desc" }]} />
-          <Toggle value={type} onChange={(value) => setType(value as SortType)} options={[{ label: "Alphabetical", value: "alpha" }, { label: "Numerical", value: "numeric" }, { label: "By length", value: "length" }]} />
+        <Panel noPadding className="flex flex-wrap items-center gap-4 p-4">
+          <TabBar active={order} onChange={(value) => setOrder(value as SortOrder)} tabs={[{ label: "A-Z", value: "asc" }, { label: "Z-A", value: "desc" }]} />
+          <TabBar active={type} onChange={(value) => setType(value as SortType)} tabs={[{ label: "Alphabetical", value: "alpha" }, { label: "Numerical", value: "numeric" }, { label: "By length", value: "length" }]} />
           <Checkbox checked={dedupe} onChange={setDedupe} label="Remove duplicates" />
           <Checkbox checked={trim} onChange={setTrim} label="Trim whitespace" />
           <Checkbox checked={ignoreCase} onChange={setIgnoreCase} label="Ignore case" />
-        </div>
+        </Panel>
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <Label>Sorted output ({output ? output.split(/\r?\n/).length : 0} lines)</Label>
@@ -59,7 +60,7 @@ export default function LineSorterPage() {
               <Button variant="ghost" onClick={() => setInput("")}>Clear</Button>
             </div>
           </div>
-          <Textarea value={output} readOnly rows={10} />
+          <ToolTextarea value={output} readOnly rows={10} />
         </div>
       </div>
     </ToolShell>

@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, CodeBlock, CopyButton, Label } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, CodeBlock, CopyButton, Label } from "@/components/tool-ui";
 import { InlineError, SuccessBanner, explainJsonError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -62,11 +62,12 @@ export default function JsonFormatterPage() {
   };
 
   return (
-    <ToolShell slug="json-formatter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "JSON Formatter" }]} title="JSON Formatter" description="Format, minify, and validate JSON." />
       <div className="space-y-5">
         <div>
           <Label>Input</Label>
-          <Textarea
+          <ToolTextarea
             value={input}
             onChange={(e) => {
               setInput(e.target.value);

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, CopyButton, Label, Toggle } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar } from "@/components/tool-ui";
 
 export default function HexEncoderPage() {
   const [mode, setMode] = useState<"toHex" | "toText">("toHex");
@@ -35,19 +35,20 @@ export default function HexEncoderPage() {
   };
 
   return (
-    <ToolShell slug="hex-encoder">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Encode & Convert" }, { label: "Hex Encoder" }]} title="Hex Encoder" description="Convert between text and hexadecimal." />
       <div className="space-y-5">
-        <Toggle
-          value={mode}
+        <TabBar
+          active={mode}
           onChange={(v) => setMode(v as "toHex" | "toText")}
-          options={[
+          tabs={[
             { label: "Text → Hex", value: "toHex" },
             { label: "Hex → Text", value: "toText" },
           ]}
         />
         <div>
           <Label>Input</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={8} />
+          <ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={8} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={convert} disabled={!input}>Convert</Button>
@@ -60,7 +61,7 @@ export default function HexEncoderPage() {
               <Label>Output</Label>
               <CopyButton value={output} />
             </div>
-            <Textarea value={output} readOnly rows={8} />
+            <ToolTextarea value={output} readOnly rows={8} />
           </div>
         )}
       </div>

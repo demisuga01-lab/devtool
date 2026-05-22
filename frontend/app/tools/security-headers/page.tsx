@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Badge, Button, CopyButton, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import {
   ERROR_MESSAGES,
@@ -43,12 +43,12 @@ const goodValues: Record<string, (value: string) => boolean> = {
   "permissions-policy": (value) => value.trim().length > 0,
 };
 
-function rating(key: string, value: string | null) {
-  if (!value) return { label: "Missing", className: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400" };
+function rating(key: string, value: string | null): { label: string; variant: "success" | "warning" | "error" } {
+  if (!value) return { label: "Missing", variant: "error" };
   const isGood = goodValues[key] ? goodValues[key](value) : true;
   return isGood
-    ? { label: "Good", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" }
-    : { label: "Warning", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400" };
+    ? { label: "Good", variant: "success" }
+    : { label: "Warning", variant: "warning" };
 }
 
 export default function SecurityHeadersPage() {
@@ -83,37 +83,38 @@ export default function SecurityHeadersPage() {
   };
 
   return (
-    <ToolShell slug="security-headers">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Web & Network" }, { label: "Security Headers" }]} title="Security Headers" description="Check HTTP security headers for any URL." />
       <div className="space-y-5">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <Label>URL</Label>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Input value={url} onChange={(event) => setUrl(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="https://example.com" />
+            <ToolInput value={url} onChange={(event) => setUrl(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="https://example.com" />
             <Button variant="primary" onClick={run} disabled={loading || !url.trim()}>
               {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Checking...</> : "Check headers"}
             </Button>
           </div>
           {error && <InlineError error={error} />}
-        </section>
+        </Panel>
 
         {loading && <LoadingSkeleton />}
 
         {result && (
           <>
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Overall score</p>
-                  <p className="mt-1 text-3xl font-semibold text-zinc-900 dark:text-zinc-100">{score}/10</p>
+                  <p className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{score}/10</p>
                   <p className="text-sm text-zinc-500">HTTP {result.status_code} from {result.url}</p>
                 </div>
                 <div className="h-3 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800 sm:w-64">
                   <div className="h-full rounded-full bg-emerald-600" style={{ width: `${score * 10}%` }} />
                 </div>
               </div>
-            </section>
+            </Panel>
 
-            <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -134,7 +135,7 @@ export default function SecurityHeadersPage() {
                           <td className="px-4 py-3 font-mono text-xs text-emerald-700 dark:text-emerald-400">{item.name}</td>
                           <td className="px-4 py-3">{value ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <XCircle className="h-4 w-4 text-red-500" />}</td>
                           <td className="max-w-sm break-all px-4 py-3 font-mono text-xs text-zinc-700 dark:text-zinc-300">{value || "-"}</td>
-                          <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${info.className}`}>{info.label}</span></td>
+                          <td className="px-4 py-3"><Badge variant={info.variant}>{info.label}</Badge></td>
                           <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">{item.description}</td>
                         </tr>
                       );
@@ -145,7 +146,7 @@ export default function SecurityHeadersPage() {
               <div className="border-t border-zinc-100 p-4 dark:border-zinc-800">
                 <CopyButton value={headers.map((item) => `${item.name}: ${result.headers[item.key] || ""}`).join("\n")} label="Copy results" />
               </div>
-            </section>
+            </Panel>
           </>
         )}
       </div>

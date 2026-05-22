@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { html as beautifyHtml } from "js-beautify";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, CopyButton, Label, CodeBlock } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, CodeBlock } from "@/components/tool-ui";
 
 function minifyHtml(input: string): string {
   return input
@@ -46,11 +46,12 @@ export default function HtmlFormatterPage() {
   };
 
   return (
-    <ToolShell slug="html-formatter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "HTML Formatter" }]} title="HTML Formatter" description="Format and tidy HTML markup." />
       <div className="space-y-5">
         <div>
           <Label>HTML</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={12} />
+          <ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={12} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={format} disabled={!input}>Format</Button>

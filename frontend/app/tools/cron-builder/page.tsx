@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell } from "@/components/tool-ui";
+import { Button, CopyButton, Label, Panel, ToolInput } from "@/components/tool-ui";
 
 type Field = { mode: "every" | "specific" | "range" | "step"; values: number[]; from: number; to: number; step: number; min: number; max: number };
 const configs = [
@@ -40,7 +40,8 @@ export default function CronBuilderPage() {
   const [fields, setFields] = useState<Record<string, Field>>(Object.fromEntries(configs.map(([name, min, max]) => [name, makeField(min, max)])) as Record<string, Field>);
   const expr = useMemo(() => configs.map(([name]) => fieldText(fields[name])).join(" "), [fields]);
   const description = expr === "*/5 * * * *" ? "Every 5 minutes" : expr === "0 9 * * 1-5" ? "At 9:00 AM every weekday" : `Cron expression: ${expr}`;
-  const setField = (name: string, next: Partial<Field>) => setFields((current) => ({ ...current, [name]: { ...current[name], ...next } }));
+  const setField = (name: string, update: Partial<Field>) =>
+    setFields((prev) => ({ ...prev, [name]: { ...prev[name], ...update } }));
   const applyPreset = (value: string) => {
     const parts = value.split(" ");
     setFields(Object.fromEntries(configs.map(([name, min, max], index) => {
@@ -59,21 +60,21 @@ export default function CronBuilderPage() {
         {configs.map(([name]) => {
           const field = fields[name];
           return (
-            <section key={name} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding key={name} className="p-4">
               <h2 className="mb-3 text-sm font-semibold capitalize">{name}</h2>
-              <div className="flex flex-wrap gap-2">{(["every", "specific", "range", "step"] as const).map((mode) => <Button key={mode} variant={field.mode === mode ? "primary" : "secondary"} onClick={() => setField(name, { ...field, mode })}>{mode}</Button>)}</div>
+              <div className="flex flex-wrap gap-2">{(["every", "specific", "range", "step"] as const).map((mode) => <Button key={mode} variant={field.mode === mode ? "primary" : "secondary"} onClick={() => setField(name, { ...fields[name], mode })}>{mode}</Button>)}</div>
               {field.mode === "specific" && <div className="mt-3 grid grid-cols-10 gap-2">{Array.from({ length: field.max - field.min + 1 }, (_, i) => i + field.min).map((n) => <label key={n} className="text-xs"><input type="checkbox" checked={field.values.includes(n)} onChange={(event) => setField(name, { values: event.target.checked ? [...field.values, n] : field.values.filter((v) => v !== n) })} /> {n}</label>)}</div>}
-              {field.mode === "range" && <div className="mt-3 grid gap-2 sm:grid-cols-2"><Input type="number" value={field.from} onChange={(event) => setField(name, { from: Number(event.target.value) })} /><Input type="number" value={field.to} onChange={(event) => setField(name, { to: Number(event.target.value) })} /></div>}
-              {field.mode === "step" && <div className="mt-3"><Label>Every n</Label><Input type="number" min={1} value={field.step} onChange={(event) => setField(name, { step: Number(event.target.value) })} /></div>}
-            </section>
+              {field.mode === "range" && <div className="mt-3 grid gap-3 sm:grid-cols-2"><ToolInput label="From" type="number" min={field.min} max={field.max} value={field.from} onChange={(event) => setField(name, { from: Number(event.target.value) })} /><ToolInput label="To" type="number" min={field.min} max={field.max} value={field.to} onChange={(event) => setField(name, { to: Number(event.target.value) })} /></div>}
+              {field.mode === "step" && <div className="mt-3"><ToolInput label="Every n" type="number" min={1} max={field.max} value={field.step} onChange={(event) => setField(name, { step: Number(event.target.value) })} /></div>}
+            </Panel>
           );
         })}
-        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel className="space-y-3">
           <div className="flex items-center justify-between"><Label>Cron expression</Label><CopyButton value={expr} /></div>
-          <p className="font-mono text-2xl">{expr}</p>
+          <p className="break-all font-mono text-[13px] text-zinc-900 dark:text-zinc-100">{expr}</p>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
           <ul className="list-inside list-disc text-sm text-zinc-600 dark:text-zinc-400">{nextRuns(expr).map((run) => <li key={run}>{run}</li>)}</ul>
-        </section>
+        </Panel>
       </div>
     </ToolShell>
   );

@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, Label, Select } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
 import { ERROR_MESSAGES, InlineError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -64,21 +64,22 @@ export default function QrGeneratorPage() {
   };
 
   return (
-    <ToolShell slug="qr-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "QR Code Generator" }]} title="QR Code Generator" description="Generate QR codes for any text or URL." />
       <div className="space-y-5">
         <div>
           <Label>Text or URL</Label>
-          <Input value={text} onChange={(e) => setText(e.target.value)} />
+          <ToolInput value={text} onChange={(e) => setText(e.target.value)} />
           {error && <InlineError error={error} />}
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          <div><Label>Size</Label><Select value={size} onChange={(e) => setSize(Number(e.target.value))}><option>128</option><option>256</option><option>512</option></Select></div>
-          <div><Label>Error correction</Label><Select value={level} onChange={(e) => setLevel(e.target.value as "L" | "M" | "Q" | "H")}><option>L</option><option>M</option><option>Q</option><option>H</option></Select></div>
-          <div><Label>Margin</Label><Input type="number" min={1} max={10} value={margin} onChange={(e) => setMargin(Number(e.target.value))} /></div>
-          <div><Label>Dark color</Label><Input type="color" value={dark} onChange={(e) => setDark(e.target.value)} /></div>
-          <div><Label>Light color</Label><Input type="color" value={light} onChange={(e) => setLight(e.target.value)} /></div>
+          <div><Label>Size</Label><ToolSelect value={size} onChange={(e) => setSize(Number(e.target.value))}><option>128</option><option>256</option><option>512</option></ToolSelect></div>
+          <div><Label>Error correction</Label><ToolSelect value={level} onChange={(e) => setLevel(e.target.value as "L" | "M" | "Q" | "H")}><option>L</option><option>M</option><option>Q</option><option>H</option></ToolSelect></div>
+          <div><Label>Margin</Label><ToolInput type="number" min={1} max={10} value={margin} onChange={(e) => setMargin(Number(e.target.value))} /></div>
+          <div><Label>Dark color</Label><ToolInput type="color" value={dark} onChange={(e) => setDark(e.target.value)} /></div>
+          <div><Label>Light color</Label><ToolInput type="color" value={light} onChange={(e) => setLight(e.target.value)} /></div>
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900"><canvas ref={canvasRef} className="mx-auto" /><Button className="mt-4" onClick={download} disabled={Boolean(error) || !text.trim()}>Download PNG</Button></div>
+        <Panel noPadding className="p-5 text-center"><canvas ref={canvasRef} className="mx-auto" /><Button className="mt-4" onClick={download} disabled={Boolean(error) || !text.trim()}>Download PNG</Button></Panel>
       </div>
     </ToolShell>
   );

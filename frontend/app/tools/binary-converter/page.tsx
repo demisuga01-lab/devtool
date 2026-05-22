@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, CopyButton, Label, Toggle } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar } from "@/components/tool-ui";
 
 export default function BinaryConverterPage() {
   const [mode, setMode] = useState<"toBin" | "toText">("toBin");
@@ -33,19 +33,20 @@ export default function BinaryConverterPage() {
   };
 
   return (
-    <ToolShell slug="binary-converter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Encode & Convert" }, { label: "Binary Converter" }]} title="Binary Converter" description="Convert between text and binary." />
       <div className="space-y-5">
-        <Toggle
-          value={mode}
+        <TabBar
+          active={mode}
           onChange={(v) => setMode(v as "toBin" | "toText")}
-          options={[
+          tabs={[
             { label: "Text → Binary", value: "toBin" },
             { label: "Binary → Text", value: "toText" },
           ]}
         />
         <div>
           <Label>Input</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={8} />
+          <ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={8} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={convert} disabled={!input}>Convert</Button>
@@ -58,7 +59,7 @@ export default function BinaryConverterPage() {
               <Label>Output</Label>
               <CopyButton value={output} />
             </div>
-            <Textarea value={output} readOnly rows={8} />
+            <ToolTextarea value={output} readOnly rows={8} />
           </div>
         )}
       </div>

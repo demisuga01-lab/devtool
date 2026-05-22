@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, Label } from "@/components/tool-ui";
 
 function uuidv4(): string {
   const c = globalThis.crypto;
@@ -30,11 +30,12 @@ export default function UuidGeneratorPage() {
   };
 
   return (
-    <ToolShell slug="uuid-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Crypto & Hash" }, { label: "UUID Generator" }]} title="UUID Generator" description="Generate UUID v4 identifiers in bulk." />
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <Label>Quantity</Label>
-          <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-0.5 dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding className="inline-flex p-0.5">
             {[1, 5, 10, 25].map((n) => (
               <button
                 key={n}
@@ -50,14 +51,14 @@ export default function UuidGeneratorPage() {
                 {n}
               </button>
             ))}
-          </div>
+          </Panel>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={generate}>Generate</Button>
           {generated.length > 0 && <CopyButton value={generated.join("\n")} label="Copy all" />}
         </div>
         {generated.length > 0 && (
-          <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding>
             <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {generated.map((u, i) => (
                 <li key={i} className="flex items-center justify-between gap-3 px-4 py-2.5">
@@ -68,18 +69,18 @@ export default function UuidGeneratorPage() {
                 </li>
               ))}
             </ul>
-          </div>
+          </Panel>
         )}
         {history.length > 0 && (
           <div>
             <Label>Recent (this session)</Label>
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="bg-zinc-50 px-4 py-3">
               <ul className="space-y-1 font-mono text-xs text-zinc-700 dark:text-zinc-300">
                 {history.map((u, i) => (
                   <li key={i} className="break-all">{u}</li>
                 ))}
               </ul>
-            </div>
+            </Panel>
           </div>
         )}
       </div>

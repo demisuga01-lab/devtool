@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Checkbox, CopyButton, Input, Label, Select, Textarea } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, Checkbox, CopyButton, ToolInput, Label, ToolSelect, ToolTextarea } from "@/components/tool-ui";
 
 type Alg = "HS256" | "HS384" | "HS512" | "RS256";
 
@@ -73,40 +73,41 @@ export default function JwtBuilderPage() {
   const parts = token.split(".");
 
   return (
-    <ToolShell slug="jwt-builder">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Crypto & Hash" }, { label: "JWT Builder" }]} title="JWT Builder" description="Build and sign JWT tokens with custom headers and payload." />
       <div className="space-y-5">
         <div className="grid gap-5 lg:grid-cols-3">
-          <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding className="space-y-3 p-4">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Header</h2>
             <div>
               <Label>Algorithm</Label>
-              <Select value={alg} onChange={(event) => setAlg(event.target.value as Alg)}>
+              <ToolSelect value={alg} onChange={(event) => setAlg(event.target.value as Alg)}>
                 {(["HS256", "HS384", "HS512", "RS256"] as const).map((item) => <option key={item}>{item}</option>)}
-              </Select>
+              </ToolSelect>
             </div>
             {alg === "RS256" && <p className="text-xs text-zinc-500">RS256 needs a private key; this builder previews unsigned header and payload.</p>}
-            <Textarea value={headerJson} readOnly rows={5} />
-          </section>
-          <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <ToolTextarea value={headerJson} readOnly rows={5} />
+          </Panel>
+          <Panel noPadding className="space-y-3 p-4">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Payload</h2>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => setClaim("sub", "user_123")}>+ sub</Button>
               <Button onClick={() => setClaim("iat", Math.floor(Date.now() / 1000))}>+ iat</Button>
               <Button onClick={() => expDate && setClaim("exp", Math.floor(new Date(expDate).getTime() / 1000))}>+ exp</Button>
             </div>
-            <Input type="datetime-local" value={expDate} onChange={(event) => setExpDate(event.target.value)} />
-            <Textarea value={payload} onChange={(event) => setPayload(event.target.value)} rows={8} />
-          </section>
-          <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <ToolInput type="datetime-local" value={expDate} onChange={(event) => setExpDate(event.target.value)} />
+            <ToolTextarea value={payload} onChange={(event) => setPayload(event.target.value)} rows={8} />
+          </Panel>
+          <Panel noPadding className="space-y-3 p-4">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Secret</h2>
-            <div><Label>Secret key</Label><Input value={secret} onChange={(event) => setSecret(event.target.value)} /></div>
+            <div><Label>Secret key</Label><ToolInput value={secret} onChange={(event) => setSecret(event.target.value)} /></div>
             <Checkbox checked={secretBase64} onChange={setSecretBase64} label="Secret is Base64 encoded" />
-          </section>
+          </Panel>
         </div>
-        {error && <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">{error}</div>}
-        <section className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        {error && <Panel noPadding className="border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">{error}</Panel>}
+        <Panel noPadding className="space-y-3 p-4">
           <div className="flex items-center justify-between"><Label>Generated token</Label><CopyButton value={token} /></div>
-          <Textarea value={token} readOnly rows={5} />
+          <ToolTextarea value={token} readOnly rows={5} />
           {token && (
             <div className="break-all font-mono text-xs">
               <span className="text-emerald-600 dark:text-emerald-400">{parts[0]}</span>
@@ -116,7 +117,7 @@ export default function JwtBuilderPage() {
               <span className="text-purple-600 dark:text-purple-400">{parts[2]}</span>
             </div>
           )}
-        </section>
+        </Panel>
       </div>
     </ToolShell>
   );

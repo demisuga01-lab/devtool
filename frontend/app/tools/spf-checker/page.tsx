@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Badge, Button, CodeBlock, CopyButton, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain, type ToolError } from "@/lib/toolErrors";
 
@@ -15,10 +15,10 @@ type Result = {
   dkim: string[];
 };
 
-function badge(kind: "pass" | "warn" | "fail") {
-  if (kind === "pass") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400";
-  if (kind === "warn") return "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400";
-  return "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400";
+function badgeVariant(kind: "pass" | "warn" | "fail"): "success" | "warning" | "error" {
+  if (kind === "pass") return "success";
+  if (kind === "warn") return "warning";
+  return "error";
 }
 
 function parseDmarc(records: string[]) {
@@ -42,26 +42,24 @@ function Section({
 }) {
   const Icon = status === "pass" ? CheckCircle2 : status === "warn" ? AlertTriangle : XCircle;
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <Panel noPadding className="p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <Icon className={status === "pass" ? "h-5 w-5 text-emerald-500" : status === "warn" ? "h-5 w-5 text-yellow-500" : "h-5 w-5 text-red-500"} />
           <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badge(status)}`}>{status === "pass" ? "Pass" : status === "warn" ? "Warning" : "Missing"}</span>
+        <Badge variant={badgeVariant(status)}>{status === "pass" ? "Pass" : status === "warn" ? "Warning" : "Missing"}</Badge>
       </div>
       <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{detail}</p>
       <div className="space-y-2">
         {records.length ? records.map((record) => (
-          <div key={record} className="break-all rounded-xl border border-zinc-100 bg-zinc-50 p-3 font-mono text-xs text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
-            {record}
-          </div>
+          <CodeBlock key={record} value={record} />
         )) : (
-          <div className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">No record found.</div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No record found.</p>
         )}
       </div>
       {note && <p className="mt-3 text-xs text-zinc-500">{note}</p>}
-    </section>
+    </Panel>
   );
 }
 
@@ -105,18 +103,19 @@ export default function SpfCheckerPage() {
   };
 
   return (
-    <ToolShell slug="spf-checker">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Web & Network" }, { label: "SPF Checker" }]} title="SPF Checker" description="Validate SPF, DKIM, and DMARC DNS records for a domain." />
       <div className="space-y-5">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <Label>Domain</Label>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Input value={domain} onChange={(event) => setDomain(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="example.com" />
+            <ToolInput value={domain} onChange={(event) => setDomain(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="example.com" />
             <Button variant="primary" onClick={run} disabled={loading || !domain.trim()}>
               {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Checking...</> : "Check records"}
             </Button>
           </div>
           {error && <InlineError error={error} />}
-        </section>
+        </Panel>
 
         {loading && <LoadingSkeleton />}
 
@@ -136,9 +135,9 @@ export default function SpfCheckerPage() {
               records={result.dkim}
               note="DKIM can use many selector names; this tool checks the common default selector."
             />
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <CopyButton value={[...result.spf, ...result.dmarc, ...result.dkim].join("\n")} label="Copy records" />
-            </section>
+            </Panel>
           </>
         )}
       </div>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CodeBlock, CopyButton, ErrorCard, Label, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, CodeBlock, CopyButton, ErrorCard, Label, ToolTextarea } from "@/components/tool-ui";
 
 const sampleXml = `<catalog>
   <book><title>Clean Code</title><author>Robert C. Martin</author></book>
@@ -48,16 +48,17 @@ export default function XsltTransformerPage() {
   };
 
   return (
-    <ToolShell slug="xslt-transformer">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "XML & Data" }, { label: "XSLT Transformer" }]} title="XSLT Transformer" description="Transform XML using an XSLT stylesheet." />
       <div className="space-y-5">
         <div className="grid gap-4 lg:grid-cols-2">
           <div>
             <Label>XML</Label>
-            <Textarea value={xml} onChange={(e) => setXml(e.target.value)} rows={14} />
+            <ToolTextarea value={xml} onChange={(e) => setXml(e.target.value)} rows={14} />
           </div>
           <div>
             <Label>XSLT</Label>
-            <Textarea value={xslt} onChange={(e) => setXslt(e.target.value)} rows={14} />
+            <ToolTextarea value={xslt} onChange={(e) => setXslt(e.target.value)} rows={14} />
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

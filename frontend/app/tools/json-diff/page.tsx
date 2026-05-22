@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Label, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Badge, Button, ErrorCard, Label, Panel, ToolTextarea } from "@/components/tool-ui";
 
 type Diff = { type: "added" | "removed" | "changed" | "same"; path: string; oldValue?: unknown; newValue?: unknown };
 
@@ -44,31 +44,38 @@ export default function JsonDiffPage() {
     }
   }
 
-  const styles = {
-    added: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200",
-    removed: "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200",
-    changed: "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200",
-    same: "border-zinc-200 bg-white text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400",
+  const styles: Record<Diff["type"], string> = {
+    added: "border-l-4 border-l-emerald-500",
+    removed: "border-l-4 border-l-red-500",
+    changed: "border-l-4 border-l-amber-500",
+    same: "border-l-4 border-l-zinc-300 dark:border-l-zinc-700",
+  };
+  const badgeVariants: Record<Diff["type"], "default" | "success" | "error" | "warning"> = {
+    added: "success",
+    removed: "error",
+    changed: "warning",
+    same: "default",
   };
 
   return (
-    <ToolShell slug="json-diff">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "JSON Diff" }]} title="JSON Diff" description="Compare two JSON objects and highlight differences." />
       <div className="space-y-5">
         <div className="grid gap-5 lg:grid-cols-2">
-          <div><Label>JSON A</Label><Textarea value={left} onChange={(event) => setLeft(event.target.value)} rows={14} /></div>
-          <div><Label>JSON B</Label><Textarea value={right} onChange={(event) => setRight(event.target.value)} rows={14} /></div>
+          <div><Label>JSON A</Label><ToolTextarea value={left} onChange={(event) => setLeft(event.target.value)} rows={14} /></div>
+          <div><Label>JSON B</Label><ToolTextarea value={right} onChange={(event) => setRight(event.target.value)} rows={14} /></div>
         </div>
         <Button variant="primary" onClick={compare}>Compare JSON</Button>
-        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
+        {error && <ErrorCard>{error}</ErrorCard>}
         <div className="space-y-2">
           {diffs.map((diff, index) => (
-            <div key={`${diff.path}-${index}`} className={`rounded-2xl border p-3 text-sm ${styles[diff.type]}`}>
+            <Panel key={`${diff.path}-${index}`} noPadding className={`p-3 text-sm ${styles[diff.type]}`}>
               <span className="font-mono font-semibold">{diff.path}</span>
-              <span className="ml-2 uppercase">{diff.type}</span>
+              <Badge variant={badgeVariants[diff.type]} className="ml-2 uppercase">{diff.type}</Badge>
               {diff.type === "changed" && <span className="ml-2 font-mono">{display(diff.oldValue)} -&gt; {display(diff.newValue)}</span>}
               {diff.type === "added" && <span className="ml-2 font-mono">{display(diff.newValue)}</span>}
               {diff.type === "removed" && <span className="ml-2 font-mono">{display(diff.oldValue)}</span>}
-            </div>
+            </Panel>
           ))}
         </div>
       </div>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CodeBlock, ErrorCard, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CodeBlock, ErrorCard, ToolInput, Label } from "@/components/tool-ui";
 
 const fields = ["Seconds", "Minutes", "Hours", "Day of month", "Month", "Day of week", "Year"];
 type ParsedCron = { parts: string[]; runs: string[] } | { error: string };
@@ -76,11 +76,12 @@ export default function QuartzCronPage() {
   useEffect(() => setError("error" in parsed ? parsed.error : ""), [parsed]);
 
   return (
-    <ToolShell slug="quartz-cron">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Date & Time" }, { label: "Quartz Cron" }]} title="Quartz Cron" description="Parse and explain Quartz cron expressions." />
       <div className="space-y-5">
         <div>
           <Label>Quartz expression</Label>
-          <Input value={expression} onChange={(e) => setExpression(e.target.value)} placeholder="0 0/5 * * * ?" />
+          <ToolInput value={expression} onChange={(e) => setExpression(e.target.value)} placeholder="0 0/5 * * * ?" />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" disabled={!expression}>Parse</Button>
@@ -89,16 +90,16 @@ export default function QuartzCronPage() {
         {error && <ErrorCard>{error}</ErrorCard>}
         {"parts" in parsed && (
           <div className="space-y-5">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-4">
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Description</h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{parsed.parts[1]?.includes("/") ? `Every ${parsed.parts[1].split("/")[1]} minutes` : "Quartz cron expression parsed successfully."}</p>
-            </div>
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            </Panel>
+            <Panel noPadding className="overflow-hidden">
               <table className="w-full text-left text-sm">
                 <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-950"><tr><th className="px-3 py-2">Field</th><th className="px-3 py-2">Value</th><th className="px-3 py-2">Meaning</th></tr></thead>
                 <tbody>{parsed.parts.map((part, idx) => <tr key={fields[idx]} className="border-t border-zinc-100 dark:border-zinc-800"><td className="px-3 py-2">{fields[idx]}</td><td className="px-3 py-2 font-mono">{part}</td><td className="px-3 py-2 text-zinc-500">{explain(part, fields[idx])}</td></tr>)}</tbody>
               </table>
-            </div>
+            </Panel>
             <div><Label>Next 10 run times</Label><CodeBlock value={parsed.runs.join("\n") || "No runs found within search limit."} /></div>
             <p className="text-xs text-zinc-500 dark:text-zinc-500">Quartz cron includes a seconds field and supports 6 or 7 fields; standard cron usually has 5 fields.</p>
           </div>

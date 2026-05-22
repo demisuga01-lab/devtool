@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton, Input, Label } from "@/components/ui";
-import { ToolShell } from "@/components/ToolShell";
+import { CopyButton, ToolInput, Label, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolShell } from "@/components/tool-ui";
 
 const entities = [
   [" ", "nbsp", 160, "Non-breaking space"], ["<", "lt", 60, "Less-than sign"], [">", "gt", 62, "Greater-than sign"], ["&", "amp", 38, "Ampersand"], ['"', "quot", 34, "Quotation mark"], ["'", "apos", 39, "Apostrophe"],
@@ -18,5 +18,6 @@ const entities = [
 export default function HtmlEntitiesPage() {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => entities.filter(([ch, name, dec, desc]) => `${ch} ${name} ${dec} ${desc}`.toLowerCase().includes(query.toLowerCase())).slice(0, 50), [query]);
-  return <ToolShell slug="html-entities"><div className="space-y-5"><div><Label>Search entities</Label><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="amp, arrow, copyright..." /></div><div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"><table className="w-full text-sm"><thead><tr className="border-b border-zinc-200 text-left text-xs uppercase text-zinc-500 dark:border-zinc-800"><th className="px-4 py-2">Character</th><th className="px-4 py-2">Entity Name</th><th className="px-4 py-2">Decimal</th><th className="px-4 py-2">Hex</th><th className="px-4 py-2">Description</th><th /></tr></thead><tbody>{filtered.map(([ch, name, dec, desc]) => <tr key={name} className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-800"><td className="px-4 py-2 text-lg">{ch}</td><td className="px-4 py-2 font-mono">&amp;{name};</td><td className="px-4 py-2 font-mono">&amp;#{dec};</td><td className="px-4 py-2 font-mono">&amp;#x{dec.toString(16).toUpperCase()};</td><td className="px-4 py-2 text-zinc-600 dark:text-zinc-400">{desc}</td><td className="px-4 py-2"><CopyButton value={`&${name};`} /></td></tr>)}</tbody></table></div></div></ToolShell>;
+  return <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "HTML Entities" }]} title="HTML Entities" description="Browse and search HTML character entities." /><div className="space-y-5"><div><Label>Search entities</Label><ToolInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="amp, arrow, copyright..." /></div><Panel noPadding className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-zinc-200 text-left text-xs uppercase text-zinc-500 dark:border-zinc-800"><th className="px-4 py-2">Character</th><th className="px-4 py-2">Entity Name</th><th className="px-4 py-2">Decimal</th><th className="px-4 py-2">Hex</th><th className="px-4 py-2">Description</th><th /></tr></thead><tbody>{filtered.map(([ch, name, dec, desc]) => <tr key={name} className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-800"><td className="px-4 py-2 text-sm">{ch}</td><td className="px-4 py-2 font-mono">{`&${name};`}</td><td className="px-4 py-2 font-mono">{`&#${dec};`}</td><td className="px-4 py-2 font-mono">{`&#x${dec.toString(16).toUpperCase()};`}</td><td className="px-4 py-2 text-zinc-600 dark:text-zinc-400">{desc}</td><td className="px-4 py-2"><CopyButton value={`&${name};`} /></td></tr>)}</tbody></table></Panel></div></ToolShell>;
 }

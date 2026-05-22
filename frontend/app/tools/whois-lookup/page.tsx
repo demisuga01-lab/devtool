@@ -1,11 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { ToolError } from "@/lib/toolErrors";
-import Link from "next/link";
-import { ChevronRight, RefreshCw } from "lucide-react";
-import { Button, Input, Label, CopyButton } from "@/components/ui";
+import { RefreshCw } from "lucide-react";
+import { Button, CopyButton, ToolInput, Label, ToolHeader, ToolShell, Panel } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isIpAddress, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
@@ -17,7 +16,6 @@ type Result = {
 
 type WhoisParsed = Record<string, string | string[]>;
 
-const cardClass = "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 const sectionHeadingClass = "mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400";
 const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
 const fieldValueClass = "mt-1 break-words font-mono text-sm text-zinc-900 dark:text-zinc-100";
@@ -165,23 +163,16 @@ export default function WhoisLookupPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      <nav className="mb-4 flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-500">
-        <Link href="/" className="hover:text-zinc-900 dark:hover:text-zinc-100">Home</Link>
-        <ChevronRight className="h-3 w-3" />
-        <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">Tools</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span>Web & Network</span>
-      </nav>
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 sm:text-3xl">WHOIS Lookup</h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Look up WHOIS records for a domain.</p>
-      </header>
-
+    <ToolShell className="max-w-5xl">
+      <ToolHeader
+        breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Web & Network" }, { label: "WHOIS Lookup" }]}
+        title="WHOIS Lookup"
+        description="Look up WHOIS records for a domain."
+      />
       <div className="space-y-5">
         <div>
           <Label>Domain</Label>
-          <Input
+          <ToolInput
             value={domain}
             onChange={(e) => { setDomain(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
             placeholder="example.com"
@@ -203,7 +194,7 @@ export default function WhoisLookupPage() {
 
         {result && (
           <div className="space-y-5">
-            <section className={`${cardClass} p-5`}>
+            <Panel noPadding className="p-5">
               <h2 className={sectionHeadingClass}>Registration Info</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Domain Name">{firstValue(parsed, ["Domain Name"]) || result.domain}</Field>
@@ -230,21 +221,21 @@ export default function WhoisLookupPage() {
                 <Field label="Registrant Country">{firstValue(parsed, ["Registrant Country"])}</Field>
                 <Field label="DNSSEC">{firstValue(parsed, ["DNSSEC"])}</Field>
               </div>
-            </section>
+            </Panel>
 
             {statuses.length > 0 && (
-              <section className={`${cardClass} p-5`}>
+              <Panel noPadding className="p-5">
                 <h2 className={sectionHeadingClass}>Domain Status</h2>
                 <div className="flex flex-wrap gap-2">
                   {statuses.map((status) => (
                     <span key={status} className={statusBadgeClass(status)}>{status}</span>
                   ))}
                 </div>
-              </section>
+              </Panel>
             )}
 
             {nameServers.length > 0 && (
-              <section className={`${cardClass} p-5`}>
+              <Panel noPadding className="p-5">
                 <h2 className={sectionHeadingClass}>Name Servers</h2>
                 <div className="flex flex-wrap gap-2">
                   {nameServers.map((server) => (
@@ -253,10 +244,10 @@ export default function WhoisLookupPage() {
                     </span>
                   ))}
                 </div>
-              </section>
+              </Panel>
             )}
 
-            <section className={`${cardClass} p-5`}>
+            <Panel noPadding className="p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className={sectionHeadingClass}>Raw WHOIS Data</h2>
                 <div className="flex items-center gap-2">
@@ -272,14 +263,14 @@ export default function WhoisLookupPage() {
                 </pre>
               )}
               {result.truncated && <p className="mt-3 text-xs text-zinc-500">Output truncated to 5000 characters.</p>}
-            </section>
+            </Panel>
           </div>
         )}
       </div>
       <p className="mt-8 text-xs text-zinc-500 dark:text-zinc-500">
         WHOIS lookup is performed server-side. Your query is not logged or stored.
       </p>
-    </div>
+    </ToolShell>
   );
 }
 

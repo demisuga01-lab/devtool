@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, RefreshCw } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label, Select } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label, ToolSelect, CodeBlock } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain, type ToolError } from "@/lib/toolErrors";
 
@@ -52,39 +52,39 @@ export default function DnsPropagationPage() {
   return (
     <ToolShell slug="dns-propagation">
       <div className="space-y-5">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <div className="grid gap-3 md:grid-cols-[1fr_180px_auto] md:items-end">
             <div>
               <Label>Domain</Label>
-              <Input value={domain} onChange={(event) => setDomain(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="example.com" />
+              <ToolInput value={domain} onChange={(event) => setDomain(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="example.com" />
             </div>
             <div>
               <Label>Record type</Label>
-              <Select value={type} onChange={(event) => setType(event.target.value)}>
+              <ToolSelect value={type} onChange={(event) => setType(event.target.value)}>
                 {["A", "AAAA", "MX", "TXT", "CNAME", "NS"].map((item) => <option key={item}>{item}</option>)}
-              </Select>
+              </ToolSelect>
             </div>
             <Button variant="primary" onClick={run} disabled={loading || !domain.trim()}>
               {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Checking...</> : "Check"}
             </Button>
           </div>
           {error && <InlineError error={error} />}
-        </section>
+        </Panel>
 
         {loading && <LoadingSkeleton />}
 
         {result && (
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding className="p-5">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Results from your server location</p>
-                <h2 className="mt-1 text-xl font-semibold text-zinc-900 dark:text-zinc-100">{result.domain} {result.type}</h2>
+                <h2 className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{result.domain} {result.type}</h2>
                 <p className="text-sm text-zinc-500">Query time {result.query_time_ms}ms</p>
               </div>
               <CopyButton value={output} label="Copy records" />
             </div>
-            <div className="mb-5 rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-mono text-sm text-zinc-800 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
-              {output || "No records returned."}
+            <div className="mb-5">
+              <CodeBlock value={output || "No records returned."} />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {resolvers.map(([name, ip]) => (
@@ -99,7 +99,7 @@ export default function DnsPropagationPage() {
                 </div>
               ))}
             </div>
-          </section>
+          </Panel>
         )}
       </div>
     </ToolShell>

@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { ToolError } from "@/lib/toolErrors";
 import { AlertTriangle, CheckCircle2, RefreshCw, Search, XCircle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, Label } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { AutoFixBanner, ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain } from "@/lib/toolErrors";
 
@@ -21,7 +21,6 @@ type Result = {
   san: string[];
 };
 
-const cardClass = "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 const sectionHeadingClass = "mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400";
 const fieldLabelClass = "text-xs text-zinc-500 dark:text-zinc-400";
 const fieldValueClass = "mt-1 break-all font-mono text-sm text-zinc-900 dark:text-zinc-100";
@@ -131,7 +130,7 @@ export default function SslCheckerPage() {
       <div className="space-y-5">
         <div>
           <Label>Domain</Label>
-          <Input
+          <ToolInput
             value={domain}
             onChange={(e) => { setDomain(e.target.value); if (!e.target.value.trim()) { setResult(null); setError(null); setFixApplied(null); } }}
             placeholder="example.com"
@@ -152,7 +151,7 @@ export default function SslCheckerPage() {
         {loading && <LoadingSkeleton />}
         {result && (
           <div className="space-y-5">
-            <section className={`${cardClass} p-5`}>
+            <Panel noPadding className="p-5">
               <h2 className={sectionHeadingClass}>Certificate Status</h2>
               <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
                 <div className="flex items-center gap-3">
@@ -164,7 +163,7 @@ export default function SslCheckerPage() {
                     <XCircle className="h-8 w-8 text-red-500" />
                   )}
                   <div>
-                    <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                       {result.expired ? "Expired" : result.valid ? "Valid certificate" : "Invalid certificate"}
                     </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -173,7 +172,7 @@ export default function SslCheckerPage() {
                   </div>
                 </div>
                 <div className="min-w-[220px]">
-                  <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                  <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                     {Math.max(0, result.days_remaining)} days remaining
                   </div>
                   <div className="mt-3 h-2 rounded-full bg-zinc-100 dark:bg-zinc-800">
@@ -184,9 +183,9 @@ export default function SslCheckerPage() {
                   </div>
                 </div>
               </div>
-            </section>
+            </Panel>
 
-            <section className={`${cardClass} p-5`}>
+            <Panel noPadding className="p-5">
               <h2 className={sectionHeadingClass}>Certificate Details</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 <Detail label="Issued To">{result.issued_to}</Detail>
@@ -196,16 +195,16 @@ export default function SslCheckerPage() {
                 <Detail label="Days Remaining"><span className={result.days_remaining > 30 ? "text-emerald-600 dark:text-emerald-400" : result.days_remaining >= 10 ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400"}>{result.days_remaining}</span></Detail>
                 <Detail label="Domain">{result.domain}</Detail>
               </div>
-            </section>
+            </Panel>
 
-            <section className={`${cardClass} p-5`}>
+            <Panel noPadding className="p-5">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className={sectionHeadingClass}>{result.san.length} domains covered</h2>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">Showing {filteredSan.length} of {result.san.length} domains</span>
               </div>
               <div className="relative mb-3">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                <Input className="pl-9" value={sanFilter} onChange={(event) => setSanFilter(event.target.value)} placeholder="Filter domains..." />
+                <ToolInput className="pl-9" value={sanFilter} onChange={(event) => setSanFilter(event.target.value)} placeholder="Filter domains..." />
               </div>
               <div className="max-h-64 overflow-y-auto rounded-xl border border-zinc-100 dark:border-zinc-800">
                 {filteredSan.length === 0 ? (
@@ -218,16 +217,16 @@ export default function SslCheckerPage() {
                   ))
                 )}
               </div>
-            </section>
+            </Panel>
 
-            <section className={`${cardClass} p-5`}>
+            <Panel noPadding className="p-5">
               <h2 className={sectionHeadingClass}>Security Assessment</h2>
               <AssessmentRow passed={result.valid} label="Certificate is valid" />
               <AssessmentRow passed={!result.expired} label="Not expired" />
               <AssessmentRow passed={Boolean(result.issued_by)} label="Issued by trusted CA" />
               <AssessmentRow passed={result.san.some((entry) => entry.startsWith("*."))} neutral label="Wildcard certificate" />
               <AssessmentRow passed={result.san.length > 1} label="Multiple domains covered" />
-            </section>
+            </Panel>
           </div>
         )}
       </div>

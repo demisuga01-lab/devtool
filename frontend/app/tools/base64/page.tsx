@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, CopyButton, Label, Toggle, Checkbox } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, CopyButton, Label, TabBar, Checkbox } from "@/components/tool-ui";
 import { InfoBanner, InlineError, WarningBanner } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -84,19 +84,20 @@ export default function Base64Page() {
   };
 
   return (
-    <ToolShell slug="base64">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Base64 Tool" }]} title="Base64 Tool" description="Encode and decode Base64 text." />
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-4">
-          <Toggle
-            value={mode}
+          <TabBar
+            active={mode}
             onChange={(v) => { setMode(v as "encode" | "decode"); setOutput(""); setError(null); setBinaryInfo(false); }}
-            options={[{ label: "Encode", value: "encode" }, { label: "Decode", value: "decode" }]}
+            tabs={[{ label: "Encode", value: "encode" }, { label: "Decode", value: "decode" }]}
           />
           <Checkbox checked={urlSafe} onChange={setUrlSafe} label="URL-safe (base64url)" />
         </div>
         <div>
           <Label>Input</Label>
-          <Textarea
+          <ToolTextarea
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -122,7 +123,7 @@ export default function Base64Page() {
               <Label>Output</Label>
               <CopyButton value={output} />
             </div>
-            <Textarea value={output} readOnly rows={8} />
+            <ToolTextarea value={output} readOnly rows={8} />
           </div>
         )}
       </div>

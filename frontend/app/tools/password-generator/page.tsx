@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Label, Checkbox } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, Label, Checkbox, ToolInput } from "@/components/tool-ui";
 
 const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER = "abcdefghijklmnopqrstuvwxyz";
@@ -73,14 +73,15 @@ export default function PasswordGeneratorPage() {
   };
 
   return (
-    <ToolShell slug="password-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Crypto & Hash" }, { label: "Password Generator" }]} title="Password Generator" description="Generate strong passwords with custom rules." />
       <div className="space-y-5">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <div className="flex items-center justify-between">
             <Label>Length</Label>
             <span className="font-mono text-sm">{opts.length}</span>
           </div>
-          <input
+          <ToolInput
             type="range"
             min={8}
             max={128}
@@ -96,10 +97,10 @@ export default function PasswordGeneratorPage() {
             <Checkbox checked={opts.excludeAmbiguous} onChange={(v) => setOpts({ ...opts, excludeAmbiguous: v })} label="Exclude ambiguous" />
             <Checkbox checked={opts.excludeSimilar} onChange={(v) => setOpts({ ...opts, excludeSimilar: v })} label="Exclude similar" />
           </div>
-        </div>
+        </Panel>
         <div className="flex flex-wrap items-center gap-3">
           <Label>Quantity</Label>
-          <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-0.5 dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding className="inline-flex p-0.5">
             {[1, 5, 10].map((n) => (
               <button
                 key={n}
@@ -115,7 +116,7 @@ export default function PasswordGeneratorPage() {
                 {n}
               </button>
             ))}
-          </div>
+          </Panel>
           <Button variant="primary" onClick={generate}>Generate</Button>
         </div>
         {results.length > 0 && (
@@ -123,10 +124,7 @@ export default function PasswordGeneratorPage() {
             {results.map((pw, i) => {
               const s = strength(pw);
               return (
-                <div
-                  key={i}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
-                >
+                <Panel noPadding key={i} className="flex items-center justify-between gap-3 px-4 py-3">
                   <code className="break-all font-mono text-sm text-zinc-900 dark:text-zinc-100">{pw}</code>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5">
@@ -135,7 +133,7 @@ export default function PasswordGeneratorPage() {
                     </div>
                     <CopyButton value={pw} />
                   </div>
-                </div>
+                </Panel>
               );
             })}
           </div>

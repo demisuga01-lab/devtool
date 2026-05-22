@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { css as beautifyCss } from "js-beautify";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, CopyButton, Label, CodeBlock } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, CodeBlock } from "@/components/tool-ui";
 
 function minifyCss(input: string): string {
   return input
@@ -40,11 +40,12 @@ export default function CssFormatterPage() {
   };
 
   return (
-    <ToolShell slug="css-formatter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "CSS Formatter" }]} title="CSS Formatter" description="Format and tidy CSS rules." />
       <div className="space-y-5">
         <div>
           <Label>CSS</Label>
-          <Textarea value={input} onChange={(e) => setInput(e.target.value)} rows={12} />
+          <ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={12} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={format} disabled={!input}>Format</Button>

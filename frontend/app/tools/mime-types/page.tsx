@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton, Input, Label } from "@/components/ui";
-import { ToolShell } from "@/components/ToolShell";
+import { CopyButton, ToolInput, Label, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolShell } from "@/components/tool-ui";
 
 const mimeTypes = [
   ["html", "text/html", "Text", "HTML document"], ["htm", "text/html", "Text", "HTML document"], ["css", "text/css", "Text", "Stylesheet"], ["js", "text/javascript", "Text", "JavaScript"], ["mjs", "text/javascript", "Text", "JavaScript module"], ["json", "application/json", "Application", "JSON data"], ["xml", "application/xml", "Application", "XML data"], ["csv", "text/csv", "Text", "CSV data"], ["txt", "text/plain", "Text", "Plain text"], ["md", "text/markdown", "Text", "Markdown"],
@@ -18,5 +18,6 @@ const mimeTypes = [
 export default function MimeTypesPage() {
   const [query, setQuery] = useState("");
   const filtered = useMemo(() => mimeTypes.filter((row) => row.join(" ").toLowerCase().includes(query.toLowerCase())), [query]);
-  return <ToolShell slug="mime-types"><div className="space-y-5"><div><Label>Search MIME types</Label><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="json, image, application..." /></div><div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"><table className="w-full text-sm"><thead><tr className="border-b border-zinc-200 text-left text-xs uppercase text-zinc-500 dark:border-zinc-800"><th className="px-4 py-2">Extension</th><th className="px-4 py-2">MIME Type</th><th className="px-4 py-2">Category</th><th className="px-4 py-2">Notes</th><th /></tr></thead><tbody>{filtered.map(([ext, mime, cat, notes]) => <tr key={`${ext}-${mime}`} className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-800"><td className="px-4 py-2 font-mono">.{ext}</td><td className="px-4 py-2 font-mono">{mime}</td><td className="px-4 py-2">{cat}</td><td className="px-4 py-2 text-zinc-600 dark:text-zinc-400">{notes}</td><td className="px-4 py-2"><CopyButton value={mime} /></td></tr>)}</tbody></table></div></div></ToolShell>;
+  return <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "MIME Types" }]} title="MIME Types" description="Browse and search common MIME types." /><div className="space-y-5"><div><Label>Search MIME types</Label><ToolInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="json, image, application..." /></div><Panel noPadding className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-zinc-200 text-left text-xs uppercase text-zinc-500 dark:border-zinc-800"><th className="px-4 py-2">Extension</th><th className="px-4 py-2">MIME Type</th><th className="px-4 py-2">Category</th><th className="px-4 py-2">Notes</th><th /></tr></thead><tbody>{filtered.map(([ext, mime, cat, notes]) => <tr key={`${ext}-${mime}`} className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-800"><td className="px-4 py-2 font-mono">.{ext}</td><td className="px-4 py-2 font-mono">{mime}</td><td className="px-4 py-2">{cat}</td><td className="px-4 py-2 text-zinc-600 dark:text-zinc-400">{notes}</td><td className="px-4 py-2"><CopyButton value={mime} /></td></tr>)}</tbody></table></Panel></div></ToolShell>;
 }

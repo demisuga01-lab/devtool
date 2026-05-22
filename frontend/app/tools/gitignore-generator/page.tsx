@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label, ToolTextarea } from "@/components/tool-ui";
 
 const templates: Record<string, string> = {
   Python: "__pycache__/\n*.py[cod]\n.venv/\n.env\n.pytest_cache/\n",
@@ -57,15 +57,16 @@ export default function GitignoreGeneratorPage() {
   };
 
   return (
-    <ToolShell slug="gitignore-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Git Ignore Generator" }]} title="Git Ignore Generator" description="Generate .gitignore files for any language or framework." />
       <div className="space-y-5">
-        <div><Label>Search templates</Label><Input value={query} onChange={(event) => setQuery(event.target.value)} /></div>
+        <div><Label>Search templates</Label><ToolInput value={query} onChange={(event) => setQuery(event.target.value)} /></div>
         {Object.entries(groups).map(([group, items]) => (
           <section key={group} className="space-y-3">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{group}</h2>
             <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-4">
               {filtered(items).map((name) => (
-                <button key={name} type="button" onClick={() => toggle(name)} className={`rounded-2xl border p-3 text-left text-sm shadow-sm ${selected.includes(name) ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" : "border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"}`}>
+                <button key={name} type="button" onClick={() => toggle(name)} className={`rounded-2xl border p-3 text-left text-sm shadow-sm ${selected.includes(name) ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" : "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300"}`}>
                   <span className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded-xl bg-zinc-100 font-semibold dark:bg-zinc-800">{name.slice(0, 2)}</span>{name}
                 </button>
               ))}
@@ -75,7 +76,7 @@ export default function GitignoreGeneratorPage() {
         <div className="flex flex-wrap gap-2">{selected.map((name) => <button key={name} type="button" onClick={() => toggle(name)} className="rounded-xl bg-emerald-100 px-3 py-1 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">{name} x</button>)}</div>
         <div className="space-y-2">
           <div className="flex items-center justify-between"><Label>Generated .gitignore</Label><div className="flex gap-2"><CopyButton value={output} /><Button onClick={download}>Download</Button></div></div>
-          <Textarea value={output} readOnly rows={16} />
+          <ToolTextarea value={output} readOnly rows={16} />
         </div>
       </div>
     </ToolShell>

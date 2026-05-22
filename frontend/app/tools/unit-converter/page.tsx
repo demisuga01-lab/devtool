@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Input, Label, Select, Toggle } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, ToolInput, Label, ToolSelect, TabBar } from "@/components/tool-ui";
 
 type Category = keyof typeof units | "Temperature";
 const units = {
@@ -49,19 +49,20 @@ export default function UnitConverterPage() {
   }
 
   return (
-    <ToolShell slug="unit-converter">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Unit Converter" }]} title="Unit Converter" description="Convert between units of length, weight, temperature, speed, and area." />
       <div className="space-y-5">
-        <Toggle value={category} onChange={switchCategory} options={["Length", "Weight", "Temperature", "Speed", "Area", "Volume", "Data"].map((item) => ({ label: item, value: item }))} />
-        <div className="grid gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:grid-cols-[1fr_180px]">
-          <div><Label>Value</Label><Input value={value} onChange={(event) => setValue(event.target.value)} /></div>
-          <div><Label>Unit</Label><Select value={unit} onChange={(event) => setUnit(event.target.value)}>{unitNames.map((item) => <option key={item}>{item}</option>)}</Select></div>
-        </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <TabBar active={category} onChange={switchCategory} tabs={["Length", "Weight", "Temperature", "Speed", "Area", "Volume", "Data"].map((item) => ({ label: item, value: item }))} />
+        <Panel noPadding className="grid gap-3 p-4 sm:grid-cols-[1fr_180px]">
+          <div><Label>Value</Label><ToolInput value={value} onChange={(event) => setValue(event.target.value)} /></div>
+          <div><Label>Unit</Label><ToolSelect value={unit} onChange={(event) => setUnit(event.target.value)}>{unitNames.map((item) => <option key={item}>{item}</option>)}</ToolSelect></div>
+        </Panel>
+        <Panel noPadding className="overflow-hidden">
           {results.map(([name, result]) => {
             const text = Number(result).toLocaleString(undefined, { maximumFractionDigits: 8 });
             return <div key={String(name)} className="grid grid-cols-[120px_1fr_auto] items-center gap-3 border-b border-zinc-100 px-4 py-3 last:border-0 dark:border-zinc-800"><span>{String(name)}</span><span className="font-mono">{text}</span><CopyButton value={text} /></div>;
           })}
-        </div>
+        </Panel>
       </div>
     </ToolShell>
   );

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { diffLines, Change } from "diff";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, Label } from "@/components/tool-ui";
 
 export default function TextDiffPage() {
   const [a, setA] = useState("");
@@ -19,16 +19,17 @@ export default function TextDiffPage() {
   };
 
   return (
-    <ToolShell slug="text-diff">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Text Diff" }]} title="Text Diff" description="Compare two pieces of text line by line." />
       <div className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <Label>Original</Label>
-            <Textarea value={a} onChange={(e) => setA(e.target.value)} rows={12} />
+            <ToolTextarea value={a} onChange={(e) => setA(e.target.value)} rows={12} />
           </div>
           <div>
             <Label>Modified</Label>
-            <Textarea value={b} onChange={(e) => setB(e.target.value)} rows={12} />
+            <ToolTextarea value={b} onChange={(e) => setB(e.target.value)} rows={12} />
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -69,7 +70,7 @@ function DiffView({ changes }: { changes: Change[] }) {
     }
   }
   return (
-    <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <Panel noPadding className="overflow-x-auto">
       <pre className="font-mono text-xs">
         {rows.map((r, i) => {
           const bg =
@@ -89,6 +90,6 @@ function DiffView({ changes }: { changes: Change[] }) {
           );
         })}
       </pre>
-    </div>
+    </Panel>
   );
 }

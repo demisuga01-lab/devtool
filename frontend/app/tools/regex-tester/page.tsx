@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
+import { ToolShell, Panel } from "@/components/tool-ui";
 import { InlineError, SuccessBanner, WarningBanner, regexSuggestion } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
-import { Input, Textarea, Label, Checkbox } from "@/components/ui";
+import { ToolInput, ToolTextarea, Label, Checkbox } from "@/components/tool-ui";
 
 type Flag = "g" | "i" | "m" | "s" | "u";
 const ALL_FLAGS: Flag[] = ["g", "i", "m", "s", "u"];
@@ -70,7 +70,7 @@ export default function RegexTesterPage() {
           <Label>Pattern</Label>
           <div className="flex items-center gap-2">
             <span className="font-mono text-zinc-500">/</span>
-            <Input
+            <ToolInput
               value={pattern}
               onChange={(e) => setPattern(e.target.value)}
               placeholder="\\b\\w+@\\w+\\.\\w+\\b"
@@ -95,7 +95,7 @@ export default function RegexTesterPage() {
 
         <div>
           <Label>Test string</Label>
-          <Textarea value={test} onChange={(e) => setTest(e.target.value)} rows={8} />
+          <ToolTextarea value={test} onChange={(e) => setTest(e.target.value)} rows={8} />
         </div>
 
         {pattern && test && !error && matches.length === 0 && (
@@ -104,17 +104,17 @@ export default function RegexTesterPage() {
         {pattern && test && !error && matches.length > 0 && (
           <SuccessBanner>Found {matches.length} match{matches.length === 1 ? "" : "es"}.</SuccessBanner>
         )}
-        <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="px-4 py-3 text-sm">
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs uppercase tracking-wide text-zinc-500">Matches</span>
             <span className="font-mono">{matches.length}</span>
           </div>
-        </div>
+        </Panel>
 
         {highlighted && (
           <div>
             <Label>Matches highlighted</Label>
-            <pre className="overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-mono text-xs leading-relaxed dark:border-zinc-800 dark:bg-zinc-950">
+            <pre className="overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100">
               {highlighted.map((p, i) =>
                 p.match ? (
                   <mark
@@ -134,7 +134,7 @@ export default function RegexTesterPage() {
         {matches.some((m) => m.groups.length > 0) && (
           <div>
             <Label>Capture groups</Label>
-            <div className="overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
@@ -157,7 +157,7 @@ export default function RegexTesterPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Panel>
           </div>
         )}
       </div>

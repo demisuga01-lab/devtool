@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Checkbox, CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, Checkbox, CopyButton, ToolInput, Label, CodeBlock } from "@/components/tool-ui";
 
 type Shadow = { x: number; y: number; blur: number; spread: number; color: string; inset: boolean };
 const presets: Record<string, Shadow[]> = {
@@ -33,17 +33,17 @@ export default function CssBoxShadowPage() {
         </div>
         <div className="space-y-4">
           {shadows.map((shadow, index) => (
-            <div key={index} className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding key={index} className="p-4">
               <div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-semibold">Shadow {index + 1}</h2><Button variant="danger" onClick={() => setShadows((items) => items.filter((_, i) => i !== index))} disabled={shadows.length <= 1}>Remove</Button></div>
               {(["x", "y", "blur", "spread"] as const).map((key) => (
-                <div key={key} className="mb-3"><Label>{key}: {shadow[key]}px</Label><Input type="range" min={key === "blur" ? 0 : -50} max={key === "blur" ? 100 : 50} value={shadow[key]} onChange={(event) => update(index, { [key]: Number(event.target.value) })} /></div>
+                <div key={key} className="mb-3"><Label>{key}: {shadow[key]}px</Label><ToolInput type="range" min={key === "blur" ? 0 : -50} max={key === "blur" ? 100 : 50} value={shadow[key]} onChange={(event) => update(index, { [key]: Number(event.target.value) })} /></div>
               ))}
-              <div className="grid gap-3 sm:grid-cols-2"><div><Label>Color</Label><Input value={shadow.color} onChange={(event) => update(index, { color: event.target.value })} /></div><Checkbox checked={shadow.inset} onChange={(value) => update(index, { inset: value })} label="Inset" /></div>
-            </div>
+              <div className="grid gap-3 sm:grid-cols-2"><div><Label>Color</Label><ToolInput value={shadow.color} onChange={(event) => update(index, { color: event.target.value })} /></div><Checkbox checked={shadow.inset} onChange={(value) => update(index, { inset: value })} label="Inset" /></div>
+            </Panel>
           ))}
         </div>
         <Button variant="primary" onClick={() => setShadows((items) => [...items, presets.sm[0]])}>Add shadow</Button>
-        <div className="space-y-2"><div className="flex items-center justify-between"><Label>CSS</Label><CopyButton value={css} /></div><pre className="rounded-2xl border border-zinc-200 bg-white p-4 font-mono text-sm dark:border-zinc-800 dark:bg-zinc-900">{css}</pre></div>
+        <div className="space-y-2"><div className="flex items-center justify-between"><Label>CSS</Label><CopyButton value={css} /></div><CodeBlock value={css} /></div>
         <div className="flex flex-wrap gap-2">{Object.keys(presets).map((name) => <Button key={name} onClick={() => setShadows(presets[name])}>{name}</Button>)}</div>
       </div>
     </ToolShell>

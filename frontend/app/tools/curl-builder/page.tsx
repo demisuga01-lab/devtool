@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Checkbox, CopyButton, Input, Label, Select, Textarea, Toggle } from "@/components/ui";
+import { ToolShell, Panel } from "@/components/tool-ui";
+import { Button, Checkbox, CopyButton, ToolInput, Label, ToolSelect, ToolTextarea, TabBar, CodeBlock } from "@/components/tool-ui";
 
 type Header = { id: number; key: string; value: string };
 type AuthMode = "none" | "basic" | "bearer";
@@ -104,26 +104,26 @@ export default function CurlBuilderPage() {
   return (
     <ToolShell slug="curl-builder">
       <div className="space-y-5">
-        <Toggle value={mode} onChange={setMode} options={[{ label: "Builder to cURL", value: "builder" }, { label: "cURL to Fetch", value: "fetch" }]} />
+        <TabBar active={mode} onChange={setMode} tabs={[{ label: "Builder to cURL", value: "builder" }, { label: "cURL to Fetch", value: "fetch" }]} />
 
         {mode === "builder" ? (
           <>
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="grid gap-3 md:grid-cols-[160px_1fr]">
                 <div>
                   <Label>Method</Label>
-                  <Select value={method} onChange={(event) => setMethod(event.target.value)}>
+                  <ToolSelect value={method} onChange={(event) => setMethod(event.target.value)}>
                     {methods.map((item) => <option key={item}>{item}</option>)}
-                  </Select>
+                  </ToolSelect>
                 </div>
                 <div>
                   <Label>URL</Label>
-                  <Input value={url} onChange={(event) => setUrl(event.target.value)} />
+                  <ToolInput value={url} onChange={(event) => setUrl(event.target.value)} />
                 </div>
               </div>
-            </section>
+            </Panel>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Headers</h2>
                 <Button onClick={() => setHeaders((items) => [...items, { id: Date.now(), key: "", value: "" }])}><Plus className="h-4 w-4" /> Add</Button>
@@ -131,43 +131,43 @@ export default function CurlBuilderPage() {
               <div className="space-y-2">
                 {headers.map((header) => (
                   <div key={header.id} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                    <Input value={header.key} onChange={(event) => setHeaders((items) => items.map((item) => item.id === header.id ? { ...item, key: event.target.value } : item))} placeholder="Header" />
-                    <Input value={header.value} onChange={(event) => setHeaders((items) => items.map((item) => item.id === header.id ? { ...item, value: event.target.value } : item))} placeholder="Value" />
+                    <ToolInput value={header.key} onChange={(event) => setHeaders((items) => items.map((item) => item.id === header.id ? { ...item, key: event.target.value } : item))} placeholder="Header" />
+                    <ToolInput value={header.value} onChange={(event) => setHeaders((items) => items.map((item) => item.id === header.id ? { ...item, value: event.target.value } : item))} placeholder="Value" />
                     <Button variant="ghost" onClick={() => setHeaders((items) => items.filter((item) => item.id !== header.id))}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 ))}
               </div>
-            </section>
+            </Panel>
 
             {bodyMethods.has(method) && (
-              <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Panel noPadding className="p-5">
                 <Label>Content type</Label>
-                <Select value={contentType} onChange={(event) => setContentType(event.target.value)} className="mb-3">
+                <ToolSelect value={contentType} onChange={(event) => setContentType(event.target.value)} className="mb-3">
                   <option>application/json</option>
                   <option>application/x-www-form-urlencoded</option>
                   <option>text/plain</option>
                   <option>multipart/form-data</option>
-                </Select>
+                </ToolSelect>
                 <Label>Body</Label>
-                <Textarea value={body} onChange={(event) => setBody(event.target.value)} rows={6} />
-              </section>
+                <ToolTextarea value={body} onChange={(event) => setBody(event.target.value)} rows={6} />
+              </Panel>
             )}
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label>Auth</Label>
-                  <Select value={authMode} onChange={(event) => setAuthMode(event.target.value as AuthMode)}>
+                  <ToolSelect value={authMode} onChange={(event) => setAuthMode(event.target.value as AuthMode)}>
                     <option value="none">None</option>
                     <option value="basic">Basic</option>
                     <option value="bearer">Bearer token</option>
-                  </Select>
+                  </ToolSelect>
                 </div>
-                {authMode === "bearer" && <div><Label>Token</Label><Input value={bearer} onChange={(event) => setBearer(event.target.value)} /></div>}
+                {authMode === "bearer" && <div><Label>Token</Label><ToolInput value={bearer} onChange={(event) => setBearer(event.target.value)} /></div>}
                 {authMode === "basic" && (
                   <>
-                    <div><Label>Username</Label><Input value={basicUser} onChange={(event) => setBasicUser(event.target.value)} /></div>
-                    <div><Label>Password</Label><Input type="password" value={basicPass} onChange={(event) => setBasicPass(event.target.value)} /></div>
+                    <div><Label>Username</Label><ToolInput value={basicUser} onChange={(event) => setBasicUser(event.target.value)} /></div>
+                    <div><Label>Password</Label><ToolInput type="password" value={basicPass} onChange={(event) => setBasicPass(event.target.value)} /></div>
                   </>
                 )}
               </div>
@@ -178,31 +178,31 @@ export default function CurlBuilderPage() {
               </div>
               <div className="mt-4">
                 <Label>Output file</Label>
-                <Input value={outputFile} onChange={(event) => setOutputFile(event.target.value)} placeholder="response.json" />
+                <ToolInput value={outputFile} onChange={(event) => setOutputFile(event.target.value)} placeholder="response.json" />
               </div>
-            </section>
+            </Panel>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Generated cURL</h2>
                 <CopyButton value={command} />
               </div>
-              <pre className="overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"><code>{command}</code></pre>
-            </section>
+              <CodeBlock value={command} />
+            </Panel>
           </>
         ) : (
           <div className="grid gap-5 lg:grid-cols-2">
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <Label>cURL command</Label>
-              <Textarea value={curlInput} onChange={(event) => setCurlInput(event.target.value)} rows={14} />
-            </section>
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <ToolTextarea value={curlInput} onChange={(event) => setCurlInput(event.target.value)} rows={14} />
+            </Panel>
+            <Panel noPadding className="p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">fetch()</h2>
                 <CopyButton value={fetchCode} />
               </div>
-              <pre className="overflow-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"><code>{fetchCode}</code></pre>
-            </section>
+              <CodeBlock value={fetchCode} />
+            </Panel>
           </div>
         )}
       </div>

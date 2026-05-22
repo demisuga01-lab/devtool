@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Label, Textarea } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, Label, ToolTextarea } from "@/components/tool-ui";
 
 function words(value: string) {
   return value
@@ -36,13 +36,14 @@ export default function TextCasePage() {
   }, [input]);
 
   return (
-    <ToolShell slug="text-case">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Text Case Converter" }]} title="Text Case Converter" description="Convert text between camelCase, snake_case, PascalCase, kebab-case, SCREAMING_SNAKE, and more." />
       <div className="space-y-5">
         <div>
           <Label>Text</Label>
-          <Textarea value={input} onChange={(event) => setInput(event.target.value)} rows={7} />
+          <ToolTextarea value={input} onChange={(event) => setInput(event.target.value)} rows={7} />
         </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
@@ -61,7 +62,7 @@ export default function TextCasePage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Panel>
       </div>
     </ToolShell>
   );

@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidUrl, normalizeUrl, type ToolError } from "@/lib/toolErrors";
 
@@ -81,46 +81,47 @@ export default function OgPreviewPage() {
   };
 
   return (
-    <ToolShell slug="og-preview">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Web & Network" }, { label: "Open Graph Preview" }]} title="Open Graph Preview" description="Preview how a URL looks when shared on social media." />
       <div className="space-y-5">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <Label>URL</Label>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Input value={url} onChange={(event) => setUrl(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="https://example.com/article" />
+            <ToolInput value={url} onChange={(event) => setUrl(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="https://example.com/article" />
             <Button variant="primary" onClick={run} disabled={loading || !url.trim()}>
               {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Previewing...</> : "Preview"}
             </Button>
           </div>
           {error && <InlineError error={error} />}
-        </section>
+        </Panel>
 
         {loading && <LoadingSkeleton />}
 
         {result && (
           <>
             <div className="grid gap-5 lg:grid-cols-2">
-              <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Panel noPadding className="overflow-hidden">
                 <PreviewImage src={result.og_image} alt={result.og_title || result.title} />
                 <div className="p-4">
                   <p className="text-xs uppercase tracking-wide text-zinc-500">{host(result.url)}</p>
-                  <h2 className="mt-1 line-clamp-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{result.og_title || result.title || "Missing title"}</h2>
+                  <h2 className="mt-1 line-clamp-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{result.og_title || result.title || "Missing title"}</h2>
                   <p className="mt-2 line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">{result.og_description || "Missing description"}</p>
                 </div>
                 <div className="border-t border-zinc-100 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800">Facebook / LinkedIn preview</div>
-              </section>
+              </Panel>
 
-              <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+              <Panel noPadding className="overflow-hidden">
                 <PreviewImage src={result.twitter_image || result.og_image} alt={result.twitter_title || result.og_title} />
                 <div className="p-4">
-                  <h2 className="line-clamp-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">{result.twitter_title || result.og_title || result.title || "Missing title"}</h2>
+                  <h2 className="line-clamp-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{result.twitter_title || result.og_title || result.title || "Missing title"}</h2>
                   <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">{result.twitter_description || result.og_description || "Missing description"}</p>
                   <p className="mt-2 text-xs text-zinc-500">{host(result.url)}</p>
                 </div>
                 <div className="border-t border-zinc-100 px-4 py-2 text-xs text-zinc-500 dark:border-zinc-800">Twitter card preview</div>
-              </section>
+              </Panel>
             </div>
 
-            <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="overflow-hidden">
               <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Raw meta tags</h2>
               </div>
@@ -136,7 +137,7 @@ export default function OgPreviewPage() {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </Panel>
           </>
         )}
       </div>

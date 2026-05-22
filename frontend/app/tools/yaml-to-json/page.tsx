@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import * as yaml from "js-yaml";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CodeBlock, CopyButton, Label, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, CodeBlock, CopyButton, Label, ToolTextarea } from "@/components/tool-ui";
 import { InlineError, explainYamlError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -28,11 +28,12 @@ export default function YamlToJsonPage() {
   };
 
   return (
-    <ToolShell slug="yaml-to-json">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "XML & Data" }, { label: "YAML to JSON" }]} title="YAML to JSON" description="Convert YAML to JSON format." />
       <div className="space-y-5">
         <div>
           <Label>YAML</Label>
-          <Textarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); } }} rows={12} />
+          <ToolTextarea value={input} onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setOutput(""); setError(null); } }} rows={12} />
           {error && <InlineError error={error} />}
         </div>
         <div className="flex gap-2"><Button variant="primary" onClick={convert} disabled={!input}>Convert</Button><Button variant="ghost" onClick={() => { setInput(""); setOutput(""); setError(null); }}>Clear</Button></div>

@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Papa from "papaparse";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, ErrorCard, CopyButton, Label, Toggle, Checkbox } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar, Checkbox } from "@/components/tool-ui";
 
 const DELIMITERS = [
   { label: "Comma", value: "," },
@@ -39,11 +39,12 @@ export default function JsonToCsvPage() {
   };
 
   return (
-    <ToolShell slug="json-to-csv">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Encode & Convert" }, { label: "JSON to CSV" }]} title="JSON to CSV" description="Convert JSON into CSV rows." />
       <div className="space-y-5">
         <div>
           <Label>JSON array</Label>
-          <Textarea
+          <ToolTextarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={10}
@@ -51,7 +52,7 @@ export default function JsonToCsvPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <Toggle value={delimiter} onChange={setDelimiter} options={DELIMITERS} />
+          <TabBar active={delimiter} onChange={setDelimiter} tabs={DELIMITERS} />
           <Checkbox checked={includeHeaders} onChange={setIncludeHeaders} label="Include headers" />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -65,7 +66,7 @@ export default function JsonToCsvPage() {
               <Label>CSV output</Label>
               <CopyButton value={output} />
             </div>
-            <Textarea value={output} readOnly rows={10} />
+            <ToolTextarea value={output} readOnly rows={10} />
           </div>
         )}
       </div>

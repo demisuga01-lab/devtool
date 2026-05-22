@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label, Textarea } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label, ToolTextarea } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
 type RunResult = { stdout?: string; output?: string; stderr?: string };
@@ -62,31 +62,32 @@ export default function BcryptGeneratorPage() {
   }
 
   return (
-    <ToolShell slug="bcrypt-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Crypto & Hash" }, { label: "Bcrypt Generator" }]} title="Bcrypt Generator" description="Hash passwords using bcrypt and verify hashes." />
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="space-y-4 p-4">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Hash</h2>
           <div>
             <Label>Password</Label>
             <div className="flex gap-2">
-              <Input type={show ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} />
+              <ToolInput type={show ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} />
               <Button type="button" onClick={() => setShow((value) => !value)}>{show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
             </div>
           </div>
           <div>
             <Label>Cost factor: {cost}</Label>
-            <input className="w-full accent-emerald-600" type="range" min={4} max={14} value={cost} onChange={(event) => setCost(Number(event.target.value))} />
+            <ToolInput className="w-full accent-emerald-600" type="range" min={4} max={14} value={cost} onChange={(event) => setCost(Number(event.target.value))} />
           </div>
           <Button variant="primary" onClick={generate} disabled={!password || loading === "hash"}>{loading === "hash" ? "Generating..." : "Generate hash"}</Button>
-          {hash && <div className="space-y-2"><div className="flex justify-end"><CopyButton value={hash} /></div><Textarea value={hash} readOnly rows={3} /></div>}
-        </section>
-        <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          {hash && <div className="space-y-2"><div className="flex justify-end"><CopyButton value={hash} /></div><ToolTextarea value={hash} readOnly rows={3} /></div>}
+        </Panel>
+        <Panel noPadding className="space-y-4 p-4">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Verify</h2>
-          <div><Label>Password</Label><Input type="password" value={verifyPassword} onChange={(event) => setVerifyPassword(event.target.value)} /></div>
-          <div><Label>Bcrypt hash</Label><Textarea value={verifyHash} onChange={(event) => setVerifyHash(event.target.value)} rows={3} /></div>
+          <div><Label>Password</Label><ToolInput type="password" value={verifyPassword} onChange={(event) => setVerifyPassword(event.target.value)} /></div>
+          <div><Label>Bcrypt hash</Label><ToolTextarea value={verifyHash} onChange={(event) => setVerifyHash(event.target.value)} rows={3} /></div>
           <Button variant="primary" onClick={verify} disabled={!verifyPassword || !verifyHash || loading === "verify"}>{loading === "verify" ? "Verifying..." : "Verify hash"}</Button>
           {match !== null && <div className={`rounded-2xl border p-4 text-sm ${match ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300" : "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300"}`}>{match ? "✓ Password matches" : "✗ Password does not match"}</div>}
-        </section>
+        </Panel>
         {error && <div className="lg:col-span-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
       </div>
     </ToolShell>

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CopyButton, Input, Label } from "@/components/ui";
-import { ToolShell } from "@/components/ToolShell";
+import { CopyButton, ToolInput, Label, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolShell } from "@/components/tool-ui";
 
 const languages = [
   ["en", "English", "English"], ["es", "Spanish", "Español"], ["fr", "French", "Français"], ["de", "German", "Deutsch"],
@@ -46,14 +46,14 @@ const snippets = [
 
 function DataTable({ rows, headings }: { rows: string[][]; headings: string[] }) {
   return (
-    <div className="max-h-80 overflow-auto rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <Panel noPadding className="max-h-80 overflow-auto">
       <table className="w-full text-left text-sm">
         <thead className="sticky top-0 bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-950">
           <tr>{headings.map((heading) => <th key={heading} className="px-3 py-2">{heading}</th>)}</tr>
         </thead>
         <tbody>{rows.map((row) => <tr key={row.join("-")} className="border-t border-zinc-100 dark:border-zinc-800">{row.map((cell) => <td key={cell} className="px-3 py-2">{cell}</td>)}</tr>)}</tbody>
       </table>
-    </div>
+    </Panel>
   );
 }
 
@@ -64,17 +64,18 @@ export default function I18nStandardsPage() {
   const filteredZones = useMemo(() => timezones.filter((zone) => zone.toLowerCase().includes(query.toLowerCase())), [query]);
 
   return (
-    <ToolShell slug="i18n-standards">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "I18N Standards" }]} title="I18N Standards" description="Internationalization standards, locale codes, and snippets." />
       <div className="space-y-8">
-        <div><Label>Search references</Label><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search code, language, country, timezone..." /></div>
-        <section className="space-y-2"><h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Language Codes (ISO 639-1)</h2><DataTable headings={["Code", "Language", "Native Name"]} rows={filteredLanguages} /></section>
-        <section className="space-y-2"><h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Country Codes (ISO 3166-1 alpha-2)</h2><DataTable headings={["Code", "Country", "Region"]} rows={filteredCountries} /></section>
-        <section className="space-y-2"><h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Locale Format Reference</h2><DataTable headings={["Locale", "Display Name"]} rows={locales.map((locale) => [locale, new Intl.DisplayNames(["en"], { type: "language" }).of(locale.split("-")[0]) ?? locale])} /></section>
+        <div><Label>Search references</Label><ToolInput value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search code, language, country, timezone..." /></div>
+        <section className="space-y-2"><h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Language Codes (ISO 639-1)</h2><DataTable headings={["Code", "Language", "Native Name"]} rows={filteredLanguages} /></section>
+        <section className="space-y-2"><h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Country Codes (ISO 3166-1 alpha-2)</h2><DataTable headings={["Code", "Country", "Region"]} rows={filteredCountries} /></section>
+        <section className="space-y-2"><h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Locale Format Reference</h2><DataTable headings={["Locale", "Display Name"]} rows={locales.map((locale) => [locale, new Intl.DisplayNames(["en"], { type: "language" }).of(locale.split("-")[0]) ?? locale])} /></section>
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Common I18N Code Snippets</h2>
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Common I18N Code Snippets</h2>
           {snippets.map(([title, code]) => <div key={title} className="space-y-2"><div className="flex items-center justify-between"><Label>{title}</Label><CopyButton value={code} /></div><pre className="overflow-auto rounded-xl bg-zinc-950 p-4 text-xs text-zinc-100"><code>{code}</code></pre></div>)}
         </section>
-        <section className="space-y-2"><h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Timezone Reference</h2><div className="grid gap-2 sm:grid-cols-2">{filteredZones.map((zone) => <div key={zone} className="rounded-xl border border-zinc-200 bg-white p-3 font-mono text-sm dark:border-zinc-800 dark:bg-zinc-900">{zone}</div>)}</div></section>
+        <section className="space-y-2"><h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Timezone Reference</h2><div className="grid gap-2 sm:grid-cols-2">{filteredZones.map((zone) => <Panel noPadding key={zone} className="p-3 font-mono text-[13px]">{zone}</Panel>)}</div></section>
       </div>
     </ToolShell>
   );

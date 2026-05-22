@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { XMLParser } from "fast-xml-parser";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CodeBlock, CopyButton, ErrorCard, Input, Label, Select, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, CodeBlock, CopyButton, ErrorCard, ToolInput, Label, ToolSelect, ToolTextarea } from "@/components/tool-ui";
 
 const sample = "<person><name>John</name><age>30</age><active>true</active></person>";
 
@@ -84,23 +84,24 @@ export default function XsdGeneratorPage() {
   };
 
   return (
-    <ToolShell slug="xsd-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "XML & Data" }, { label: "XSD Generator" }]} title="XSD Generator" description="Generate an XSD schema from a sample XML." />
       <div className="space-y-5">
         <div>
           <Label>XML Input</Label>
-          <Textarea value={xml} onChange={(e) => setXml(e.target.value)} rows={12} />
+          <ToolTextarea value={xml} onChange={(e) => setXml(e.target.value)} rows={12} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <Label>Namespace URI</Label>
-            <Input value={namespace} onChange={(e) => setNamespace(e.target.value)} placeholder="https://example.com/schema" />
+            <ToolInput value={namespace} onChange={(e) => setNamespace(e.target.value)} placeholder="https://example.com/schema" />
           </div>
           <div>
             <Label>Element form</Label>
-            <Select value={elementForm} onChange={(e) => setElementForm(e.target.value)}>
+            <ToolSelect value={elementForm} onChange={(e) => setElementForm(e.target.value)}>
               <option value="qualified">qualified</option>
               <option value="unqualified">unqualified</option>
-            </Select>
+            </ToolSelect>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

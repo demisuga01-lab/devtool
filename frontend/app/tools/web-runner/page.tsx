@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { DragEvent, KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -10,12 +9,12 @@ import {
   Maximize2,
   PanelLeft,
   PanelTop,
-  Play,
   RefreshCw,
   Square,
   Upload,
   X,
 } from "lucide-react";
+import { RunButton, TabBar, ToolHeader, ToolShell } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
 type Mode = "combined" | "html" | "css" | "javascript" | "typescript";
@@ -840,7 +839,7 @@ function CodeEditor({
         }}
         readOnly={readOnly}
         spellCheck={false}
-        className={`min-h-[300px] w-full resize-y bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1 ${
+        className={`min-h-[320px] w-full resize-y bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1 ${
           readOnly ? "cursor-default text-zinc-300" : ""
         }`}
       />
@@ -899,7 +898,7 @@ function WebPreviewPanel({
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
+    <section className="flex h-full min-h-[280px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <div className="flex min-w-0 items-center gap-2">
           {onBack && canGoBack && (
@@ -964,7 +963,7 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
+    <section className="flex h-full min-h-[280px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
         <button type="button" onClick={clearConsole} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">
@@ -998,7 +997,7 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex h-full min-h-[250px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
+    <section className="flex h-full min-h-[280px] flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
@@ -1370,15 +1369,7 @@ function WebRunnerPageContent() {
   }
 
   const runButton = (
-    <button
-      type="button"
-      onClick={runPreview}
-      disabled={running}
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-      <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
-    </button>
+    <RunButton running={running} onClick={runPreview} />
   );
 
   const combinedUploadZone = (
@@ -1589,48 +1580,27 @@ function WebRunnerPageContent() {
     );
 
   return (
-    <main className="flex min-h-screen flex-col bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] dark:bg-zinc-950">
+    <ToolShell className="flex min-h-screen max-w-none flex-col px-0 py-0 sm:px-0 sm:py-0">
       <header className="border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/85">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-3 py-4 sm:px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <nav className="flex min-w-0 items-center gap-1 overflow-hidden text-xs text-zinc-500">
-            <Link href="/tools" className="shrink-0 hover:text-zinc-900 dark:hover:text-zinc-100">
-              Tools
-            </Link>
-            <span>/</span>
-            <span className="shrink-0">Code Runners</span>
-            <span>/</span>
-            <span className="truncate">Web Runner</span>
-              </nav>
-              <h1 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-100">Web Runner</h1>
-            </div>
-
-            <div className="flex items-center gap-2">
+          <ToolHeader
+            breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Code Runners" }, { label: "Web Runner" }]}
+            title="Web Runner"
+            description="Run HTML, CSS, and JavaScript with a live preview. Supports combined and solo modes."
+            actions={(
+              <div className="flex items-center gap-2">
               {runButton}
               <span className="hidden text-xs text-zinc-500 lg:inline">Ctrl+Enter</span>
-            </div>
-          </div>
+              </div>
+            )}
+          />
 
-        <div className="flex items-center gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800">
-          {modes.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => setMode(item.value)}
-              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                mode === item.value
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                {item.icon}
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
+        <TabBar
+          tabs={modes.map((item) => ({ value: item.value, label: item.label, icon: item.icon }))}
+          active={mode}
+          onChange={(value) => setMode(value as Mode)}
+          className="border-b border-zinc-200 pb-3 dark:border-zinc-800"
+        />
 
         <div className="hidden items-center gap-3 lg:flex">
           <div className="flex items-center gap-1">
@@ -1704,8 +1674,8 @@ function WebRunnerPageContent() {
       <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-5 sm:px-6 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
         {layout === "horizontal" && (
           <div className="flex h-full flex-col gap-5 lg:flex-row">
-            <div className="flex min-h-[300px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-[55%]">{editorPane}</div>
-            <div className="flex min-h-[250px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-[45%]">{outputPane}</div>
+            <div className="flex min-h-[320px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-[55%]">{editorPane}</div>
+            <div className="flex min-h-[280px] min-w-0 flex-col overflow-hidden lg:min-h-0 lg:w-[45%]">{outputPane}</div>
           </div>
         )}
 
@@ -1718,7 +1688,7 @@ function WebRunnerPageContent() {
 
         {layout === "bottom" && (
           <div className="flex h-full flex-col gap-5 overflow-auto">
-            <div className="min-h-[300px]">{editorPane}</div>
+            <div className="min-h-[320px]">{editorPane}</div>
             {hasRun && <div className="min-h-[500px]">{outputPane}</div>}
           </div>
         )}
@@ -1758,7 +1728,7 @@ function WebRunnerPageContent() {
         <ExpandModal title="TypeScript" tone="ts" value={ts} onChange={setTs} onClose={() => setModalTarget(null)} />
       )}
       {modalTarget === "preview" && <PreviewModal doc={previewDoc} onClose={() => setModalTarget(null)} />}
-    </main>
+    </ToolShell>
   );
 }
 

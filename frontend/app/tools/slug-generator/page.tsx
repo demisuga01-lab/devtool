@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Input, CopyButton, Label, Toggle, Checkbox } from "@/components/ui";
+import { ToolShell } from "@/components/tool-ui";
+import { ToolInput, CopyButton, Label, TabBar, Checkbox, CodeBlock } from "@/components/tool-ui";
 
 const STOP_WORDS = new Set([
   "a", "an", "and", "as", "at", "be", "but", "by", "for", "from", "in", "is",
@@ -49,19 +49,19 @@ export default function SlugGeneratorPage() {
       <div className="space-y-5">
         <div>
           <Label>Title or phrase</Label>
-          <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="My great blog post" />
+          <ToolInput value={text} onChange={(e) => setText(e.target.value)} placeholder="My great blog post" />
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <Toggle
-            value={sep}
+          <TabBar
+            active={sep}
             onChange={setSep}
-            options={[{ label: "Hyphen", value: "-" }, { label: "Underscore", value: "_" }]}
+            tabs={[{ label: "Hyphen", value: "-" }, { label: "Underscore", value: "_" }]}
           />
           <Checkbox checked={lower} onChange={setLower} label="Lowercase" />
           <Checkbox checked={removeStop} onChange={setRemoveStop} label="Remove stop words" />
           <div>
             <Label>Max length</Label>
-            <Input
+            <ToolInput
               type="number"
               min={1}
               value={maxLen}
@@ -76,9 +76,7 @@ export default function SlugGeneratorPage() {
             <Label>Slug</Label>
             {slug && <CopyButton value={slug} />}
           </div>
-          <div className="break-all rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
-            {slug || <span className="text-zinc-400">—</span>}
-          </div>
+          <CodeBlock value={slug || "-"} />
         </div>
       </div>
     </ToolShell>

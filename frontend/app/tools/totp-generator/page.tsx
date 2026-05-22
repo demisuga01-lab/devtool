@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label, Select } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
 
 type Algo = "SHA-1" | "SHA-256" | "SHA-512";
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
@@ -85,16 +85,17 @@ export default function TotpGeneratorPage() {
   }, [uri]);
 
   return (
-    <ToolShell slug="totp-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "TOTP Generator" }]} title="TOTP Generator" description="Generate TOTP/2FA codes from a secret key." />
       <div className="space-y-5">
-        <section className="grid gap-4 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:grid-cols-2">
-          <div className="sm:col-span-2"><Label>Secret key</Label><div className="flex gap-2"><Input value={secret} onChange={(event) => setSecret(event.target.value)} className="font-mono" /><Button onClick={() => setSecret(randomSecret())}>Random</Button></div></div>
-          <div><Label>Period</Label><Select value={period} onChange={(event) => setPeriod(Number(event.target.value))}><option value={30}>30s</option><option value={60}>60s</option></Select></div>
-          <div><Label>Digits</Label><Select value={digits} onChange={(event) => setDigits(Number(event.target.value))}><option value={6}>6</option><option value={8}>8</option></Select></div>
-          <div><Label>Algorithm</Label><Select value={algorithm} onChange={(event) => setAlgorithm(event.target.value as Algo)}><option>SHA-1</option><option>SHA-256</option><option>SHA-512</option></Select></div>
-        </section>
+        <Panel noPadding className="grid gap-4 p-4 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Label>Secret key</Label><div className="flex gap-2"><ToolInput value={secret} onChange={(event) => setSecret(event.target.value)} className="font-mono" /><Button onClick={() => setSecret(randomSecret())}>Random</Button></div></div>
+          <div><Label>Period</Label><ToolSelect value={period} onChange={(event) => setPeriod(Number(event.target.value))}><option value={30}>30s</option><option value={60}>60s</option></ToolSelect></div>
+          <div><Label>Digits</Label><ToolSelect value={digits} onChange={(event) => setDigits(Number(event.target.value))}><option value={6}>6</option><option value={8}>8</option></ToolSelect></div>
+          <div><Label>Algorithm</Label><ToolSelect value={algorithm} onChange={(event) => setAlgorithm(event.target.value as Algo)}><option>SHA-1</option><option>SHA-256</option><option>SHA-512</option></ToolSelect></div>
+        </Panel>
         {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
-        <section className="grid gap-5 rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:grid-cols-[1fr_240px]">
+        <Panel noPadding className="grid gap-5 p-6 text-center lg:grid-cols-[1fr_240px]">
           <div>
             <p className="font-mono text-4xl font-bold tracking-widest text-zinc-900 dark:text-zinc-100">{codes.current || "------"}</p>
             <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800"><div className="h-full bg-emerald-600" style={{ width: `${(remaining / period) * 100}%` }} /></div>
@@ -105,8 +106,8 @@ export default function TotpGeneratorPage() {
             </div>
             <div className="mt-4"><CopyButton value={codes.current} /></div>
           </div>
-          <div className="flex flex-col items-center justify-center"><canvas ref={canvasRef} className="rounded-xl bg-white p-2" /><p className="mt-2 text-xs text-zinc-500">Scan with an authenticator app</p></div>
-        </section>
+          <div className="flex flex-col items-center justify-center"><canvas ref={canvasRef} className="rounded-xl p-2" style={{ backgroundColor: "#fff" }} /><p className="mt-2 text-xs text-zinc-500">Scan with an authenticator app</p></div>
+        </Panel>
       </div>
     </ToolShell>
   );

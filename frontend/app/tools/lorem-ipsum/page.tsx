@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Input, CopyButton, Label, Toggle, Checkbox, Textarea } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolInput, CopyButton, Label, TabBar, Checkbox, ToolTextarea } from "@/components/tool-ui";
 
 const WORDS = ("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est laborum").split(" ");
 
@@ -68,12 +68,13 @@ export default function LoremIpsumPage() {
   };
 
   return (
-    <ToolShell slug="lorem-ipsum">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "Lorem Ipsum" }]} title="Lorem Ipsum" description="Generate placeholder Lorem Ipsum text." />
       <div className="space-y-5">
-        <Toggle
-          value={mode}
+        <TabBar
+          active={mode}
           onChange={(v) => setMode(v as Mode)}
-          options={[
+          tabs={[
             { label: "Paragraphs", value: "paragraphs" },
             { label: "Sentences", value: "sentences" },
             { label: "Words", value: "words" },
@@ -83,7 +84,7 @@ export default function LoremIpsumPage() {
         <div className="flex flex-wrap items-center gap-4">
           <div>
             <Label>Count</Label>
-            <Input
+            <ToolInput
               type="number"
               min={1}
               max={50}
@@ -104,7 +105,7 @@ export default function LoremIpsumPage() {
               <Label>Output</Label>
               <CopyButton value={output} />
             </div>
-            <Textarea value={output} readOnly rows={12} />
+            <ToolTextarea value={output} readOnly rows={12} />
           </div>
         )}
       </div>

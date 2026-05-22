@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { KeyboardEvent, ReactNode, Suspense, useCallback, useEffect, useState } from "react";
 import { Play, RefreshCw } from "lucide-react";
+import { TabBar, ToolShell } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
 type OutputTab = "output" | "errors";
@@ -298,7 +299,7 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+    <section className="flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
       <div className="-m-4 mb-4 flex flex-wrap gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -415,8 +416,8 @@ function OtherRunnerPageContent() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-50 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.10),transparent_32rem)] px-3 py-6 dark:bg-zinc-950 sm:px-6 sm:py-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <ToolShell className="max-w-none px-0 py-0 sm:px-0 sm:py-0">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-3 py-6 sm:px-6 sm:py-10">
         <nav className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500">
           <Link href="/tools" className="hover:text-zinc-900 dark:hover:text-zinc-100">
             Tools
@@ -428,30 +429,18 @@ function OtherRunnerPageContent() {
         </nav>
 
         <header>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Other Languages</h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">Run additional compiled, functional, scientific, and JVM languages.</p>
+          <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">Other Languages</h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Run additional compiled, functional, scientific, and JVM languages.</p>
         </header>
 
-        <section className="flex gap-2 overflow-x-auto border-b border-zinc-200 pb-3 scrollbar-hide dark:border-zinc-800 lg:flex-wrap">
-          {languages.map((language, index) => (
-            <button
-              key={language.label}
-              type="button"
-              onClick={() => setActiveIndex(index)}
-              className={`inline-flex min-h-11 whitespace-nowrap items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
-                index === activeIndex
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                  : "text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-              }`}
-            >
-              {language.icon}
-              <span>{language.label}</span>
-              {index === activeIndex && <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/90">{language.version}</span>}
-            </button>
-          ))}
-        </section>
+        <TabBar
+          tabs={languages.map((language, index) => ({ value: String(index), label: language.label, icon: language.icon, badge: index === activeIndex ? language.version : undefined }))}
+          active={String(activeIndex)}
+          onChange={(value) => setActiveIndex(Number(value))}
+          className="border-b border-zinc-200 pb-3 dark:border-zinc-800"
+        />
 
-        <div className="flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:flex-row">
+        <div className="flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100">{active.icon}<span>{active.label}</span></h2>
@@ -464,7 +453,7 @@ function OtherRunnerPageContent() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className="min-h-[300px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0"
+              className="min-h-[320px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0"
             />
 
             <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
@@ -495,7 +484,7 @@ function OtherRunnerPageContent() {
           <OutputPanel result={result} error={error} outputTab={outputTab} setOutputTab={setOutputTab} hasRun={hasRun} />
         </div>
       </div>
-    </main>
+    </ToolShell>
   );
 }
 

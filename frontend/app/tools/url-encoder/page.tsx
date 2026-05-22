@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, Textarea, CopyButton, Label, Toggle } from "@/components/ui";
+import { ToolShell, ToolHeader } from "@/components/tool-ui";
+import { Button, ToolTextarea, CopyButton, Label, TabBar } from "@/components/tool-ui";
 import { InlineError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -33,15 +33,16 @@ export default function UrlEncoderPage() {
   };
 
   return (
-    <ToolShell slug="url-encoder">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Text & Format" }, { label: "URL Encoder" }]} title="URL Encoder" description="Encode and decode URL components." />
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-4">
-          <Toggle value={mode} onChange={(v) => { setMode(v as "encode" | "decode"); setError(null); setOutput(""); }} options={[{ label: "Encode", value: "encode" }, { label: "Decode", value: "decode" }]} />
-          <Toggle value={variant} onChange={(v) => setVariant(v as "component" | "full")} options={[{ label: "Component", value: "component" }, { label: "Full URI", value: "full" }]} />
+          <TabBar active={mode} onChange={(v) => { setMode(v as "encode" | "decode"); setError(null); setOutput(""); }} tabs={[{ label: "Encode", value: "encode" }, { label: "Decode", value: "decode" }]} />
+          <TabBar active={variant} onChange={(v) => setVariant(v as "component" | "full")} tabs={[{ label: "Component", value: "component" }, { label: "Full URI", value: "full" }]} />
         </div>
         <div>
           <Label>Input</Label>
-          <Textarea
+          <ToolTextarea
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
@@ -64,7 +65,7 @@ export default function UrlEncoderPage() {
               <Label>Output</Label>
               <CopyButton value={output} />
             </div>
-            <Textarea value={output} readOnly rows={8} />
+            <ToolTextarea value={output} readOnly rows={8} />
           </div>
         )}
       </div>

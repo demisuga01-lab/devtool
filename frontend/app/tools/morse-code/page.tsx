@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { CopyButton, Label, Textarea, Toggle } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { CopyButton, Label, ToolTextarea, TabBar } from "@/components/tool-ui";
 
 const morse: Record<string, string> = {
   A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "--.", H: "....", I: "..", J: ".---", K: "-.-", L: ".-..", M: "--", N: "-.", O: "---", P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-", U: "..-", V: "...-", W: ".--", X: "-..-", Y: "-.--", Z: "--..",
@@ -22,22 +22,23 @@ export default function MorseCodePage() {
   }, [input, mode]);
 
   return (
-    <ToolShell slug="morse-code">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "Morse Code" }]} title="Morse Code" description="Convert text to Morse code and back." />
       <div className="space-y-5">
-        <Toggle value={mode} onChange={setMode} options={[{ label: "Text to Morse", value: "encode" }, { label: "Morse to Text", value: "decode" }]} />
-        <div><Label>Input</Label><Textarea value={input} onChange={(event) => setInput(event.target.value)} rows={8} /></div>
+        <TabBar active={mode} onChange={setMode} tabs={[{ label: "Text to Morse", value: "encode" }, { label: "Morse to Text", value: "decode" }]} />
+        <div><Label>Input</Label><ToolTextarea value={input} onChange={(event) => setInput(event.target.value)} rows={8} /></div>
         <div className="space-y-2">
           <div className="flex items-center justify-between"><Label>Output</Label><CopyButton value={output} /></div>
-          <Textarea value={output} readOnly rows={6} />
+          <ToolTextarea value={output} readOnly rows={6} />
         </div>
-        <div className="grid gap-2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:grid-cols-3 md:grid-cols-6">
+        <Panel noPadding className="grid gap-2 p-4 sm:grid-cols-3 md:grid-cols-6">
           {Object.entries(morse).map(([char, code]) => (
             <div key={char} className="flex justify-between rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-950">
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">{char}</span>
               <span className="font-mono text-zinc-500">{code}</span>
             </div>
           ))}
-        </div>
+        </Panel>
       </div>
     </ToolShell>
   );

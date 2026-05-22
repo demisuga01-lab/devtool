@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolInput, Label } from "@/components/tool-ui";
 import { InlineError, WarningBanner } from "@/lib/toolErrors";
 
 function workingDays(start: Date, end: Date): number {
@@ -78,17 +78,18 @@ export default function DateDiffPage() {
   }, [start, end]);
 
   return (
-    <ToolShell slug="date-diff">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Date & Time" }, { label: "Date Diff" }]} title="Date Diff" description="Calculate the difference between two dates." />
       <div className="space-y-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label>Start date</Label>
-            <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            <ToolInput type="date" value={start} onChange={(e) => setStart(e.target.value)} />
             {startError && <InlineError error={startError} />}
           </div>
           <div>
             <Label>End date</Label>
-            <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <ToolInput type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
             {endError && <InlineError error={endError} />}
           </div>
         </div>
@@ -107,7 +108,7 @@ export default function DateDiffPage() {
             <Stat label="Working days (Mon-Fri)" value={`${stats.working}`} />
             <Stat
               label="Hours / minutes / seconds"
-              value={`${stats.totalHours.toLocaleString()} h · ${stats.totalMinutes.toLocaleString()} m · ${stats.totalSeconds.toLocaleString()} s`}
+              value={`${stats.totalHours.toLocaleString()} h � ${stats.totalMinutes.toLocaleString()} m � ${stats.totalSeconds.toLocaleString()} s`}
             />
           </div>
         )}
@@ -118,10 +119,10 @@ export default function DateDiffPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <Panel noPadding className="p-4">
       <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
-      <div className="mt-1 font-mono text-base text-zinc-900 dark:text-zinc-100">{value}</div>
-    </div>
+      <div className="mt-1 font-mono text-[13px] text-zinc-900 dark:text-zinc-100">{value}</div>
+    </Panel>
   );
 }
 

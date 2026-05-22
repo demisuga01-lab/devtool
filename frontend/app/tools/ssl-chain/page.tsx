@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Badge, Button, CopyButton, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidDomain, normalizeDomain, type ToolError } from "@/lib/toolErrors";
 
@@ -47,11 +47,7 @@ export default function SslChainPage() {
   const [loading, setLoading] = useState(false);
 
   const status = result?.expired ? "Expired" : result && result.days_remaining <= 30 ? "Expiring soon" : result?.valid ? "Valid" : "Invalid";
-  const statusClass = result?.expired || !result?.valid
-    ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400"
-    : result.days_remaining <= 30
-      ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400"
-      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400";
+  const statusVariant: "success" | "warning" | "error" = result?.expired || !result?.valid ? "error" : result.days_remaining <= 30 ? "warning" : "success";
   const Icon = result?.expired || !result?.valid ? XCircle : result.days_remaining <= 30 ? AlertTriangle : CheckCircle2;
 
   const validityPercent = useMemo(() => {
@@ -92,40 +88,41 @@ export default function SslChainPage() {
   };
 
   return (
-    <ToolShell slug="ssl-chain">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Web & Network" }, { label: "SSL Chain Viewer" }]} title="SSL Chain Viewer" description="View the full SSL certificate chain for any domain." />
       <div className="space-y-5">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <Label>Domain</Label>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Input value={domain} onChange={(event) => setDomain(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="example.com" />
+            <ToolInput value={domain} onChange={(event) => setDomain(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="example.com" />
             <Button variant="primary" onClick={run} disabled={loading || !domain.trim()}>
               {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Checking...</> : "View chain"}
             </Button>
           </div>
           {error && <InlineError error={error} />}
-        </section>
+        </Panel>
 
         {loading && <LoadingSkeleton />}
 
         {result && (
           <>
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <Icon className={status === "Valid" ? "h-8 w-8 text-emerald-500" : status === "Expiring soon" ? "h-8 w-8 text-yellow-500" : "h-8 w-8 text-red-500"} />
                   <div>
-                    <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{result.domain}</h2>
+                    <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{result.domain}</h2>
                     <p className="text-sm text-zinc-500">{Math.max(0, result.days_remaining)} days remaining</p>
                   </div>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-sm font-medium ${statusClass}`}>{status}</span>
+                <Badge variant={statusVariant} className="px-3 py-1 text-sm">{status}</Badge>
               </div>
               <div className="mt-5 h-3 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                 <div className="h-full rounded-full bg-emerald-600" style={{ width: `${validityPercent}%` }} />
               </div>
-            </section>
+            </Panel>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Certificate details</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Issued to" value={result.issued_to} />
@@ -136,9 +133,9 @@ export default function SslChainPage() {
                 <Field label="Fingerprint display" value={fingerprint} />
               </div>
               <p className="mt-3 text-xs text-zinc-500">Fingerprint is derived from the current endpoint payload because the existing SSL endpoint does not expose the raw certificate fingerprint.</p>
-            </section>
+            </Panel>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding className="p-5">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Subject alternative names</h2>
                 <CopyButton value={result.san.join("\n")} label="Copy SANs" />
@@ -148,7 +145,7 @@ export default function SslChainPage() {
                   <div key={name} className="border-b border-zinc-100 px-3 py-2 font-mono text-xs text-zinc-700 last:border-b-0 dark:border-zinc-800 dark:text-zinc-300">{name}</div>
                 ))}
               </div>
-            </section>
+            </Panel>
           </>
         )}
       </div>

@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
 import { ERROR_MESSAGES, InlineError, WarningBanner } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
-import { Button, Input, CopyButton, Label, Select } from "@/components/ui";
+import { Button, ToolInput, CopyButton, Label, ToolSelect } from "@/components/tool-ui";
 
 function relativeTime(date: Date): string {
   const diffMs = date.getTime() - Date.now();
@@ -105,9 +105,10 @@ export default function TimestampPage() {
   };
 
   return (
-    <ToolShell slug="timestamp">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Date & Time" }, { label: "Timestamp Converter" }]} title="Timestamp Converter" description="Convert between Unix timestamps and date strings." />
       <div className="space-y-5">
-        <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="px-4 py-3 text-sm">
           <span className="text-xs uppercase tracking-wide text-zinc-500">Now</span>
           <div className="mt-1 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
@@ -127,11 +128,11 @@ export default function TimestampPage() {
               <div className="font-mono text-xs">{now.toLocaleTimeString()}</div>
             </div>
           </div>
-        </div>
+        </Panel>
 
         <div>
           <Label>Timestamp or date string</Label>
-          <Input
+          <ToolInput
             value={input}
             onChange={(e) => { setInput(e.target.value); if (!e.target.value.trim()) { setParsed(null); setError(null); setScaleWarning(null); } }}
             placeholder="1700000000 or 2023-11-14T22:13:20Z"
@@ -141,11 +142,11 @@ export default function TimestampPage() {
           <Button variant="primary" onClick={convert} disabled={!input}>Convert</Button>
           <Button onClick={useNow}>Use now</Button>
           <Label>Timezone</Label>
-          <Select value={tz} onChange={(e) => setTz(e.target.value)}>
+          <ToolSelect value={tz} onChange={(e) => setTz(e.target.value)}>
             {tzList.map((z) => (
               <option key={z} value={z}>{z}</option>
             ))}
-          </Select>
+          </ToolSelect>
         </div>
         {error && <InlineError error={error} />}
         {scaleWarning && (
@@ -158,7 +159,7 @@ export default function TimestampPage() {
           </WarningBanner>
         )}
         {parsed && (
-          <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding>
             <table className="w-full text-sm">
               <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                 <Row label="Unix (seconds)" value={String(Math.floor(parsed.getTime() / 1000))} />
@@ -170,7 +171,7 @@ export default function TimestampPage() {
                 <Row label="Relative" value={relativeTime(parsed)} />
               </tbody>
             </table>
-          </div>
+          </Panel>
         )}
       </div>
     </ToolShell>
@@ -180,7 +181,7 @@ export default function TimestampPage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <tr>
-      <td className="w-44 bg-zinc-50 px-4 py-2.5 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/50">
+      <td className="w-44 bg-zinc-50 px-4 py-2.5 text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-950/50">
         {label}
       </td>
       <td className="break-all px-4 py-2.5 font-mono text-xs text-zinc-900 dark:text-zinc-100">

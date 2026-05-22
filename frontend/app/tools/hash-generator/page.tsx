@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Textarea, CopyButton, Label, Checkbox } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { ToolTextarea, CopyButton, Label, Checkbox } from "@/components/tool-ui";
 import { md5 } from "@/lib/md5";
 
 type Algo = "MD5" | "SHA-1" | "SHA-256" | "SHA-512";
@@ -47,11 +47,12 @@ export default function HashGeneratorPage() {
   const algos: Algo[] = ["MD5", "SHA-1", "SHA-256", "SHA-512"];
 
   return (
-    <ToolShell slug="hash-generator">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Crypto & Hash" }, { label: "Hash Generator" }]} title="Hash Generator" description="Generate MD5, SHA-1, SHA-256, and SHA-512 hashes." />
       <div className="space-y-5">
         <div>
           <Label>Text to hash</Label>
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} />
+          <ToolTextarea value={text} onChange={(e) => setText(e.target.value)} rows={6} />
         </div>
         <div className="flex flex-wrap gap-4">
           {algos.map((a) => (
@@ -63,7 +64,7 @@ export default function HashGeneratorPage() {
             />
           ))}
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
@@ -86,7 +87,7 @@ export default function HashGeneratorPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </Panel>
         <p className="text-xs text-zinc-500">
           Hashed in your browser. Input never sent to any server.
         </p>

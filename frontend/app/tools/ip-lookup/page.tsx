@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { MapPin, RefreshCw } from "lucide-react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { InlineError, LoadingSkeleton, errorFromUnknown, type ToolError } from "@/lib/toolErrors";
 
@@ -70,28 +70,29 @@ export default function IpLookupPage() {
   };
 
   return (
-    <ToolShell slug="ip-lookup">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Web & Network" }, { label: "IP Lookup" }]} title="IP Lookup" description="Look up geolocation and ASN info for any IP address." />
       <div className="space-y-5">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Panel noPadding className="p-5">
           <Label>IP address</Label>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Input value={ip} onChange={(event) => setIp(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="8.8.8.8" />
+            <ToolInput value={ip} onChange={(event) => setIp(event.target.value)} onKeyDown={(event) => event.key === "Enter" && run()} placeholder="8.8.8.8" />
             <Button variant="primary" onClick={() => run()} disabled={loading || !ip.trim()}>
               {loading ? <><RefreshCw className="h-4 w-4 animate-spin" /> Looking...</> : "Lookup"}
             </Button>
             <Button onClick={useMyIp} disabled={loading}>Use my IP</Button>
           </div>
           {error && <InlineError error={error} />}
-        </section>
+        </Panel>
 
         {loading && <LoadingSkeleton />}
 
         {result && (
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel noPadding className="p-5">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-wide text-zinc-500">Lookup result</p>
-                <h2 className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{result.ip}</h2>
+                <h2 className="mt-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{result.ip}</h2>
               </div>
               <CopyButton value={result.ip || ""} label="Copy IP" />
             </div>
@@ -105,7 +106,7 @@ export default function IpLookupPage() {
               <Field label="ASN" value={result.asn} />
               <Field label="Coordinates" value={result.latitude && result.longitude ? `${result.latitude}, ${result.longitude}` : undefined} />
             </div>
-            <div className="mt-5 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+            <Panel noPadding className="mt-5 bg-zinc-50 p-4 dark:bg-zinc-950">
               <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
                 <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 Map coordinates
@@ -113,8 +114,8 @@ export default function IpLookupPage() {
               <p className="mt-2 font-mono text-sm text-zinc-600 dark:text-zinc-400">
                 {result.latitude && result.longitude ? `${result.latitude}, ${result.longitude}` : "Coordinates unavailable"}
               </p>
-            </div>
-          </section>
+            </Panel>
+          </Panel>
         )}
       </div>
     </ToolShell>

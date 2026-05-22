@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ToolShell } from "@/components/ToolShell";
-import { Button, CopyButton, Input, Label, Textarea } from "@/components/ui";
+import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
+import { Button, CopyButton, ToolInput, Label, ToolTextarea } from "@/components/tool-ui";
 
 const controls = ["NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL", "BS", "TAB", "LF", "VT", "FF", "CR", "SO", "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US"];
-const entities: Record<number, string> = { 34: "&quot;", 38: "&amp;", 39: "&#39;", 60: "&lt;", 62: "&gt;", 160: "&nbsp;" };
+const entities: Record<number, string> = { 34: "&quot;", 38: "&", 39: "&#39;", 60: "&lt;", 62: "&gt;", 160: "&nbsp;" };
 const rows = Array.from({ length: 128 }, (_, code) => ({
   code,
   hex: code.toString(16).toUpperCase().padStart(2, "0"),
@@ -31,22 +31,23 @@ export default function AsciiTablePage() {
   }
 
   return (
-    <ToolShell slug="ascii-table">
+    <ToolShell>
+      <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "ASCII Table" }]} title="ASCII Table" description="Browse the full ASCII character table with decimal, hex, and binary values." />
       <div className="space-y-5">
         <div>
           <Label>Search</Label>
-          <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter by character, decimal, or hex" />
+          <ToolInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter by character, decimal, or hex" />
         </div>
         <div className="hidden">
           <Button>Search</Button>
-          <Textarea readOnly value={query} />
+          <ToolTextarea readOnly value={query} />
           <CopyButton value={query} />
         </div>
         {["Control", "Printable"].map((group) => {
           const groupRows = filtered.filter((row) => group === "Control" ? !row.printable : row.printable);
           if (groupRows.length === 0) return null;
           return (
-            <section key={group} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <Panel noPadding key={group} className="overflow-hidden">
               <h2 className="border-b border-zinc-200 px-4 py-3 text-sm font-semibold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100">{group}</h2>
               <table className="w-full text-sm">
                 <thead className="text-left text-xs uppercase tracking-wide text-zinc-500">
@@ -64,7 +65,7 @@ export default function AsciiTablePage() {
                   ))}
                 </tbody>
               </table>
-            </section>
+            </Panel>
           );
         })}
       </div>
