@@ -647,7 +647,7 @@ function UploadZone({
   }
 
   return (
-    <div className="border-b border-zinc-800 bg-zinc-900 p-3">
+    <div className="border-b border-zinc-800 bg-zinc-900 p-2">
       <input
         ref={inputRef}
         type="file"
@@ -675,18 +675,17 @@ function UploadZone({
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition ${
+        className={`flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-2 text-center transition ${
           dragging
             ? "border-emerald-400 bg-emerald-500/10 text-emerald-200"
             : "border-zinc-700 bg-zinc-950 text-zinc-400 hover:border-emerald-500 hover:text-zinc-200"
         }`}
       >
-        <Upload className="mb-2 h-5 w-5" />
-        <span className="text-sm font-medium">{prompt}</span>
-        <span className="mt-1 text-xs text-zinc-500">Up to {MAX_FILES_PER_UPLOAD} files per upload, {MAX_FILE_SIZE_BYTES / 1024}KB each</span>
+        <Upload className="h-4 w-4 shrink-0" />
+        <span className="truncate text-sm font-medium">{prompt}</span>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         {groups.map((group) => (
           <span
             key={group.kind}
@@ -699,7 +698,7 @@ function UploadZone({
       </div>
 
       {files.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           {files.map((file) => (
             <span
               key={`${file.kind}-${file.index}-${file.name}`}

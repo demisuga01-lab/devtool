@@ -183,7 +183,7 @@ export default function CompilersPage() {
                 aria-disabled="true"
                 className="flex cursor-not-allowed flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-100 p-4 text-center opacity-70 grayscale dark:border-zinc-800 dark:bg-zinc-900"
               >
-                <div className="flex h-12 w-12 items-center justify-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
                   {lang.icon}
                 </div>
                 <span className="text-sm font-medium text-zinc-500 dark:text-zinc-500">
@@ -199,7 +199,7 @@ export default function CompilersPage() {
                 href={lang.href!}
                 className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-center transition hover:border-emerald-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600"
               >
-                <div className="flex h-12 w-12 items-center justify-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
                   {lang.icon}
                 </div>
                 <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
