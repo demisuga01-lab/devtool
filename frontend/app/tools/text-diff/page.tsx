@@ -1,22 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { diffLines, Change } from "diff";
+import { diffLines, diffWords, Change } from "diff";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
-import { Button, ToolTextarea, Label } from "@/components/tool-ui";
+import { Badge, Button, Checkbox, ResultCard, ToolTextarea, Label, TabBar } from "@/components/tool-ui";
 
 export default function TextDiffPage() {
   const [a, setA] = useState("");
   const [b, setB] = useState("");
   const [diff, setDiff] = useState<Change[] | null>(null);
+  const [mode, setMode] = useState<"line" | "word">("line");
+  const [ignoreWhitespace, setIgnoreWhitespace] = useState(false);
 
   const compare = () => {
     if (!a && !b) {
       setDiff(null);
       return;
     }
-    setDiff(diffLines(a, b));
+    const left = ignoreWhitespace ? a.replace(/[ \t]+/g, " ") : a;
+    const right = ignoreWhitespace ? b.replace(/[ \t]+/g, " ") : b;
+    setDiff(mode === "line" ? diffLines(left, right) : diffWords(left, right));
   };
+
+  const stats = diff
+    ? diff.reduce(
+        (acc, change) => {
+          const units = mode === "line" ? change.value.split("\n").filter((line, index, arr) => line || index < arr.length - 1).length : change.value.trim().split(/\s+/).filter(Boolean).length;
+          if (change.added) acc.added += units;
+          else if (change.removed) acc.removed += units;
+          else acc.unchanged += units;
+          return acc;
+        },
+        { added: 0, removed: 0, unchanged: 0 },
+      )
+    : { added: 0, removed: 0, unchanged: 0 };
+  const similarity = stats.added + stats.removed + stats.unchanged > 0 ? (stats.unchanged / (stats.added + stats.removed + stats.unchanged)) * 100 : 100;
 
   return (
     <ToolShell>
@@ -33,11 +51,23 @@ export default function TextDiffPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <TabBar active={mode} onChange={(value) => setMode(value as "line" | "word")} tabs={[{ label: "Line diff", value: "line" }, { label: "Word diff", value: "word" }]} />
+          <Checkbox checked={ignoreWhitespace} onChange={setIgnoreWhitespace} label="Ignore repeated whitespace" />
           <Button variant="primary" onClick={compare}>Compare</Button>
           <Button variant="ghost" onClick={() => { setA(""); setB(""); setDiff(null); }}>Clear</Button>
         </div>
         {diff && (
-          <div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <ResultCard label={mode === "line" ? "Lines Added" : "Words Added"} value={String(stats.added)} />
+              <ResultCard label={mode === "line" ? "Lines Removed" : "Words Removed"} value={String(stats.removed)} />
+              <ResultCard label="Unchanged" value={String(stats.unchanged)} />
+              <ResultCard label="Similarity" value={`${similarity.toFixed(1)}%`} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={similarity > 80 ? "success" : similarity > 50 ? "warning" : "error"}>{similarity.toFixed(0)}% similar</Badge>
+              <Badge variant="info">{Math.abs(b.length - a.length)} character delta</Badge>
+            </div>
             <Label>Diff</Label>
             <DiffView changes={diff} />
           </div>

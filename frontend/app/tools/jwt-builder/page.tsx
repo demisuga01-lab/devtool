@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
-import { Button, Checkbox, CopyButton, ToolInput, Label, ToolSelect, ToolTextarea } from "@/components/tool-ui";
+import { Badge, Button, Checkbox, CodeBlock, CopyButton, ResultCard, ToolInput, Label, ToolSelect, ToolTextarea } from "@/components/tool-ui";
 
 type Alg = "HS256" | "HS384" | "HS512" | "RS256";
 
@@ -35,6 +35,21 @@ export default function JwtBuilderPage() {
 
   const header = useMemo(() => ({ alg, typ: "JWT" }), [alg]);
   const headerJson = useMemo(() => JSON.stringify(header, null, 2), [header]);
+  const payloadPreview = useMemo(() => {
+    try {
+      const parsed = JSON.parse(payload || "{}") as Record<string, unknown>;
+      const issues: string[] = [];
+      ["iat", "exp", "nbf"].forEach((key) => {
+        if (key in parsed && typeof parsed[key] !== "number") issues.push(`${key} should be a Unix timestamp number.`);
+      });
+      ["iss", "sub", "aud", "jti"].forEach((key) => {
+        if (key in parsed && typeof parsed[key] !== "string" && !Array.isArray(parsed[key])) issues.push(`${key} is usually a string${key === "aud" ? " or string array" : ""}.`);
+      });
+      return { parsed, issues, valid: true };
+    } catch (err) {
+      return { parsed: null, issues: [err instanceof Error ? err.message : "Invalid JSON"], valid: false };
+    }
+  }, [payload]);
 
   function setClaim(key: string, value: unknown) {
     try {
@@ -97,6 +112,10 @@ export default function JwtBuilderPage() {
             </div>
             <ToolInput type="datetime-local" value={expDate} onChange={(event) => setExpDate(event.target.value)} />
             <ToolTextarea value={payload} onChange={(event) => setPayload(event.target.value)} rows={8} />
+            <div className="flex flex-wrap gap-2">
+              {payloadPreview.valid ? <Badge variant="success">valid JSON</Badge> : <Badge variant="error">invalid JSON</Badge>}
+              {payloadPreview.issues.map((issue) => <Badge key={issue} variant="warning">{issue}</Badge>)}
+            </div>
           </Panel>
           <Panel noPadding className="space-y-3 p-4">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Secret</h2>
@@ -118,6 +137,25 @@ export default function JwtBuilderPage() {
             </div>
           )}
         </Panel>
+        {token && payloadPreview.parsed && (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Panel noPadding className="space-y-3 p-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <ResultCard label="Algorithm" value={alg} />
+                <ResultCard label="Payload Claims" value={String(Object.keys(payloadPreview.parsed).length)} />
+                <ResultCard label="Signature" value={alg === "RS256" ? "unsigned preview" : "HMAC signed"} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {alg.startsWith("HS") && secret.length < 16 && <Badge variant="warning">short shared secret</Badge>}
+                {alg === "RS256" && <Badge variant="warning">signature not generated</Badge>}
+              </div>
+            </Panel>
+            <Panel noPadding className="p-4">
+              <div className="mb-2 flex items-center justify-between"><Label>Decoded payload preview</Label><CopyButton value={JSON.stringify(payloadPreview.parsed, null, 2)} /></div>
+              <CodeBlock value={JSON.stringify(payloadPreview.parsed, null, 2)} />
+            </Panel>
+          </div>
+        )}
       </div>
     </ToolShell>
   );

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
-import { ToolInput, Label } from "@/components/tool-ui";
+import { Badge, Button, ResultCard, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
 import { InlineError, WarningBanner } from "@/lib/toolErrors";
 
 function workingDays(start: Date, end: Date): number {
@@ -37,10 +37,24 @@ function ymd(start: Date, end: Date) {
   return { years, months, days };
 }
 
+function addDuration(date: Date, amount: number, unit: string): Date {
+  const next = new Date(date);
+  if (unit === "minutes") next.setMinutes(next.getMinutes() + amount);
+  if (unit === "hours") next.setHours(next.getHours() + amount);
+  if (unit === "days") next.setDate(next.getDate() + amount);
+  if (unit === "weeks") next.setDate(next.getDate() + amount * 7);
+  if (unit === "months") next.setMonth(next.getMonth() + amount);
+  if (unit === "years") next.setFullYear(next.getFullYear() + amount);
+  return next;
+}
+
 export default function DateDiffPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState(today);
+  const [duration, setDuration] = useState(30);
+  const [durationUnit, setDurationUnit] = useState("days");
+  const [durationSign, setDurationSign] = useState<"add" | "subtract">("add");
 
   const startDate = useMemo(() => new Date(start), [start]);
   const endDate = useMemo(() => new Date(end), [end]);
@@ -63,19 +77,24 @@ export default function DateDiffPage() {
     const weeks = Math.floor(totalDays / 7);
     const days = totalDays % 7;
     const approxMonths = Math.floor(totalDays / 30.4375);
-    const ymdv = ymd(a, b);
     return {
       totalDays,
       weeks,
       days,
       approxMonths,
-      ymd: ymdv,
+      ymd: ymd(a, b),
       working: workingDays(a, b),
       totalHours,
       totalMinutes,
       totalSeconds,
     };
   }, [start, end]);
+
+  const adjustedDate = useMemo(() => {
+    if (Number.isNaN(startDate.getTime())) return null;
+    return addDuration(startDate, durationSign === "add" ? duration : -duration, durationUnit);
+  }, [startDate, duration, durationSign, durationUnit]);
+  const relation = endDate < startDate ? "End is earlier" : endDate > startDate ? "End is later" : "Same instant";
 
   return (
     <ToolShell>
@@ -97,32 +116,52 @@ export default function DateDiffPage() {
           <WarningBanner title="End date before start date">End date is before start date. Showing absolute difference.</WarningBanner>
         )}
         {stats && (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Stat label="Total days" value={`${stats.totalDays}`} />
-            <Stat label="Weeks + days" value={`${stats.weeks} weeks, ${stats.days} days`} />
-            <Stat label="Approx. months" value={`${stats.approxMonths}`} />
-            <Stat
-              label="Years, months, days"
-              value={`${stats.ymd.years}y ${stats.ymd.months}m ${stats.ymd.days}d`}
-            />
-            <Stat label="Working days (Mon-Fri)" value={`${stats.working}`} />
-            <Stat
-              label="Hours / minutes / seconds"
-              value={`${stats.totalHours.toLocaleString()} h � ${stats.totalMinutes.toLocaleString()} m � ${stats.totalSeconds.toLocaleString()} s`}
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ResultCard label="Earlier / Later" value={<Badge variant={relation === "Same instant" ? "info" : "success"}>{relation}</Badge>} />
+              <ResultCard label="Years, Months, Days" value={`${stats.ymd.years}y ${stats.ymd.months}m ${stats.ymd.days}d`} />
+              <ResultCard label="Weeks + Days" value={`${stats.weeks} weeks, ${stats.days} days`} />
+              <ResultCard label="Total Days" value={stats.totalDays.toLocaleString()} />
+              <ResultCard label="Total Hours" value={stats.totalHours.toLocaleString()} />
+              <ResultCard label="Total Minutes" value={stats.totalMinutes.toLocaleString()} />
+              <ResultCard label="Total Seconds" value={stats.totalSeconds.toLocaleString()} />
+              <ResultCard label="Approx. Months" value={stats.approxMonths.toLocaleString()} />
+              <ResultCard label="Working Days" value={`${stats.working.toLocaleString()} Mon-Fri days`} />
+            </div>
+            <Panel noPadding className="p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Add or subtract duration</h2>
+                  <p className="text-xs text-zinc-500">Uses the start date as the base date.</p>
+                </div>
+                {adjustedDate && <Badge variant="info">{adjustedDate.toISOString().slice(0, 10)}</Badge>}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[auto_1fr_160px_auto] sm:items-end">
+                <div className="flex gap-2">
+                  <Button type="button" variant={durationSign === "add" ? "primary" : "secondary"} onClick={() => setDurationSign("add")}>Add</Button>
+                  <Button type="button" variant={durationSign === "subtract" ? "primary" : "secondary"} onClick={() => setDurationSign("subtract")}>Subtract</Button>
+                </div>
+                <div>
+                  <Label>Amount</Label>
+                  <ToolInput type="number" min={0} value={duration} onChange={(event) => setDuration(Number(event.target.value))} />
+                </div>
+                <div>
+                  <Label>Unit</Label>
+                  <ToolSelect value={durationUnit} onChange={(event) => setDurationUnit(event.target.value)}>
+                    <option value="minutes">Minutes</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months">Months</option>
+                    <option value="years">Years</option>
+                  </ToolSelect>
+                </div>
+                <div className="font-mono text-xs text-zinc-600 dark:text-zinc-300">{adjustedDate?.toLocaleString() || "-"}</div>
+              </div>
+            </Panel>
+          </>
         )}
       </div>
     </ToolShell>
   );
 }
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <Panel noPadding className="p-4">
-      <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
-      <div className="mt-1 font-mono text-[13px] text-zinc-900 dark:text-zinc-100">{value}</div>
-    </Panel>
-  );
-}
-

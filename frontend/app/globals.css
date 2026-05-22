@@ -118,3 +118,17 @@ pre, code {
 .hljs-addition {
   color: #d4d4d8;
 }
+
+@media (max-width: 767px) {
+  .cm-editor,
+  .monaco-editor,
+  .monaco-editor .overflow-guard {
+    height: 100%;
+    min-height: 280px;
+  }
+
+  .cm-scroller {
+    min-height: 280px;
+    overflow: auto;
+  }
+}

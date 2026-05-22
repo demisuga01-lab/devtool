@@ -4,10 +4,16 @@ import { useMemo, useState } from "react";
 import { ToolShell, Panel } from "@/components/tool-ui";
 import { InlineError, SuccessBanner, WarningBanner, regexSuggestion } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
-import { ToolInput, ToolTextarea, Label, Checkbox } from "@/components/tool-ui";
+import { Badge, Button, ResultCard, ToolInput, ToolTextarea, Label, Checkbox, Panel as UiPanel } from "@/components/tool-ui";
 
 type Flag = "g" | "i" | "m" | "s" | "u";
 const ALL_FLAGS: Flag[] = ["g", "i", "m", "s", "u"];
+const LIBRARY = [
+  ["Email", String.raw`[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`],
+  ["URL", String.raw`https?:\/\/[^\s/$.?#].[^\s]*`],
+  ["IPv4", String.raw`\b(?:\d{1,3}\.){3}\d{1,3}\b`],
+  ["ISO date", String.raw`\b\d{4}-\d{2}-\d{2}\b`],
+];
 
 type MatchInfo = {
   match: string;
@@ -63,6 +69,21 @@ export default function RegexTesterPage() {
     return parts;
   }, [matches, regex, test]);
 
+  const explanation = useMemo(() => {
+    if (!pattern) return "Enter a pattern to see a quick rule-based explanation.";
+    const notes: string[] = [];
+    if (pattern.includes("^")) notes.push("Anchored to the start of a line/string.");
+    if (pattern.includes("$")) notes.push("Anchored to the end of a line/string.");
+    if (/\\d/.test(pattern)) notes.push("Matches digits.");
+    if (/\\w/.test(pattern)) notes.push("Matches word characters.");
+    if (/\\s/.test(pattern)) notes.push("Matches whitespace.");
+    if (/\[[^\]]+\]/.test(pattern)) notes.push("Uses a character class.");
+    if (/[+*?]|\{\d/.test(pattern)) notes.push("Uses quantifiers to repeat tokens.");
+    if (/\((?!\?)/.test(pattern)) notes.push("Captures one or more groups.");
+    if (/\(\?:/.test(pattern)) notes.push("Uses non-capturing groups.");
+    return notes.join(" ") || "Literal text or a simple expression with no special tokens detected.";
+  }, [pattern]);
+
   return (
     <ToolShell slug="regex-tester">
       <div className="space-y-5">
@@ -78,6 +99,11 @@ export default function RegexTesterPage() {
             />
             <span className="font-mono text-zinc-500">/{flagString}</span>
           </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {LIBRARY.map(([label, value]) => (
+            <Button key={label} onClick={() => setPattern(value)}>{label}</Button>
+          ))}
         </div>
 
         <div className="flex flex-wrap gap-4">
@@ -104,12 +130,17 @@ export default function RegexTesterPage() {
         {pattern && test && !error && matches.length > 0 && (
           <SuccessBanner>Found {matches.length} match{matches.length === 1 ? "" : "es"}.</SuccessBanner>
         )}
-        <Panel noPadding className="px-4 py-3 text-sm">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-xs uppercase tracking-wide text-zinc-500">Matches</span>
-            <span className="font-mono">{matches.length}</span>
+        <div className="grid gap-3 md:grid-cols-3">
+          <ResultCard label="Match Count" value={String(matches.length)} />
+          <ResultCard label="Capture Groups" value={String(Math.max(0, ...matches.map((match) => match.groups.length)))} />
+          <ResultCard label="Flags" value={flagString || "-"} />
+        </div>
+        <UiPanel noPadding className="p-4">
+          <div className="mb-2 flex flex-wrap gap-2">
+            {ALL_FLAGS.map((flag) => <Badge key={flag} variant={flags[flag] ? "success" : "default"}>{flag}: {flagText(flag)}</Badge>)}
           </div>
-        </Panel>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{explanation}</p>
+        </UiPanel>
 
         {highlighted && (
           <div>
@@ -163,5 +194,15 @@ export default function RegexTesterPage() {
       </div>
     </ToolShell>
   );
+}
+
+function flagText(flag: Flag) {
+  return {
+    g: "global",
+    i: "ignore case",
+    m: "multiline",
+    s: "dotall",
+    u: "unicode",
+  }[flag];
 }
 

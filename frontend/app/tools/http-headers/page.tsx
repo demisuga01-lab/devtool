@@ -140,6 +140,18 @@ export default function HttpHeadersPage() {
       value: getHeader(result.headers, check.keys),
     }));
   }, [result]);
+  const groupedRows = useMemo(() => {
+    if (!result) return [];
+    const groups = [
+      ["Caching", ["cache-control", "etag", "expires", "last-modified", "vary"]],
+      ["Content", ["content-type", "content-length", "content-encoding", "content-language"]],
+      ["Server Info", ["server", "x-powered-by", "via"]],
+    ] as const;
+    return groups.map(([label, keys]) => ({
+      label,
+      rows: keys.map((key) => [key, getHeader(result.headers, [key])] as const).filter(([, value]) => value),
+    }));
+  }, [result]);
 
   const presentCount = securityRows.filter((row) => row.value).length;
   const status = result ? statusInfo(result.status_code) : null;
@@ -209,7 +221,7 @@ export default function HttpHeadersPage() {
                 <div>
                   <h2 className={sectionHeadingClass}>Security Headers Analysis</h2>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {presentCount}/{securityChecks.length} security headers present
+                    Security score {Math.round((presentCount / securityChecks.length) * 100)}/100 from {presentCount}/{securityChecks.length} headers
                   </p>
                 </div>
                 <div className="w-full sm:w-48">
@@ -244,6 +256,34 @@ export default function HttpHeadersPage() {
                     </div>
                   );
                 })}
+              </div>
+            </Panel>
+
+            <Panel noPadding className="overflow-hidden">
+              <div className="border-b border-zinc-100 p-4 dark:border-zinc-800">
+                <h2 className={sectionHeadingClass}>Categorized Headers</h2>
+              </div>
+              <div className="grid gap-0 md:grid-cols-3">
+                {groupedRows.map((group) => (
+                  <div key={group.label} className="border-b border-zinc-100 p-4 dark:border-zinc-800 md:border-b-0 md:border-r md:last:border-r-0">
+                    <h3 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{group.label}</h3>
+                    {group.rows.length ? (
+                      <dl className="space-y-3">
+                        {group.rows.map(([name, value]) => (
+                          <div key={name}>
+                            <dt className="font-mono text-xs text-emerald-700 dark:text-emerald-400">{name}</dt>
+                            <dd className="mt-1 break-all font-mono text-xs text-zinc-600 dark:text-zinc-300">{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : (
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">No matching headers found.</p>
+                    )}
+                    {group.label === "Server Info" && group.rows.some(([name]) => name === "server" || name === "x-powered-by") && (
+                      <p className="mt-3 text-xs text-yellow-600 dark:text-yellow-400">These headers can reveal implementation details.</p>
+                    )}
+                  </div>
+                ))}
               </div>
             </Panel>
 

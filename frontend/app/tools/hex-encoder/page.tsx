@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { ToolShell, ToolHeader } from "@/components/tool-ui";
-import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar, Panel, ResultCard } from "@/components/tool-ui";
+import { formatBytes, utf8ByteLength } from "@/lib/tool-insights";
 
 export default function HexEncoderPage() {
   const [mode, setMode] = useState<"toHex" | "toText">("toHex");
@@ -56,7 +57,24 @@ export default function HexEncoderPage() {
         </div>
         {error && <ErrorCard>{error}</ErrorCard>}
         {output && (
-          <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <ResultCard label="Input Bytes" value={formatBytes(utf8ByteLength(input))} />
+              <ResultCard label="Output Tokens" value={String(output.trim().split(/\s+/).filter(Boolean).length)} />
+              <ResultCard label="Encoding" value={mode === "toHex" ? "UTF-8 text to hex bytes" : "Hex bytes to UTF-8 text"} />
+            </div>
+            {mode === "toHex" && input.length <= 64 && (
+              <Panel noPadding className="overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-950"><tr><th className="px-4 py-2">Char</th><th className="px-4 py-2">Code point</th><th className="px-4 py-2">UTF-8 hex</th></tr></thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {Array.from(input).map((char, index) => (
+                      <tr key={`${char}-${index}`}><td className="px-4 py-2 font-mono">{JSON.stringify(char)}</td><td className="px-4 py-2 font-mono">U+{char.codePointAt(0)?.toString(16).toUpperCase().padStart(4, "0")}</td><td className="px-4 py-2 font-mono">{Array.from(new TextEncoder().encode(char)).map((byte) => byte.toString(16).padStart(2, "0")).join(" ")}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Panel>
+            )}
             <div className="flex items-center justify-between">
               <Label>Output</Label>
               <CopyButton value={output} />

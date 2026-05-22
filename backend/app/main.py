@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
+from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.api.routes import auth, paste, status, tools
@@ -38,6 +40,36 @@ app.add_middleware(
 @app.get("/api/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+class HibpCheckRequest(BaseModel):
+    sha1: str
+
+
+@app.post("/api/hibp-check")
+async def hibp_check(payload: HibpCheckRequest) -> dict:
+    sha1 = payload.sha1.strip().upper()
+    if len(sha1) != 40 or any(ch not in "0123456789ABCDEF" for ch in sha1):
+        return {"count": 0, "checked": False, "detail": "Invalid SHA-1 hash."}
+    prefix, suffix = sha1[:5], sha1[5:]
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"https://api.pwnedpasswords.com/range/{prefix}",
+                headers={"Add-Padding": "true", "User-Agent": "WellFriend-DevTools"},
+            )
+            response.raise_for_status()
+    except httpx.HTTPError:
+        return {"count": 0, "checked": False, "detail": "HIBP check unavailable."}
+
+    for line in response.text.splitlines():
+        parts = line.split(":", 1)
+        if len(parts) == 2 and parts[0].upper() == suffix:
+            try:
+                return {"count": int(parts[1]), "checked": True}
+            except ValueError:
+                return {"count": 0, "checked": True}
+    return {"count": 0, "checked": True}
 
 
 app.include_router(tools.router, prefix="/api")

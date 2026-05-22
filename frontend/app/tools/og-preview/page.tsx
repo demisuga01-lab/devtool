@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
-import { Button, ToolInput, Label } from "@/components/tool-ui";
+import { Badge, Button, ResultCard, ToolInput, Label } from "@/components/tool-ui";
 import { apiGet } from "@/lib/api";
 import { ERROR_MESSAGES, InlineError, LoadingSkeleton, errorFromUnknown, isValidUrl, normalizeUrl, type ToolError } from "@/lib/toolErrors";
 
@@ -12,6 +12,7 @@ type Result = {
   og_title: string;
   og_description: string;
   og_image: string;
+  og_url?: string;
   og_type: string;
   og_site_name: string;
   twitter_card: string;
@@ -59,6 +60,18 @@ export default function OgPreviewPage() {
       ["title", result.title],
     ];
   }, [result]);
+  const warnings = useMemo(() => {
+    if (!result) return [];
+    const out: string[] = [];
+    if (!result.og_title && !result.title) out.push("Missing og:title or HTML title.");
+    if (!result.og_description) out.push("Missing og:description.");
+    if (!result.og_image && !result.twitter_image) out.push("Missing social preview image.");
+    if (!result.og_url && result.url) out.push("Missing canonical og:url tag.");
+    const title = result.og_title || result.twitter_title || result.title;
+    if (title.length > 70) out.push("Title is longer than 70 characters and may be truncated.");
+    if ((result.og_description || result.twitter_description).length > 200) out.push("Description is longer than 200 characters and may be truncated.");
+    return out;
+  }, [result]);
 
   const run = async () => {
     const normalized = normalizeUrl(url);
@@ -99,6 +112,23 @@ export default function OgPreviewPage() {
 
         {result && (
           <>
+            <div className="grid gap-3 md:grid-cols-4">
+              <ResultCard label="OG Title" value={result.og_title ? "present" : "missing"} variant={result.og_title ? "success" : "error"} />
+              <ResultCard label="OG Image" value={result.og_image || result.twitter_image ? "present" : "missing"} variant={result.og_image || result.twitter_image ? "success" : "error"} />
+              <ResultCard label="Twitter Card" value={result.twitter_card || "missing"} />
+              <ResultCard label="Warnings" value={String(warnings.length)} variant={warnings.length ? "error" : "success"} />
+            </div>
+            {warnings.length > 0 && (
+              <Panel noPadding className="space-y-3 p-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Metadata warnings</h2>
+                  <Badge variant="warning">{warnings.length} issue{warnings.length === 1 ? "" : "s"}</Badge>
+                </div>
+                <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  {warnings.map((warning) => <li key={warning}>{warning}</li>)}
+                </ul>
+              </Panel>
+            )}
             <div className="grid gap-5 lg:grid-cols-2">
               <Panel noPadding className="overflow-hidden">
                 <PreviewImage src={result.og_image} alt={result.og_title || result.title} />

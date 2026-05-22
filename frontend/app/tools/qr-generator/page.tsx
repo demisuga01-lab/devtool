@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
-import { Button, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
+import { Badge, Button, ResultCard, ToolInput, Label, ToolSelect } from "@/components/tool-ui";
 import { ERROR_MESSAGES, InlineError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
 
@@ -16,6 +16,15 @@ export default function QrGeneratorPage() {
   const [dark, setDark] = useState("#000000");
   const [light, setLight] = useState("#ffffff");
   const [error, setError] = useState<ToolError | null>(null);
+  const qrInfo = useMemo(() => {
+    if (!text.trim() || text.length > 2953) return null;
+    try {
+      const qr = QRCode.create(text, { errorCorrectionLevel: level });
+      return { version: qr.version, modules: qr.modules.size, type: detectQrType(text) };
+    } catch {
+      return null;
+    }
+  }, [text, level]);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,6 +72,17 @@ export default function QrGeneratorPage() {
     a.click();
   };
 
+  const downloadSvg = async () => {
+    if (error || !text.trim()) return;
+    const svg = await QRCode.toString(text, { type: "svg", errorCorrectionLevel: level, margin, color: { dark, light } });
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "qr-code.svg";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <ToolShell>
       <ToolHeader breadcrumbs={[{ label: "Tools", href: "/tools" }, { label: "Reference & Utils" }, { label: "QR Code Generator" }]} title="QR Code Generator" description="Generate QR codes for any text or URL." />
@@ -79,8 +99,34 @@ export default function QrGeneratorPage() {
           <div><Label>Dark color</Label><ToolInput type="color" value={dark} onChange={(e) => setDark(e.target.value)} /></div>
           <div><Label>Light color</Label><ToolInput type="color" value={light} onChange={(e) => setLight(e.target.value)} /></div>
         </div>
-        <Panel noPadding className="p-5 text-center"><canvas ref={canvasRef} className="mx-auto" /><Button className="mt-4" onClick={download} disabled={Boolean(error) || !text.trim()}>Download PNG</Button></Panel>
+        {qrInfo && (
+          <div className="grid gap-3 md:grid-cols-4">
+            <ResultCard label="QR Version" value={String(qrInfo.version)} />
+            <ResultCard label="Modules" value={`${qrInfo.modules} x ${qrInfo.modules}`} />
+            <ResultCard label="Correction" value={level} />
+            <ResultCard label="Detected Type" value={qrInfo.type} />
+          </div>
+        )}
+        <Panel noPadding className="p-5 text-center">
+          <div className="mb-3 flex flex-wrap justify-center gap-2">
+            {qrInfo && <Badge variant="info">{qrInfo.type}</Badge>}
+            {level === "H" && <Badge variant="success">high damage recovery</Badge>}
+          </div>
+          <canvas ref={canvasRef} className="mx-auto" />
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button onClick={download} disabled={Boolean(error) || !text.trim()}>Download PNG</Button>
+            <Button onClick={() => void downloadSvg()} disabled={Boolean(error) || !text.trim()}>Download SVG</Button>
+          </div>
+        </Panel>
       </div>
     </ToolShell>
   );
+}
+
+function detectQrType(value: string) {
+  if (/^https?:\/\//i.test(value)) return "URL";
+  if (/^WIFI:/i.test(value)) return "WiFi";
+  if (/^BEGIN:VCARD/i.test(value)) return "vCard";
+  if (/^mailto:/i.test(value)) return "Email";
+  return "Plain text";
 }

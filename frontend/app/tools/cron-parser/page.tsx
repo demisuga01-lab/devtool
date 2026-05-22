@@ -5,7 +5,7 @@ import cronstrue from "cronstrue";
 import { ToolShell, Panel, ToolHeader } from "@/components/tool-ui";
 import { InlineError } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
-import { ToolInput, Label } from "@/components/tool-ui";
+import { Badge, ToolInput, Label } from "@/components/tool-ui";
 
 function parseField(field: string, min: number, max: number): number[] {
   const out = new Set<number>();
@@ -104,6 +104,16 @@ export default function CronParserPage() {
   }, [expr]);
 
   const upcoming = useMemo(() => (parsed ? nextRuns(parsed, new Date(), 10) : []), [parsed]);
+  const warnings = useMemo(() => {
+    const parts = expr.trim().split(/\s+/);
+    const fields = parts.length === 6 ? parts.slice(1) : parts;
+    const out: string[] = [];
+    if (fields.some((field) => field.includes("*/1"))) out.push("*/1 is equivalent to * and runs every matching unit.");
+    if (fields[2] && fields[4] && fields[2] !== "*" && fields[4] !== "*") out.push("Day-of-month and day-of-week are OR in standard cron, not AND.");
+    if (parts.length === 6) out.push("This expression includes a seconds field; some cron systems only accept 5 fields.");
+    if (fields[0] === "*" && fields[1] === "*") out.push("This can run every minute. Confirm the target job is cheap and idempotent.");
+    return out;
+  }, [expr]);
 
   return (
     <ToolShell>
@@ -134,22 +144,34 @@ export default function CronParserPage() {
                   <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                     {(
                       [
-                        ["Minute", parsed.minute],
-                        ["Hour", parsed.hour],
-                        ["Day of month", parsed.dom],
-                        ["Month", parsed.month],
-                        ["Day of week", parsed.dow],
-                      ] as [string, number[]][]
-                    ).map(([label, vals]) => (
+                        ["Minute", parsed.minute, "0-59"],
+                        ["Hour", parsed.hour, "0-23"],
+                        ["Day of month", parsed.dom, "1-31"],
+                        ["Month", parsed.month, "1-12"],
+                        ["Day of week", parsed.dow, "0-6, Sunday=0"],
+                      ] as [string, number[], string][]
+                    ).map(([label, vals, range]) => (
                       <tr key={label}>
                         <td className="px-4 py-2 font-medium">{label}</td>
                         <td className="px-4 py-2 font-mono text-xs">{vals.join(", ")}</td>
+                        <td className="px-4 py-2 text-xs text-zinc-500">{range}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </Panel>
             </div>
+            {warnings.length > 0 && (
+              <Panel noPadding className="space-y-3 p-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Pitfalls to check</h2>
+                  <Badge variant="warning">{warnings.length} warning{warnings.length === 1 ? "" : "s"}</Badge>
+                </div>
+                <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-300">
+                  {warnings.map((warning) => <li key={warning}>{warning}</li>)}
+                </ul>
+              </Panel>
+            )}
             <div>
               <Label>Next 10 runs (local)</Label>
               <Panel noPadding>

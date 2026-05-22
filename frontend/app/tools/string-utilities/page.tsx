@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Label, ToolTextarea, ResultCard } from "@/components/tool-ui";
+import { Label, Panel, ToolInput, ToolTextarea, ResultCard } from "@/components/tool-ui";
 import { ToolShell } from "@/components/tool-ui";
 
 function words(s: string) { return s.toLowerCase().match(/[a-z0-9]+/g) || []; }
@@ -12,6 +12,7 @@ function shuffle<T>(arr: T[]) { return [...arr].sort(() => Math.random() - 0.5);
 
 export default function StringUtilitiesPage() {
   const [input, setInput] = useState("");
+  const [needle, setNeedle] = useState("");
   const items = useMemo(() => {
     const lines = input.split(/\r?\n/);
     const w = words(input);
@@ -21,5 +22,9 @@ export default function StringUtilitiesPage() {
       ["Characters", String(input.length)], ["Words", String(w.length)], ["Lines", String(input ? lines.length : 0)], ["Unique words", String(new Set(w).size)],
     ];
   }, [input]);
-  return <ToolShell slug="string-utilities"><div className="space-y-5"><div><Label>Text</Label><ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} /></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{items.map(([label, value]) => <ResultCard key={label} label={label} value={value} mono copyable />)}</div></div></ToolShell>;
+  const occurrences = useMemo(() => {
+    if (!needle) return 0;
+    return input.toLowerCase().split(needle.toLowerCase()).length - 1;
+  }, [input, needle]);
+  return <ToolShell slug="string-utilities"><div className="space-y-5"><div><Label>Text</Label><ToolTextarea value={input} onChange={(e) => setInput(e.target.value)} rows={10} /></div><Panel noPadding className="p-4"><Label>Count occurrences</Label><div className="mt-2 grid gap-3 sm:grid-cols-[1fr_180px] sm:items-center"><ToolInput value={needle} onChange={(e) => setNeedle(e.target.value)} placeholder="Search text..." /><ResultCard label="Occurrences" value={String(occurrences)} /></div></Panel><div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{items.map(([label, value]) => <ResultCard key={label} label={label} value={value} mono copyable />)}</div></div></ToolShell>;
 }

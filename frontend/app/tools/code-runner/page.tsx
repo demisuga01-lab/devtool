@@ -34,7 +34,7 @@ type RunResult = {
 };
 
 const editorClass =
-  "w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-mono text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100";
+  "w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100";
 
 const cardClass = "rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
 
@@ -235,7 +235,7 @@ export default function CodeRunnerPage() {
 
   return (
     <ToolShell className="max-w-none px-0 py-0 sm:px-0 sm:py-0">
-    <main className="min-h-screen bg-zinc-50 px-4 py-8 dark:bg-zinc-950 sm:px-6 sm:py-12">
+    <main className="min-h-screen bg-zinc-50 px-3 py-6 dark:bg-zinc-950 sm:px-6 sm:py-12">
       <div className="mx-auto max-w-6xl space-y-6">
         <header>
           <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Code Runner</p>
@@ -275,10 +275,10 @@ export default function CodeRunnerPage() {
               <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Code
               </label>
-              <div className="flex min-h-[320px] overflow-hidden rounded-xl">
+              <div className="flex min-h-[300px] overflow-hidden rounded-xl md:min-h-[320px]">
                 <div
                   ref={lineNumbersRef}
-                  className="max-h-[640px] min-h-[320px] w-12 flex-shrink-0 overflow-hidden border border-r-0 border-zinc-200 bg-zinc-100 px-2 py-2 text-right font-mono text-sm leading-5 text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-600"
+                  className="max-h-[640px] min-h-[300px] w-10 flex-shrink-0 overflow-hidden border border-r-0 border-zinc-200 bg-zinc-100 px-2 py-2 text-right font-mono text-xs leading-5 text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-600 md:min-h-[320px] md:w-12 md:text-sm"
                   aria-hidden="true"
                 >
                   {Array.from({ length: lineCount }).map((_, index) => (
@@ -293,7 +293,7 @@ export default function CodeRunnerPage() {
                   onScroll={syncLineNumbers}
                   placeholder="// Write your code here..."
                   spellCheck={false}
-                  className={`${editorClass} min-h-[320px] resize-y rounded-l-none leading-5`}
+                  className={`${editorClass} min-h-[300px] resize-y overflow-auto rounded-l-none leading-5 md:min-h-[320px]`}
                 />
               </div>
             </div>
@@ -311,12 +311,12 @@ export default function CodeRunnerPage() {
             />
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-5 flex flex-wrap items-center gap-3 border-t border-zinc-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95 md:static md:mx-0 md:border-t-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
             <button
               type="button"
               onClick={runCode}
               disabled={running || !selectedRuntime || !code.trim()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 md:min-h-0"
             >
               {running && <RefreshCw className="h-4 w-4 animate-spin" />}
               {running ? "Running..." : "Run"}
@@ -332,14 +332,14 @@ export default function CodeRunnerPage() {
         </section>
 
         <section className={`${cardClass} overflow-hidden`}>
-          <div className="flex border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex overflow-x-auto whitespace-nowrap border-b border-zinc-200 dark:border-zinc-800">
             {(["output", "stderr"] as const).map((tab) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
                 className={
-                  "border-b-2 px-4 py-3 text-sm font-medium capitalize transition-colors " +
+                  "min-h-11 border-b-2 px-4 py-3 text-sm font-medium capitalize transition-colors md:min-h-0 " +
                   (activeTab === tab
                     ? "border-emerald-600 text-emerald-600 dark:border-emerald-400 dark:text-emerald-400"
                     : "border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100")
@@ -362,7 +362,7 @@ export default function CodeRunnerPage() {
               </div>
             )}
 
-            <pre className="max-h-96 min-h-32 overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-50 p-4 font-mono text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+            <pre className="max-h-96 min-h-[200px] overflow-auto whitespace-pre-wrap rounded-xl bg-zinc-50 p-4 font-mono text-sm text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 md:min-h-32">
               {activeTab === "output"
                 ? outputText || (result?.exit_code === 0 ? "Program exited with no output." : "")
                 : stderrText || "No errors."}

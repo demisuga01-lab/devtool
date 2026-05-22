@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { ToolShell } from "@/components/tool-ui";
-import { Button, ToolTextarea, CodeBlock, CopyButton, Label } from "@/components/tool-ui";
+import { Badge, Button, ToolTextarea, CodeBlock, CopyButton, Label, Panel, ResultCard, TabBar } from "@/components/tool-ui";
 import { InlineError, WarningBanner } from "@/lib/toolErrors";
 import type { ToolError } from "@/lib/toolErrors";
+import { jwtClaimDetails, sensitiveJwtKeys } from "@/lib/tool-insights";
 
 function base64UrlDecode(input: string): string {
   let s = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -81,6 +82,7 @@ export default function JwtDecoderPage() {
   const [signature, setSignature] = useState("");
   const [error, setError] = useState<ToolError | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [activePart, setActivePart] = useState<"header" | "payload" | "signature">("payload");
 
   const decode = () => {
     setError(null);
@@ -101,15 +103,19 @@ export default function JwtDecoderPage() {
       const decodedHeader = safeParseJson(base64UrlDecode(parts[0]));
       const decodedPayloadRaw = base64UrlDecode(parts[1]);
       const decodedPayload = safeParseJson(decodedPayloadRaw);
+      const headerObj = JSON.parse(base64UrlDecode(parts[0])) as { alg?: string; typ?: string };
       const payloadObj = JSON.parse(decodedPayloadRaw) as { exp?: number; nbf?: number };
       const nextWarnings: string[] = [];
       const now = Date.now() / 1000;
+      if (headerObj.alg?.toLowerCase() === "none") nextWarnings.push("The token uses alg=none. This is unsafe unless the surrounding protocol explicitly allows unsigned tokens.");
       if (typeof payloadObj.exp === "number" && payloadObj.exp < now) {
         nextWarnings.push(`This token expired on ${formatClaimDate(payloadObj.exp)} (${relativePast(payloadObj.exp)}).`);
       }
       if (typeof payloadObj.nbf === "number" && payloadObj.nbf > now) {
         nextWarnings.push(`This token is not yet valid. It becomes valid on ${formatClaimDate(payloadObj.nbf)}.`);
       }
+      const sensitive = sensitiveJwtKeys(payloadObj as Record<string, unknown>);
+      if (sensitive.length) nextWarnings.push(`Sensitive-looking payload fields detected: ${sensitive.join(", ")}.`);
       setHeader(decodedHeader);
       setPayload(decodedPayload);
       setSignature(parts[2]);
@@ -159,10 +165,18 @@ export default function JwtDecoderPage() {
           <WarningBanner key={warning} title="JWT warning">{warning}</WarningBanner>
         ))}
         {(header || payload || signature) && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Section title="Header" value={header} />
-            <Section title="Payload" value={payload} />
-            <Section title="Signature" value={signature} mono />
+          <div className="space-y-4">
+            <JwtSummary header={header} payload={payload} signature={signature} />
+            <TabBar
+              active={activePart}
+              onChange={(value) => setActivePart(value as "header" | "payload" | "signature")}
+              tabs={[{ label: "Header", value: "header" }, { label: "Payload", value: "payload" }, { label: "Signature", value: "signature" }]}
+            />
+            <Section
+              title={activePart === "header" ? "Header" : activePart === "payload" ? "Payload" : "Signature"}
+              value={activePart === "header" ? header : activePart === "payload" ? payload : signature}
+              mono
+            />
           </div>
         )}
       </div>
@@ -182,6 +196,47 @@ function Section({ title, value, mono }: { title: string; value: string; mono?: 
       ) : (
         <CodeBlock value={value} />
       )}
+    </div>
+  );
+}
+
+function JwtSummary({ header, payload, signature }: { header: string; payload: string; signature: string }) {
+  let headerObj: Record<string, unknown> = {};
+  let payloadObj: Record<string, unknown> = {};
+  try {
+    headerObj = JSON.parse(header);
+    payloadObj = JSON.parse(payload);
+  } catch {
+    return null;
+  }
+  const claims = jwtClaimDetails(payloadObj);
+  const exp = claims.find((claim) => claim.key === "exp");
+  const sensitive = sensitiveJwtKeys(payloadObj);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-4">
+        <ResultCard label="Algorithm" value={String(headerObj.alg ?? "-")} />
+        <ResultCard label="Token Type" value={String(headerObj.typ ?? "JWT")} />
+        <ResultCard label="Payload Claims" value={String(Object.keys(payloadObj).length)} />
+        <ResultCard label="Signature Bytes" value={String(Math.ceil(signature.length * 3 / 4))} />
+      </div>
+      <Panel noPadding className="p-4">
+        <div className="mb-3 flex flex-wrap gap-2">
+          {String(headerObj.alg).toLowerCase() === "none" ? <Badge variant="error">unsigned alg none</Badge> : <Badge variant="info">signature not verified</Badge>}
+          {exp && <Badge variant={exp.expired ? "error" : "success"}>{exp.expired ? `expired ${exp.relative}` : `expires ${exp.relative}`}</Badge>}
+          {sensitive.length > 0 && <Badge variant="warning">sensitive fields</Badge>}
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {claims.length ? claims.map((claim) => (
+            <div key={claim.key} className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-950">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{claim.key}</p>
+              <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-100">{claim.date}</p>
+              <p className="text-xs text-zinc-500">{claim.relative}</p>
+            </div>
+          )) : <p className="text-sm text-zinc-500">No iat, exp, or nbf timestamp claims found.</p>}
+        </div>
+      </Panel>
     </div>
   );
 }

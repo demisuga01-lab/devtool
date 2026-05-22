@@ -829,7 +829,7 @@ function CodeEditor({
   }[tone];
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-zinc-950">
+    <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-950 lg:min-h-0">
       <div className="flex items-center border-b border-zinc-700 bg-zinc-800/50 px-4 py-1.5 text-xs font-semibold">
         <span className={labelClass}>{label}</span>
         {readOnly && <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">merged upload</span>}
@@ -840,7 +840,7 @@ function CodeEditor({
               type="button"
               title="Maximize editor"
               onClick={onMaximize}
-              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-200"
+              className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-200 md:min-h-0 md:min-w-0"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
@@ -850,7 +850,7 @@ function CodeEditor({
               type="button"
               title="Open in new tab"
               onClick={onNewTab}
-              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-200"
+              className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-200 md:min-h-0 md:min-w-0"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
@@ -869,7 +869,7 @@ function CodeEditor({
         }}
         readOnly={readOnly}
         spellCheck={false}
-        className={`flex-1 min-h-0 w-full resize-none border-0 outline-none bg-zinc-950 text-zinc-100 font-mono text-[13px] leading-relaxed p-4 ${readOnly ? "cursor-default text-zinc-300" : ""}`}
+        className={`min-h-[200px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 outline-none lg:min-h-0 ${readOnly ? "cursor-default text-zinc-300" : ""}`}
       />
     </section>
   );
@@ -898,7 +898,7 @@ function LintIndicator({ errors }: { errors: LintError[] }) {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className={`inline-flex items-center gap-1 rounded-lg p-1 transition-colors duration-200 hover:bg-zinc-800 ${iconClass}`}
+        className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-lg p-1 transition-colors duration-200 hover:bg-zinc-800 md:min-h-0 md:min-w-0 ${iconClass}`}
         title={`${count} lint ${isError ? "error" : "warning"}${count !== 1 ? "s" : ""}`}
       >
         <Icon className="h-3.5 w-3.5" />
@@ -952,7 +952,7 @@ function WebPreviewPanel({
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex flex-col min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:basis-[45%] h-full">
+    <section className="flex h-auto min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm gap-2">
         <div className="flex min-w-0 items-center gap-1">
           {onBack && (
@@ -961,7 +961,7 @@ function WebPreviewPanel({
               title="Back"
               disabled={!canGoBack}
               onClick={onBack}
-              className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+              className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent md:min-h-0 md:min-w-0"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
@@ -972,7 +972,7 @@ function WebPreviewPanel({
               title="Forward"
               disabled={!canGoForward}
               onClick={onForward}
-              className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+              className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent md:min-h-0 md:min-w-0"
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
@@ -981,7 +981,7 @@ function WebPreviewPanel({
             type="button"
             title="Refresh preview"
             onClick={onRefresh}
-            className="rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100"
+            className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-400 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 md:min-h-0 md:min-w-0"
           >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
@@ -997,7 +997,7 @@ function WebPreviewPanel({
             value={zoom}
             onChange={(event) => onZoomChange(Number(event.target.value))}
             title="Zoom level"
-            className="cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-[11px] text-zinc-300 outline-none transition-colors duration-200 hover:bg-zinc-800 focus:border-emerald-500"
+            className="min-h-11 cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900 px-1.5 py-1 text-[11px] text-zinc-300 outline-none transition-colors duration-200 hover:bg-zinc-800 focus:border-emerald-500 md:min-h-0"
           >
             {ZOOM_LEVELS.map((level) => (
               <option key={level} value={level}>{Math.round(level * 100)}%</option>
@@ -1008,7 +1008,7 @@ function WebPreviewPanel({
               type="button"
               title="Maximize preview"
               onClick={onMaximize}
-              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100"
+              className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 md:min-h-0 md:min-w-0"
             >
               <Maximize2 className="h-3.5 w-3.5" />
             </button>
@@ -1018,14 +1018,14 @@ function WebPreviewPanel({
               type="button"
               title="Open in new tab"
               onClick={onNewTab}
-              className="rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100"
+              className="min-h-11 min-w-11 rounded-lg p-1.5 text-zinc-500 transition-colors duration-200 hover:bg-zinc-700 hover:text-zinc-100 md:min-h-0 md:min-w-0"
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
       </div>
-      <div className="relative flex-1 min-h-0 overflow-hidden bg-white">
+      <div className="relative min-h-[300px] flex-1 overflow-hidden bg-white lg:min-h-0">
         <iframe
           key={previewKey}
           title="Preview"
@@ -1056,14 +1056,14 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex flex-col min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:basis-[45%] h-full">
+    <section className="flex h-auto min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
-        <button type="button" onClick={clearConsole} className="rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100">
+        <button type="button" onClick={clearConsole} className="min-h-11 min-w-11 rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100 md:min-h-0 md:min-w-0">
           Clear
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100">
+      <div className="min-h-[200px] flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100 lg:min-h-0">
         {consoleLines.length === 0 ? (
           <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>
         ) : (
@@ -1093,12 +1093,12 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex flex-col min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:basis-[45%] h-full">
+    <section className="flex h-auto min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
       </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100">
+      <div className="min-h-[200px] flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100 lg:min-h-0">
         {!hasRun && <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>}
         {error && <div className="mb-3 rounded-xl border border-red-800 bg-red-950/30 px-3 py-2 text-red-400">{error}</div>}
         {failed && <div className="mb-3 rounded-xl border border-red-800 bg-red-950/30 px-3 py-2 text-red-400">Exited with code {result.exit_code}</div>}
@@ -1624,7 +1624,7 @@ function WebRunnerPageContent() {
   );
 
   const editorPane = (
-    <section className="flex flex-col min-h-0 flex-1 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:basis-[55%] h-full">
+    <section className="flex h-auto min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[55%]">
       {mode === "combined" && (
         <>
           {combinedUploadZone}
@@ -1696,13 +1696,13 @@ function WebRunnerPageContent() {
               className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
             />
           </details>
-          <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
+          <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900/95 px-3 py-2.5 backdrop-blur md:static md:px-4 md:py-3 md:backdrop-blur-none">
             {runButton}
             <span className="text-xs text-zinc-500">Ctrl+Enter to run</span>
           </div>
         </>
       )}
-      <div className="border-t border-zinc-800 bg-zinc-900 p-3 lg:hidden">
+      <div className="sticky bottom-0 z-20 border-t border-zinc-800 bg-zinc-900/95 p-3 backdrop-blur lg:hidden">
         {runButton}
       </div>
     </section>
@@ -1827,25 +1827,25 @@ function WebRunnerPageContent() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-3 sm:px-6 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
+      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
         {layout === "horizontal" && (
-          <div className="flex flex-col gap-4 lg:flex-row h-[calc(100vh-12rem)] min-h-[500px]">
+          <div className="flex flex-col gap-2 md:gap-4 lg:h-[calc(100vh-12rem)] lg:min-h-[500px] lg:flex-row">
             {editorPane}
             {outputPane}
           </div>
         )}
 
         {layout === "vertical" && (
-          <div className="flex h-full flex-col gap-5">
-            <div className="h-1/2 min-h-0 overflow-hidden">{editorPane}</div>
-            <div className="h-1/2 min-h-0 overflow-hidden">{outputPane}</div>
+          <div className="flex h-auto flex-col gap-2 md:gap-5 lg:h-full">
+            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-0">{editorPane}</div>
+            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-0">{outputPane}</div>
           </div>
         )}
 
         {layout === "bottom" && (
-          <div className="flex h-full flex-col gap-5 overflow-auto">
+          <div className="flex h-auto flex-col gap-2 overflow-auto md:gap-5 lg:h-full">
             <div className="min-h-[320px]">{editorPane}</div>
-            {hasRun && <div className="min-h-[500px]">{outputPane}</div>}
+            {hasRun && <div className="min-h-[300px] lg:min-h-[500px]">{outputPane}</div>}
           </div>
         )}
       </div>

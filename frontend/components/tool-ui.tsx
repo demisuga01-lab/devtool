@@ -152,7 +152,11 @@ export function PanelHeader({
         )}
         {subtitle && <span className="truncate text-xs text-zinc-500 dark:text-zinc-400">{subtitle}</span>}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-1.5">{actions}</div>}
+      {actions && (
+        <div className="flex shrink-0 items-center gap-1.5 [&_button]:min-h-11 [&_button]:min-w-11 md:[&_button]:min-h-0 md:[&_button]:min-w-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
@@ -169,8 +173,8 @@ export function TabBar({
   className?: string;
 }) {
   return (
-    <div className={joinClasses("flex overflow-x-auto scrollbar-hide", className)}>
-      <div className="flex shrink-0 gap-0.5 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800/80">
+    <div className={joinClasses("flex w-full max-w-full overflow-x-auto whitespace-nowrap pb-1 scrollbar-hide", className)}>
+      <div className="flex min-w-max shrink-0 gap-0.5 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800/80">
         {tabs.map((tab) => (
           <button
             key={tab.value}
@@ -217,7 +221,7 @@ export function CodeArea({
   rows?: number;
 }) {
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div className="relative flex h-full min-h-[280px] flex-1 flex-col md:min-h-[320px] lg:min-h-0">
       <textarea
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
@@ -227,7 +231,7 @@ export function CodeArea({
         rows={rows}
         spellCheck={false}
         className={joinClasses(
-          "min-h-[320px] w-full flex-1 resize-none border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed tracking-normal text-zinc-100 outline-none selection:bg-emerald-600/30 placeholder:text-zinc-700 lg:min-h-0",
+          "h-full min-h-[280px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed tracking-normal text-zinc-100 outline-none selection:bg-emerald-600/30 placeholder:text-zinc-700 md:min-h-[320px] lg:min-h-0",
           className,
         )}
       />
@@ -272,7 +276,7 @@ export function OutputPanel({
   const copyValue = activeTab === "output" ? stdout : stderr;
 
   return (
-    <section className="flex min-h-[280px] flex-1 flex-col overflow-hidden bg-zinc-900 lg:min-h-0">
+    <section className="flex h-full min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-900 md:min-h-[280px] lg:min-h-0">
       <div className="flex items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900 px-4 py-3">
         <span className="text-sm font-semibold text-zinc-100">Output</span>
         <div className="flex items-center gap-1.5">
@@ -313,7 +317,7 @@ export function OutputPanel({
           <span>Killed by signal {signal}</span>
         </div>
       )}
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div className="min-h-[200px] flex-1 overflow-auto p-4 lg:min-h-0">
         {!hasRun ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600">
             <span className="rounded-full bg-zinc-800 p-3">
@@ -373,7 +377,7 @@ export function RunButton({
       onClick={onClick}
       disabled={disabled || running}
       className={joinClasses(
-        "inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all duration-150 hover:bg-emerald-500 active:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-all duration-150 hover:bg-emerald-500 active:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none md:min-h-0",
         fullWidth && "w-full",
         className,
       )}
@@ -406,7 +410,7 @@ export function CopyButton({ value, className = "", label }: { value: string; cl
       onClick={onClick}
       disabled={!value}
       className={joinClasses(
-        "inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40",
+        "inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-40 md:min-h-0 md:min-w-0",
         className,
       )}
     >
@@ -512,11 +516,11 @@ export function Badge({ children, variant = "default", className = "" }: { child
 
 export function SplitLayout({ left, right, className = "" }: { left: ReactNode; right: ReactNode; className?: string }) {
   return (
-    <div className={joinClasses("mt-5 flex flex-col gap-4 lg:h-[calc(100vh-14rem)] lg:min-h-[560px] lg:flex-row", className)}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:basis-[55%]">
+    <div className={joinClasses("mt-5 flex flex-col gap-2 md:gap-4 lg:h-[calc(100vh-14rem)] lg:min-h-[560px] lg:flex-row", className)}>
+      <div className="flex h-[40vh] min-h-[300px] w-full flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[55%]">
         {left}
       </div>
-      <div className="flex min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:min-h-0 lg:basis-[45%]">
+      <div className="flex h-[40vh] min-h-[250px] w-full flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[45%]">
         {right}
       </div>
     </div>
@@ -553,7 +557,7 @@ export function StdinSection({
 
 export function ActionBar({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={joinClasses("flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900", className)}>
+    <div className={joinClasses("sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50/95 px-3 py-2.5 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95 md:static md:px-4 md:py-3 md:backdrop-blur-none", className)}>
       {children}
     </div>
   );

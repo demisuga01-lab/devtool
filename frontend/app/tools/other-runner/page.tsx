@@ -299,14 +299,14 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+    <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
       <div className="-m-4 mb-4 flex flex-wrap gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         {(["output", "errors"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setOutputTab(tab)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+            className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 md:min-h-0 ${
               outputTab === tab
                 ? "bg-emerald-600 text-white shadow shadow-emerald-600/20"
                 : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
@@ -331,7 +331,7 @@ function OutputPanel({
           Killed by signal {result.signal}
         </div>
       )}
-      <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
+      <pre className="min-h-[200px] flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
         {!hasRun
           ? "Select a language and run code to see output."
           : outputTab === "output"
@@ -440,8 +440,8 @@ function OtherRunnerPageContent() {
           className="border-b border-zinc-200 pb-3 dark:border-zinc-800"
         />
 
-        <div className="flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
+        <div className="flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
+          <section className="flex min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[55%]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100">{active.icon}<span>{active.label}</span></h2>
               <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
@@ -453,7 +453,7 @@ function OtherRunnerPageContent() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className="min-h-[320px] w-full flex-1 resize-y border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0"
+              className="min-h-[300px] w-full flex-1 resize-y overflow-auto border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0"
             />
 
             <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
@@ -467,7 +467,7 @@ function OtherRunnerPageContent() {
               />
             </details>
 
-            <div className="flex flex-wrap items-center gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
+            <div className="sticky bottom-0 z-20 flex flex-wrap items-center gap-3 border-t border-zinc-800 bg-zinc-900/95 px-3 py-2.5 backdrop-blur md:static md:px-4 md:py-3 md:backdrop-blur-none">
               <button
                 type="button"
                 onClick={runCode}

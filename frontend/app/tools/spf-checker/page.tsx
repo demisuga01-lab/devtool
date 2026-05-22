@@ -27,6 +27,30 @@ function parseDmarc(records: string[]) {
   return { record, policy };
 }
 
+function parseSpf(record: string) {
+  const parts = record.trim().split(/\s+/).filter(Boolean).slice(1);
+  let dnsLookups = 0;
+  const mechanisms = parts.map((part) => {
+    const qualifier = /^[+~?-]/.test(part) ? part[0] : "+";
+    const body = qualifier === "+" ? part : part.slice(1);
+    const [kind, value = ""] = body.split(/[:=]/, 2);
+    if (["include", "a", "mx", "ptr", "exists", "redirect"].includes(kind)) dnsLookups++;
+    const result = qualifier === "-" ? "fail" : qualifier === "~" ? "softfail" : qualifier === "?" ? "neutral" : "pass";
+    const explanation =
+      kind === "include" ? `Authorizes senders permitted by ${value}.` :
+      kind === "ip4" ? `Authorizes IPv4 range ${value}.` :
+      kind === "ip6" ? `Authorizes IPv6 range ${value}.` :
+      kind === "a" ? "Authorizes hosts matching the domain A/AAAA records." :
+      kind === "mx" ? "Authorizes hosts listed as mail exchangers." :
+      kind === "all" ? `Default outcome for anything not matched earlier: ${result}.` :
+      kind === "redirect" ? `Redirects SPF evaluation to ${value}.` :
+      kind === "exists" ? `Passes if ${value} resolves in DNS.` :
+      `Mechanism or modifier: ${body}.`;
+    return { raw: part, kind, value, result, explanation };
+  });
+  return { mechanisms, dnsLookups };
+}
+
 function Section({
   title,
   status,
@@ -81,6 +105,7 @@ export default function SpfCheckerPage() {
       dmarcStatus: dmarcStatus as "pass" | "warn" | "fail",
     };
   }, [result]);
+  const spfExplain = useMemo(() => parseSpf(result?.spf[0] || ""), [result]);
 
   const run = async () => {
     const normalized = normalizeDomain(domain);
@@ -122,6 +147,37 @@ export default function SpfCheckerPage() {
         {result && (
           <>
             <Section title="SPF" status={assessment.spfStatus} detail={assessment.spfDetail} records={result.spf} />
+            {result.spf[0] && (
+              <Panel noPadding className="overflow-hidden">
+                <div className="border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">SPF mechanism breakdown</h2>
+                    <Badge variant={spfExplain.dnsLookups > 10 ? "error" : spfExplain.dnsLookups > 8 ? "warning" : "success"}>{spfExplain.dnsLookups}/10 DNS lookups</Badge>
+                    {spfExplain.dnsLookups > 10 && <Badge variant="error">invalid per RFC limit</Badge>}
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+                        <th className="px-4 py-2">Mechanism</th>
+                        <th className="px-4 py-2">Outcome</th>
+                        <th className="px-4 py-2">Meaning</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      {spfExplain.mechanisms.map((item) => (
+                        <tr key={item.raw}>
+                          <td className="px-4 py-2 font-mono text-xs">{item.raw}</td>
+                          <td className="px-4 py-2"><Badge variant={item.result === "pass" ? "success" : item.result === "softfail" ? "warning" : item.result === "fail" ? "error" : "info"}>{item.result}</Badge></td>
+                          <td className="px-4 py-2 text-zinc-600 dark:text-zinc-300">{item.explanation}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Panel>
+            )}
             <Section
               title="DMARC"
               status={assessment.dmarcStatus}

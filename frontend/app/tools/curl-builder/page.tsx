@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { ToolShell, Panel } from "@/components/tool-ui";
-import { Button, Checkbox, CopyButton, ToolInput, Label, ToolSelect, ToolTextarea, TabBar, CodeBlock } from "@/components/tool-ui";
+import { Badge, Button, Checkbox, CopyButton, ResultCard, ToolInput, Label, ToolSelect, ToolTextarea, TabBar, CodeBlock } from "@/components/tool-ui";
 
 type Header = { id: number; key: string; value: string };
 type AuthMode = "none" | "basic" | "bearer";
@@ -40,6 +40,14 @@ function tokenizeCurl(input: string) {
 }
 
 function curlToFetch(input: string) {
+  const { method, url, headers, body } = parseCurl(input);
+  const options: string[] = [`method: ${JSON.stringify(method)}`];
+  if (Object.keys(headers).length) options.push(`headers: ${JSON.stringify(headers, null, 2)}`);
+  if (body) options.push(`body: ${JSON.stringify(body)}`);
+  return `const response = await fetch(${JSON.stringify(url || "https://example.com")}, {\n  ${options.join(",\n  ")}\n});\n\nconst data = await response.text();\nconsole.log(data);`;
+}
+
+function parseCurl(input: string) {
   const tokens = tokenizeCurl(input.replace(/\\\r?\n/g, " "));
   const headers: Record<string, string> = {};
   let method = "GET";
@@ -60,10 +68,26 @@ function curlToFetch(input: string) {
       url = token;
     }
   }
-  const options: string[] = [`method: ${JSON.stringify(method)}`];
-  if (Object.keys(headers).length) options.push(`headers: ${JSON.stringify(headers, null, 2)}`);
-  if (body) options.push(`body: ${JSON.stringify(body)}`);
-  return `const response = await fetch(${JSON.stringify(url || "https://example.com")}, {\n  ${options.join(",\n  ")}\n});\n\nconst data = await response.text();\nconsole.log(data);`;
+  return { method, url, headers, body };
+}
+
+function snippets(parsed: ReturnType<typeof parseCurl>) {
+  const headers = JSON.stringify(parsed.headers, null, 2);
+  const body = parsed.body && looksJson(parsed.body) ? JSON.stringify(JSON.parse(parsed.body), null, 2) : parsed.body;
+  return {
+    axios: `const response = await axios({\n  method: ${JSON.stringify(parsed.method)},\n  url: ${JSON.stringify(parsed.url || "https://example.com")},\n  headers: ${headers}${parsed.body ? `,\n  data: ${JSON.stringify(body)}` : ""}\n});`,
+    python: `import requests\n\nresponse = requests.request(\n    ${JSON.stringify(parsed.method)},\n    ${JSON.stringify(parsed.url || "https://example.com")},\n    headers=${JSON.stringify(parsed.headers, null, 4)}${parsed.body ? `,\n    data=${JSON.stringify(parsed.body)}` : ""}\n)\nprint(response.text)`,
+    go: `req, _ := http.NewRequest(${JSON.stringify(parsed.method)}, ${JSON.stringify(parsed.url || "https://example.com")}, ${parsed.body ? `strings.NewReader(${JSON.stringify(parsed.body)})` : "nil"})\n${Object.entries(parsed.headers).map(([key, value]) => `req.Header.Set(${JSON.stringify(key)}, ${JSON.stringify(value)})`).join("\n") || "// no custom headers"}\nresp, err := http.DefaultClient.Do(req)`,
+  };
+}
+
+function looksJson(value: string) {
+  try {
+    JSON.parse(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export default function CurlBuilderPage() {
@@ -100,6 +124,8 @@ export default function CurlBuilderPage() {
   }, [authMode, basicPass, basicUser, bearer, body, contentType, follow, headers, insecure, method, outputFile, url, verbose]);
 
   const fetchCode = useMemo(() => curlToFetch(curlInput), [curlInput]);
+  const parsedCurl = useMemo(() => parseCurl(curlInput), [curlInput]);
+  const codeSnippets = useMemo(() => snippets(parsedCurl), [parsedCurl]);
 
   return (
     <ToolShell slug="curl-builder">
@@ -195,6 +221,12 @@ export default function CurlBuilderPage() {
             <Panel noPadding className="p-5">
               <Label>cURL command</Label>
               <ToolTextarea value={curlInput} onChange={(event) => setCurlInput(event.target.value)} rows={14} />
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <ResultCard label="Method" value={<Badge variant="info">{parsedCurl.method}</Badge>} />
+                <ResultCard label="URL" value={parsedCurl.url || "-"} />
+                <ResultCard label="Headers" value={String(Object.keys(parsedCurl.headers).length)} />
+                <ResultCard label="Body" value={parsedCurl.body ? `${parsedCurl.body.length} chars` : "none"} />
+              </div>
             </Panel>
             <Panel noPadding className="p-5">
               <div className="mb-3 flex items-center justify-between">
@@ -202,6 +234,14 @@ export default function CurlBuilderPage() {
                 <CopyButton value={fetchCode} />
               </div>
               <CodeBlock value={fetchCode} />
+            </Panel>
+            <Panel noPadding className="p-5 lg:col-span-2">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Equivalent client snippets</h2>
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div><div className="mb-2 flex items-center justify-between"><Label>axios</Label><CopyButton value={codeSnippets.axios} /></div><CodeBlock value={codeSnippets.axios} /></div>
+                <div><div className="mb-2 flex items-center justify-between"><Label>Python requests</Label><CopyButton value={codeSnippets.python} /></div><CodeBlock value={codeSnippets.python} /></div>
+                <div><div className="mb-2 flex items-center justify-between"><Label>Go http</Label><CopyButton value={codeSnippets.go} /></div><CodeBlock value={codeSnippets.go} /></div>
+              </div>
             </Panel>
           </div>
         )}

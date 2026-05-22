@@ -200,12 +200,12 @@ function SystemsRunnerPageContent() {
           className="mt-6 border-b border-zinc-200 pb-3 dark:border-zinc-800"
         />
 
-        <div className="mt-5 flex flex-col gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:basis-[55%]">
+        <div className="mt-5 flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
+          <section className="flex min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[55%]">
             <div className="border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs text-zinc-300">
               {active.label} · {active.compiler} {active.version}
             </div>
-            <div className="flex min-h-0 flex-1 overflow-hidden bg-zinc-950">
+            <div className="flex min-h-[300px] flex-1 overflow-hidden bg-zinc-950 lg:min-h-0">
               <div ref={lineRef} className="h-full w-8 min-w-8 overflow-hidden px-2 py-4 text-right font-mono text-xs leading-relaxed text-zinc-600 select-none lg:w-12 lg:min-w-12 lg:text-sm">
                 {Array.from({ length: lines }).map((_, index) => <div key={index}>{index + 1}</div>)}
               </div>
@@ -216,7 +216,7 @@ function SystemsRunnerPageContent() {
                 onKeyDown={insertTab}
                 onScroll={syncLines}
                 spellCheck={false}
-                className="min-h-[320px] min-w-0 flex-1 resize-y bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1"
+                className="min-h-[300px] min-w-0 flex-1 resize-y overflow-auto bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1"
               />
             </div>
             <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
@@ -233,7 +233,7 @@ function SystemsRunnerPageContent() {
                 className="mt-3 min-h-[90px] w-full resize-y rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-sm text-zinc-100 outline-none transition-colors duration-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
             </details>
-            <div className="flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
+            <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-zinc-800 bg-zinc-900/95 px-3 py-2.5 backdrop-blur md:static md:px-4 md:py-3 md:backdrop-blur-none">
               <button type="button" onClick={runCode} disabled={running} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition-colors duration-200 hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">
                 {running ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                 <span className="hidden sm:inline">{running ? "Running..." : "Run"}</span>
@@ -242,7 +242,7 @@ function SystemsRunnerPageContent() {
             </div>
           </section>
 
-          <section className="flex min-h-[280px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
+          <section className="flex min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:min-h-0 lg:basis-[45%]">
             <div className="-m-4 mb-4 flex items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
@@ -251,13 +251,13 @@ function SystemsRunnerPageContent() {
               {result && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${success ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400"}`}>exit {result.exit_code ?? "-"}</span>}
             </div>
             <div className="mb-3 flex gap-2">
-              <button type="button" onClick={() => setTab("stdout")} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${tab === "stdout" ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>stdout</button>
-              <button type="button" onClick={() => setTab("stderr")} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${tab === "stderr" ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>stderr+compile</button>
+              <button type="button" onClick={() => setTab("stdout")} className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 md:min-h-0 ${tab === "stdout" ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>stdout</button>
+              <button type="button" onClick={() => setTab("stderr")} className={`min-h-11 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200 md:min-h-0 ${tab === "stderr" ? "bg-emerald-600 text-white shadow shadow-emerald-600/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}>stderr+compile</button>
             </div>
             {error && <Banner tone="red">{error}</Banner>}
             {result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0 && <Banner tone="red">Process exited with code {result.exit_code}</Banner>}
             {result?.signal && <Banner tone="orange">Killed by signal {result.signal}</Banner>}
-            <pre className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200">
+            <pre className="min-h-[200px] flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
               {hasRun ? (tab === "stdout" ? stdout || (success ? "Program exited with no output." : "") : stderr || "No errors.") : "Run code to see output"}
             </pre>
             {result && <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-500"><Stat label="CPU" value={`${result.cpu_time ?? "-"}ms`} /><Stat label="Wall" value={`${result.wall_time ?? "-"}ms`} /><Stat label="Memory" value={`${result.memory == null ? "-" : Math.round(result.memory / 1000)}KB`} /></div>}

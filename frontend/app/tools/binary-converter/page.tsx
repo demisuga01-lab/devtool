@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ToolShell, ToolHeader } from "@/components/tool-ui";
-import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar } from "@/components/tool-ui";
+import { Button, ToolTextarea, ErrorCard, CopyButton, Label, TabBar, Panel, ResultCard } from "@/components/tool-ui";
 
 export default function BinaryConverterPage() {
   const [mode, setMode] = useState<"toBin" | "toText">("toBin");
@@ -54,7 +54,26 @@ export default function BinaryConverterPage() {
         </div>
         {error && <ErrorCard>{error}</ErrorCard>}
         {output && (
-          <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <ResultCard label="Binary" value={mode === "toBin" ? output : input} mono copyable />
+              <ResultCard label="Decimal" value={mode === "toBin" ? Array.from(new TextEncoder().encode(input)).map((byte) => String(byte)).join(" ") : input.trim().split(/\s+/).map((byte) => String(parseInt(byte, 2))).join(" ")} mono copyable />
+              <ResultCard label="Hex" value={mode === "toBin" ? Array.from(new TextEncoder().encode(input)).map((byte) => byte.toString(16).padStart(2, "0")).join(" ") : input.trim().split(/\s+/).map((byte) => parseInt(byte, 2).toString(16).padStart(2, "0")).join(" ")} mono copyable />
+              <ResultCard label="Octal" value={mode === "toBin" ? Array.from(new TextEncoder().encode(input)).map((byte) => byte.toString(8)).join(" ") : input.trim().split(/\s+/).map((byte) => parseInt(byte, 2).toString(8)).join(" ")} mono copyable />
+            </div>
+            {mode === "toBin" && input.length <= 64 && (
+              <Panel noPadding className="overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-950"><tr><th className="px-4 py-2">Char</th><th className="px-4 py-2">ASCII/UTF-8</th><th className="px-4 py-2">Binary</th></tr></thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                    {Array.from(input).map((char, index) => {
+                      const bytes = Array.from(new TextEncoder().encode(char));
+                      return <tr key={`${char}-${index}`}><td className="px-4 py-2 font-mono">{JSON.stringify(char)}</td><td className="px-4 py-2 font-mono">{bytes.join(" ")}</td><td className="px-4 py-2 font-mono">{bytes.map((byte) => byte.toString(2).padStart(8, "0")).join(" ")}</td></tr>;
+                    })}
+                  </tbody>
+                </table>
+              </Panel>
+            )}
             <div className="flex items-center justify-between">
               <Label>Output</Label>
               <CopyButton value={output} />
