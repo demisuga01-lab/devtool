@@ -111,7 +111,62 @@ const BADGE_MAP: Record<number, { abbr: string; bg: string; color: string }> = {
   45: { abbr: "ASM", bg: "#6e4a7e", color: "#fff" },
 };
 
+const STARTER_CODE: Record<number, string> = {
+  71: "# Python 3\nprint('Hello, World!')\n\n# Try input:\n# name = input('Enter name: ')\n# print(f'Hello, {name}!')",
+  70: "# Python 2\nprint 'Hello, World!'",
+  62: "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}",
+  50: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}",
+  49: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}",
+  48: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}",
+  75: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}",
+  54: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+  53: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+  52: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+  76: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+  51: "using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}",
+  73: "fn main() {\n    println!(\"Hello, World!\");\n}",
+  60: "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n}",
+  78: "fun main() {\n    println(\"Hello, World!\")\n}",
+  68: "<?php\necho \"Hello, World!\\n\";\n?>",
+  72: "puts 'Hello, World!'",
+  83: "print(\"Hello, World!\")",
+  63: "console.log('Hello, World!');",
+  74: "const message: string = 'Hello, World!';\nconsole.log(message);",
+  46: "#!/bin/bash\necho \"Hello, World!\"",
+  85: "print \"Hello, World!\\n\";",
+  64: "print(\"Hello, World!\")",
+  80: "cat(\"Hello, World!\\n\")",
+  66: "disp('Hello, World!')",
+  82: "SELECT 'Hello, World!';",
+  81: "object Main extends App {\n  println(\"Hello, World!\")\n}",
+  86: "(println \"Hello, World!\")",
+  88: "println 'Hello, World!'",
+  47: "PRINT \"Hello, World!\"",
+  84: "Module Program\n    Sub Main()\n        Console.WriteLine(\"Hello, World!\")\n    End Sub\nEnd Module",
+  87: "[<EntryPoint>]\nlet main argv =\n    printfn \"Hello, World!\"\n    0",
+  61: "main :: IO ()\nmain = putStrLn \"Hello, World!\"",
+  57: "IO.puts \"Hello, World!\"",
+  58: "main() ->\n    io:format(\"Hello, World!~n\").",
+  65: "let () = print_endline \"Hello, World!\"",
+  55: "(write-line \"Hello, World!\")",
+  69: ":- initialization(main).\nmain :- write('Hello, World!'), nl.",
+  56: "import std.stdio;\nvoid main() {\n    writeln(\"Hello, World!\");\n}",
+  59: "program hello\n  print *, 'Hello, World!'\nend program hello",
+  67: "program Hello;\nbegin\n  writeln('Hello, World!');\nend.",
+  79: "#import <Foundation/Foundation.h>\nint main() {\n    NSLog(@\"Hello, World!\");\n    return 0;\n}",
+  77: "IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\n    DISPLAY 'Hello, World!'.\n    STOP RUN.",
+  45: "section .data\n    msg db 'Hello, World!', 0xa\n    len equ $ - msg\nsection .text\n    global _start\n_start:\n    mov eax, 4\n    mov ebx, 1\n    mov ecx, msg\n    mov edx, len\n    int 0x80\n    mov eax, 1\n    xor ebx, ebx\n    int 0x80",
+};
+
 type OutputTab = "stdout" | "stderr" | "info";
+type RunInfo = {
+  cpuTime: number;
+  memory: number;
+  exitCode: number;
+  status: string;
+  statusDesc: string;
+};
+type StatusKind = "accepted" | "runtime" | "compile" | "tle";
 
 const CATEGORIES = ["popular", "scripting", "jvm", "systems", "functional", "data", "database", "lowlevel"];
 const OUTPUT_TABS: OutputTab[] = ["stdout", "stderr", "info"];
@@ -120,22 +175,38 @@ const iconButtonClass =
 
 export default function RunPage() {
   const [selectedLangId, setSelectedLangId] = useState(71);
-  const [code, setCode] = useState("# Python 3\nprint('Hello, World!')");
+  const [code, setCode] = useState(() => STARTER_CODE[71] || "// Start coding here...");
   const [stdin, setStdin] = useState("");
   const [stdinOpen, setStdinOpen] = useState(false);
   const [activeOutputTab, setActiveOutputTab] = useState<"stdout" | "stderr" | "info">("stdout");
   const [leftWidth, setLeftWidth] = useState(55);
   const [isDragging, setIsDragging] = useState(false);
   const [lineCount, setLineCount] = useState(1);
+  const [isRunning, setIsRunning] = useState(false);
+  const [stdout, setStdout] = useState("");
+  const [stderr, setStderr] = useState("");
+  const [runInfo, setRunInfo] = useState<RunInfo | null>(null);
+  const [copyDone, setCopyDone] = useState(false);
+  const [outputCopyDone, setOutputCopyDone] = useState(false);
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const lineNumRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const dragStartX = useRef(0);
   const dragStartWidth = useRef(55);
 
   const selectedLang = LANGUAGES.find((l) => l.id === selectedLangId) || LANGUAGES[0];
   const badge = BADGE_MAP[selectedLangId];
+
+  useEffect(() => {
+    const starter = STARTER_CODE[selectedLangId] || "// Start coding here...";
+    setCode(starter);
+    setLineCount(starter.split("\n").length);
+    setStdout("");
+    setStderr("");
+    setRunInfo(null);
+  }, [selectedLangId]);
 
   useEffect(() => {
     setLineCount(code.split("\n").length);
@@ -172,10 +243,110 @@ export default function RunPage() {
     };
   }, [isDragging]);
 
+  const handleRun = useCallback(async () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    setStdout("");
+    setStderr("");
+    setRunInfo(null);
+    setActiveOutputTab("stdout");
+
+    const lang = LANGUAGES.find((l) => l.id === selectedLangId);
+    if (!lang) {
+      setIsRunning(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/tools/run-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: lang.language,
+          version: lang.version,
+          code: code,
+          stdin: stdin || "",
+        }),
+      });
+
+      const data = await res.json();
+
+      setStdout(data.stdout || "");
+      setStderr(data.stderr || data.compile_output || data.message || "");
+      setRunInfo({
+        cpuTime: data.cpu_time || data.wall_time || 0,
+        memory: Math.round((data.memory || 0) / 1000),
+        exitCode: data.exit_code ?? 1,
+        status: data.status || "error",
+        statusDesc: data.status_description || "",
+      });
+
+      if (data.stderr || data.compile_output) {
+        setActiveOutputTab("stderr");
+      }
+    } catch (err) {
+      setStderr("Failed to connect to execution service.");
+      setRunInfo({
+        cpuTime: 0,
+        memory: 0,
+        exitCode: 1,
+        status: "error",
+        statusDesc: "Network Error",
+      });
+    } finally {
+      setIsRunning(false);
+    }
+  }, [isRunning, selectedLangId, code, stdin]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleRun();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [handleRun]);
+
   const handleCodeChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCode(e.target.value);
     setLineCount(e.target.value.split("\n").length);
   }, []);
+
+  const handleUpload = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      setCode(content);
+      setLineCount(content.split("\n").length);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopyDone(true);
+    setTimeout(() => setCopyDone(false), 1500);
+  };
+
+  const handleCopyOutput = () => {
+    navigator.clipboard.writeText(stdout);
+    setOutputCopyDone(true);
+    setTimeout(() => setOutputCopyDone(false), 1500);
+  };
+
+  const handleClearOutput = () => {
+    setStdout("");
+    setStderr("");
+    setRunInfo(null);
+    setActiveOutputTab("stdout");
+  };
 
   const handleEditorScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
     if (lineNumRef.current) {
@@ -251,6 +422,179 @@ export default function RunPage() {
     );
   };
 
+  const getStatusKind = (): StatusKind => {
+    if (!runInfo) return "runtime";
+    if (runInfo.exitCode === 0) return "accepted";
+    if (runInfo.statusDesc.includes("Time")) return "tle";
+    if (stdout === "" && stderr !== "") return "compile";
+    return "runtime";
+  };
+
+  const renderStatusBadge = () => {
+    if (!runInfo) return <div />;
+
+    const statusKind = getStatusKind();
+    const styles: Record<StatusKind, { bg: string; border: string; text: string; label: string }> = {
+      accepted: {
+        bg: "rgba(16,185,129,0.12)",
+        border: "1px solid rgba(16,185,129,0.3)",
+        text: "#10b981",
+        label: "Accepted",
+      },
+      runtime: {
+        bg: "rgba(239,68,68,0.12)",
+        border: "1px solid rgba(239,68,68,0.3)",
+        text: "#ef4444",
+        label: "Runtime Error",
+      },
+      compile: {
+        bg: "rgba(245,158,11,0.12)",
+        border: "1px solid rgba(245,158,11,0.3)",
+        text: "#f59e0b",
+        label: "Compile Error",
+      },
+      tle: {
+        bg: "rgba(245,158,11,0.12)",
+        border: "1px solid rgba(245,158,11,0.3)",
+        text: "#f59e0b",
+        label: "Time Limit",
+      },
+    };
+    const style = styles[statusKind];
+
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "2px 10px",
+          borderRadius: 999,
+          fontSize: 11,
+          fontWeight: 600,
+          backgroundColor: style.bg,
+          border: style.border,
+          color: style.text,
+        }}
+      >
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 999,
+            backgroundColor: style.text,
+          }}
+        />
+        {style.label}
+      </div>
+    );
+  };
+
+  const renderStatCard = (label: string, value: string, color = "rgb(var(--foreground))") => (
+    <div
+      style={{
+        backgroundColor: "rgba(128,128,128,0.08)",
+        border: "1px solid rgb(var(--border))",
+        borderRadius: 8,
+        padding: "10px 12px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 600,
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: "rgb(var(--muted-foreground))",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+
+  const renderOutputContent = () => {
+    if (activeOutputTab === "stdout") {
+      if (!runInfo) return renderEmptyState();
+      return (
+        <pre
+          style={{
+            margin: 0,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            color: runInfo.exitCode === 0 ? "#4ec994" : "#d4d4d4",
+            fontFamily: "monospace",
+            fontSize: 13,
+            lineHeight: 1.65,
+          }}
+        >
+          {stdout || (runInfo.exitCode !== 0 ? `Process exited with code ${runInfo.exitCode}` : "No output")}
+        </pre>
+      );
+    }
+
+    if (activeOutputTab === "stderr") {
+      if (!stderr) return renderEmptyState();
+      return (
+        <>
+          {stderr
+            .split("\n")
+            .filter(Boolean)
+            .map((line, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, padding: "1px 0" }}>
+                <AlertCircle
+                  size={12}
+                  style={{
+                    color: "#f48771",
+                    flexShrink: 0,
+                    marginTop: 3,
+                  }}
+                />
+                <span
+                  style={{
+                    color: "#f48771",
+                    fontFamily: "monospace",
+                    fontSize: 13,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {line}
+                </span>
+              </div>
+            ))}
+        </>
+      );
+    }
+
+    if (!runInfo) return renderEmptyState();
+    const timeColor = runInfo.cpuTime < 300 ? "#10b981" : runInfo.cpuTime <= 1000 ? "#f59e0b" : "#ef4444";
+
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+        {renderStatCard("Execution Time", `${runInfo.cpuTime}ms`, timeColor)}
+        {renderStatCard("Memory", `${runInfo.memory}KB`)}
+        {renderStatCard(
+          "Exit Code",
+          runInfo.exitCode === 0 ? "0 — Success" : `${runInfo.exitCode} — Error`,
+          runInfo.exitCode === 0 ? "#10b981" : "#ef4444",
+        )}
+        {renderStatCard("Language", `${selectedLang.name}`)}
+        {renderStatCard("Status", runInfo.statusDesc || runInfo.status)}
+        {renderStatCard("Version", selectedLang.version)}
+      </div>
+    );
+  };
+
   return (
     <div
       style={{
@@ -303,10 +647,24 @@ export default function RunPage() {
 
           <button
             type="button"
+            onClick={handleRun}
+            disabled={isRunning}
             className="flex h-[28px] cursor-pointer items-center gap-1.5 rounded-md border-0 bg-emerald-600 px-3 text-[12px] font-semibold text-white transition-colors hover:bg-emerald-700"
           >
-            <Play size={12} />
-            Run
+            {isRunning ? (
+              <>
+                <svg className="animate-spin" width={12} height={12} viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
+                  <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+                Running...
+              </>
+            ) : (
+              <>
+                <Play size={12} />
+                Run
+              </>
+            )}
           </button>
 
           <span className="text-[11px] text-muted-foreground/40">Ctrl+Enter</span>
@@ -341,13 +699,28 @@ export default function RunPage() {
             </div>
 
             <div className="flex items-center gap-0.5">
-              <button type="button" className={iconButtonClass} title="Upload file">
+              <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+                accept=".txt,.py,.js,.ts,.java,.c,.cpp,.cs,.rs,.go,.rb,.php,.swift,.sh,.lua,.r,.sql,.scala,.hs,.ex,.erl,.ml,.lisp,.pl,.d,.f90,.pas,.m,.cob,.asm,.kt,.groovy,.bas,.vb,.fs,.clj,.pro"
+              />
+              <button type="button" className={iconButtonClass} title="Upload file" onClick={handleUpload}>
                 <Upload size={14} />
               </button>
-              <button type="button" className={iconButtonClass} title="Copy code">
-                <Copy size={14} />
+              <button type="button" className={iconButtonClass} title="Copy code" onClick={handleCopy}>
+                {copyDone ? <Check size={14} /> : <Copy size={14} />}
               </button>
-              <button type="button" className={iconButtonClass} title="Clear editor">
+              <button
+                type="button"
+                className={iconButtonClass}
+                title="Clear editor"
+                onClick={() => {
+                  setCode("");
+                  setLineCount(1);
+                }}
+              >
                 <Trash2 size={14} />
               </button>
             </div>
@@ -479,12 +852,12 @@ export default function RunPage() {
             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               Output
             </span>
-            <div />
+            {renderStatusBadge()}
             <div className="flex items-center gap-0.5">
-              <button type="button" className={iconButtonClass} title="Copy output">
-                <Copy size={14} />
+              <button type="button" className={iconButtonClass} title="Copy output" onClick={handleCopyOutput}>
+                {outputCopyDone ? <Check size={14} /> : <Copy size={14} />}
               </button>
-              <button type="button" className={iconButtonClass} title="Clear output">
+              <button type="button" className={iconButtonClass} title="Clear output" onClick={handleClearOutput}>
                 <Trash2 size={14} />
               </button>
             </div>
@@ -506,6 +879,26 @@ export default function RunPage() {
                 }`}
               >
                 {tab}
+                {tab === "stderr" && stderr && (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 999,
+                      backgroundColor: "#ef4444",
+                      color: "white",
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: "0 4px",
+                      marginLeft: 4,
+                    }}
+                  >
+                    {stderr.split("\n").filter(Boolean).length}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -521,7 +914,7 @@ export default function RunPage() {
               lineHeight: 1.65,
             }}
           >
-            {renderEmptyState()}
+            {renderOutputContent()}
           </div>
         </div>
       </div>
