@@ -9,6 +9,7 @@ from email.message import EmailMessage
 import httpx
 from sqlalchemy.orm import Session
 
+from app.core.alerting import send_routed_alert
 from app.core.config import settings
 from app.models.status import AlertConfig, Monitor, MonitorCheck
 
@@ -123,6 +124,11 @@ def _calculate_uptime_30d(db: Session, monitor_id: int) -> float:
 
 
 async def send_alert(monitor: Monitor, check: MonitorCheck, alert_type: str, db: Session) -> None:
+    try:
+        await send_routed_alert(monitor, check, alert_type, db)
+    except Exception:
+        pass
+
     configs = db.query(AlertConfig).filter(
         AlertConfig.monitor_id == monitor.id,
         AlertConfig.is_active.is_(True),

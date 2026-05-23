@@ -41,7 +41,7 @@ const navItems = [
   { key: "monitors" as const, label: "Monitors", icon: Activity },
   { key: "incidents" as const, label: "Incidents", icon: AlertTriangle },
   { key: "maintenance" as const, label: "Maintenance", icon: Wrench },
-  { key: "alerts" as const, label: "Alerts", icon: Bell },
+  { key: "alerts" as const, label: "Alerts", icon: Bell, href: "/dashboard/alerts" },
   { key: "settings" as const, label: "Settings", icon: Settings },
   { key: "reports" as const, label: "Reports", icon: ShieldAlert, href: "/dashboard/reports" },
   { key: "apiKeys" as const, label: "API Keys", icon: KeyRound, href: "/dashboard/api-keys" },
@@ -84,6 +84,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith("/dashboard/reports")) return "reports";
     if (pathname.startsWith("/dashboard/api-keys")) return "apiKeys";
     if (pathname.startsWith("/dashboard/sla")) return "sla";
+    if (pathname.startsWith("/dashboard/alerts")) return "alerts";
     const value = searchParams.get("section");
     return navItems.some((item) => item.key === value) ? (value as Section) : "dashboard";
   }, [pathname, searchParams]);

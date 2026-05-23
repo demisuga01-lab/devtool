@@ -14,11 +14,13 @@ import {
   FileText,
   Fingerprint,
   FolderOpen,
+  Files,
   GitCompare,
   Globe,
   Hash,
   Key,
   Layers,
+  LayoutList,
   Link2,
   Lock,
   Network,
@@ -35,6 +37,7 @@ import {
   Sparkles,
   Terminal,
   Timer,
+  Trophy,
   Type,
   Wand2,
   Wifi,
@@ -323,6 +326,27 @@ const seedToolGroups: ToolSeedGroup[] = [
         implemented: true,
       },
       {
+        name: "Multi-file Runner",
+        slug: "multifile-runner",
+        description: "Run multi-file projects in one execution.",
+        href: "/tools/multifile-runner",
+        implemented: true,
+      },
+      {
+        name: "Notebook Runner",
+        slug: "notebook",
+        description: "Interactive code cells with inline outputs.",
+        href: "/tools/notebook",
+        implemented: true,
+      },
+      {
+        name: "Challenges",
+        slug: "challenges",
+        description: "Solve coding challenges with test cases.",
+        href: "/tools/challenges",
+        implemented: true,
+      },
+      {
         name: "Other Languages",
         slug: "other-runner",
         description: "Run Swift, Dart, Fortran, and D code.",
@@ -482,6 +506,9 @@ const textTools = new Set([
   "systems-runner",
   "other-runner",
   "data-runner",
+  "multifile-runner",
+  "notebook",
+  "challenges",
   "recent-pastes",
 ]);
 
@@ -560,6 +587,9 @@ const newTools = new Set([
   "webhook-inbox",
   "webhook-viewer",
   "heartbeat",
+  "multifile-runner",
+  "notebook",
+  "challenges",
 ]);
 
 const iconBySlug: Record<string, LucideIcon> = {
@@ -674,6 +704,9 @@ const iconBySlug: Record<string, LucideIcon> = {
   "jvm-runner": Cpu,
   "systems-runner": Cpu,
   "data-runner": Database,
+  "multifile-runner": Files,
+  notebook: LayoutList,
+  challenges: Trophy,
   "other-runner": Terminal,
   base64: ArrowLeftRight,
   "url-encoder": Link2,
@@ -713,6 +746,9 @@ const explicitTags: Record<string, string[]> = {
   "rest-client": ["rest", "http", "api", "request", "get", "post", "client", "fetch", "curl", "endpoint", "test"],
   "graphql-client": ["graphql", "gql", "query", "mutation", "schema", "introspection", "api", "graph"],
   "api-collections": ["collection", "postman", "api", "requests", "save", "organize", "environment", "variables"],
+  "multifile-runner": ["multi file", "project", "runner", "code", "execute", "compile", "files", "judge0", "sandbox"],
+  notebook: ["notebook", "cells", "code", "runner", "interactive", "execute", "inline output", "judge0"],
+  challenges: ["challenge", "testcase", "coding", "practice", "judge", "submit", "tests", "score", "hidden cases"],
 };
 
 function intentForSlug(slug: string): IntentGroupId {
@@ -728,6 +764,7 @@ function intentForSlug(slug: string): IntentGroupId {
 function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
   const slug = tool.slug;
   if (["rest-client", "graphql-client", "api-collections"].includes(slug)) return ["url", "text", "json"];
+  if (["multifile-runner", "notebook", "challenges"].includes(slug)) return ["code"];
   if (["uuid-generator", "ulid-generator", "nanoid-generator", "random-token-generator", "passphrase-generator", "password-generator", "lorem-ipsum", "qr-generator", "status-badges"].includes(slug)) return ["none"];
   if (slug.includes("runner") || ["code-share", "testcase-runner", "js-beautifier", "css-formatter", "html-formatter", "sql-formatter", "nginx-config-checker", "docker-compose-validator", "systemd-unit-generator"].includes(slug)) return ["code"];
   if (slug.includes("json") || ["jwt-builder", "jwt-decoder", "jwt-verifier", "openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-viewer"].includes(slug)) return ["json", "text"];
@@ -738,7 +775,8 @@ function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
 
 function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOutputType[] {
   const slug = tool.slug;
-  if (slug.includes("runner") || ["testcase-runner"].includes(slug)) return ["executed"];
+  if (slug.includes("runner") || ["testcase-runner", "notebook"].includes(slug)) return ["executed"];
+  if (slug === "challenges") return ["validated", "executed"];
   if (slug.includes("validator") || ["jwt-verifier", "hash-verifier", "contrast-checker", "nginx-config-checker", "docker-compose-validator", "security-headers", "spf-checker"].includes(slug)) return ["validated"];
   if (slug.includes("formatter") || ["js-beautifier", "line-sorter", "duplicate-line-remover"].includes(slug)) return ["formatted"];
   if (intentGroup === "convert" || slug.includes("-to-") || slug.includes("converter") || ["base64", "url-encoder", "hex-encoder", "binary-converter", "unicode-escape", "morse-code", "number-base", "roman-numerals", "case-converter", "text-case"].includes(slug)) return ["converted"];
@@ -749,7 +787,7 @@ function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOut
 function complexityForTool(tool: ToolSeed): ToolComplexity {
   if (
     tool.slug.includes("runner") ||
-    ["openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-inbox", "webhook-viewer", "heartbeat", "rest-client", "graphql-client", "api-collections", "jwt-builder", "jwt-verifier", "xsd-generator", "xslt-transformer", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
+    ["openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-inbox", "webhook-viewer", "heartbeat", "rest-client", "graphql-client", "api-collections", "multifile-runner", "notebook", "challenges", "jwt-builder", "jwt-verifier", "xsd-generator", "xslt-transformer", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
   ) {
     return "advanced";
   }

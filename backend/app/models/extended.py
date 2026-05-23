@@ -3,8 +3,8 @@ from __future__ import annotations
 import datetime
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 from app.models.paste import Base
 
@@ -195,3 +195,79 @@ class CollectionEnvironment(Base):
     collection_id = Column(String(12), ForeignKey("api_collections.id", ondelete="CASCADE"), nullable=False)
     name = Column(Text, nullable=False)
     variables = Column(JSONB, default=list)
+
+
+class Challenge(Base):
+    __tablename__ = "challenges"
+
+    id = Column(String(12), primary_key=True)
+    title = Column(Text, nullable=False)
+    description = Column(Text, nullable=False)
+    difficulty = Column(Text, nullable=False)
+    language_ids = Column(ARRAY(Integer), default=list)
+    template_code = Column(JSONB, default=dict)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    admin_key_hash = Column(Text, nullable=False)
+
+
+class TestCase(Base):
+    __tablename__ = "test_cases"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    challenge_id = Column(String(12), ForeignKey("challenges.id", ondelete="CASCADE"), nullable=False)
+    input = Column(Text, default="")
+    expected_output = Column(Text, nullable=False)
+    is_hidden = Column(Boolean, default=False)
+    points = Column(Integer, default=1)
+    sort_order = Column(Integer, default=0)
+
+
+class ChallengeSubmission(Base):
+    __tablename__ = "challenge_submissions"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    challenge_id = Column(String(12), ForeignKey("challenges.id", ondelete="CASCADE"), nullable=False)
+    language_id = Column(Integer, nullable=False)
+    source_code = Column(Text, nullable=False)
+    submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
+    results = Column(JSONB, default=list)
+    total_passed = Column(Integer, default=0)
+    total_tests = Column(Integer, default=0)
+    score = Column(Integer, default=0)
+    time_ms = Column(Float, default=0)
+    memory_kb = Column(Float, default=0)
+
+
+class AlertChannel(Base):
+    __tablename__ = "alert_channels"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    name = Column(Text, nullable=False)
+    channel_type = Column(Text, nullable=False)
+    config = Column(JSONB, default=dict)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class AlertRule(Base):
+    __tablename__ = "alert_rules"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    monitor_id = Column(Integer, ForeignKey("monitors.id", ondelete="CASCADE"), nullable=False)
+    channel_id = Column(String(36), ForeignKey("alert_channels.id", ondelete="CASCADE"), nullable=False)
+    on_down = Column(Boolean, default=True)
+    on_recovery = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class AlertLog(Base):
+    __tablename__ = "alert_logs"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    monitor_id = Column(Integer, ForeignKey("monitors.id", ondelete="SET NULL"), nullable=True)
+    channel_id = Column(String(36), ForeignKey("alert_channels.id", ondelete="SET NULL"), nullable=True)
+    alert_type = Column(Text, nullable=False)
+    message = Column(Text, nullable=False)
+    sent_at = Column(DateTime, default=datetime.datetime.utcnow)
+    status = Column(Text, default="sent")
+    error = Column(Text, nullable=True)
