@@ -5,12 +5,11 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 
 type Language = {
-  id: string;
+  id: number;
   name: string;
-  href?: string;
+  version: string;
   categories: string[];
   icon: JSX.Element;
-  unavailable?: boolean;
 };
 
 const categories = [
@@ -74,52 +73,50 @@ const icons = {
 } satisfies Record<string, JSX.Element>;
 
 const languages: Language[] = [
-  { id: "python", name: "Python", href: "/tools/scripting-runner?lang=python", categories: ["popular", "scripting"], icon: icons.python },
-  { id: "javascript", name: "JavaScript", href: "/tools/web-runner?lang=javascript", categories: ["popular", "web"], icon: icons.javascript },
-  { id: "java", name: "Java", href: "/tools/jvm-runner?lang=java", categories: ["popular", "jvm"], icon: icons.java },
-  { id: "c", name: "C", href: "/tools/systems-runner?lang=c", categories: ["popular", "systems"], icon: icons.c },
-  { id: "cpp", name: "C++", href: "/tools/systems-runner?lang=c%2B%2B", categories: ["popular", "systems"], icon: icons.cpp },
-  { id: "csharp", name: "C#", href: "/tools/jvm-runner?lang=csharp", categories: ["popular", "jvm"], icon: icons.csharp },
-  { id: "typescript", name: "TypeScript", href: "/tools/web-runner?lang=typescript", categories: ["popular", "web"], icon: icons.typescript },
-  { id: "go", name: "Go", href: "/tools/systems-runner?lang=go", categories: ["popular", "systems"], icon: icons.go },
-  { id: "rust", name: "Rust", href: "/tools/systems-runner?lang=rust", categories: ["popular", "systems"], icon: icons.rust },
-  { id: "kotlin", name: "Kotlin", href: "/tools/jvm-runner?lang=kotlin", categories: ["popular", "jvm"], icon: icons.kotlin },
-  { id: "php", name: "PHP", href: "/tools/scripting-runner?lang=php", categories: ["popular", "scripting", "web"], icon: icons.php },
-  { id: "ruby", name: "Ruby", href: "/tools/scripting-runner?lang=ruby", categories: ["popular", "scripting"], icon: icons.ruby },
-  { id: "swift", name: "Swift", href: "/tools/other-runner?lang=swift", categories: ["popular", "systems"], icon: icons.swift },
-  { id: "dart", name: "Dart", categories: ["popular", "web"], icon: icons.dart, unavailable: true },
-  { id: "basic", name: "Basic", href: "/tools/jvm-runner?lang=basic", categories: ["jvm"], icon: icons.basic },
-  { id: "visualbasic", name: "Visual Basic", href: "/tools/other-runner?lang=vb", categories: ["jvm"], icon: icons.basic },
-  { id: "fsharp", name: "F#", href: "/tools/other-runner?lang=fsharp", categories: ["functional", "jvm"], icon: icons.fsharp },
-  { id: "html", name: "HTML", href: "/tools/web-runner?lang=html", categories: ["web"], icon: icons.html },
-  { id: "css", name: "CSS", href: "/tools/web-runner?lang=css", categories: ["web"], icon: icons.css },
-  { id: "d", name: "D", href: "/tools/other-runner?lang=d", categories: ["systems"], icon: icons.d },
-  { id: "objc", name: "Objective-C", href: "/tools/other-runner?lang=objectivec", categories: ["systems"], icon: icons.objc },
-  { id: "fortran", name: "Fortran", href: "/tools/other-runner?lang=fortran", categories: ["systems", "data"], icon: icons.fortran },
-  { id: "nasm", name: "Assembly", href: "/tools/other-runner?lang=nasm", categories: ["lowlevel"], icon: icons.assembly },
-  { id: "scala", name: "Scala", href: "/tools/jvm-runner?lang=scala", categories: ["jvm", "functional"], icon: icons.scala },
-  { id: "groovy", name: "Groovy", href: "/tools/other-runner?lang=groovy", categories: ["jvm"], icon: icons.groovy },
-  { id: "clojure", name: "Clojure", href: "/tools/jvm-runner?lang=clojure", categories: ["jvm", "functional"], icon: icons.clojure },
-  { id: "perl", name: "Perl", href: "/tools/scripting-runner?lang=perl", categories: ["scripting"], icon: icons.perl },
-  { id: "lua", name: "Lua", href: "/tools/scripting-runner?lang=lua", categories: ["scripting"], icon: icons.lua },
-  { id: "bash", name: "Bash", href: "/tools/scripting-runner?lang=bash", categories: ["scripting"], icon: icons.bash },
-  { id: "haskell", name: "Haskell", href: "/tools/other-runner?lang=haskell", categories: ["functional"], icon: icons.haskell },
-  { id: "elixir", name: "Elixir", href: "/tools/other-runner?lang=elixir", categories: ["functional"], icon: icons.elixir },
-  { id: "erlang", name: "Erlang", href: "/tools/other-runner?lang=erlang", categories: ["functional"], icon: icons.erlang },
-  { id: "ocaml", name: "OCaml", href: "/tools/other-runner?lang=ocaml", categories: ["functional"], icon: icons.ocaml },
-  { id: "prolog", name: "Prolog", href: "/tools/other-runner?lang=prolog", categories: ["functional"], icon: icons.prolog },
-  { id: "commonlisp", name: "Common Lisp", href: "/tools/other-runner?lang=commonlisp", categories: ["functional"], icon: icons.commonlisp },
-  { id: "octave", name: "Octave", href: "/tools/other-runner?lang=octave", categories: ["data"], icon: icons.octave },
-  { id: "r", name: "R", href: "/tools/data-runner?lang=r", categories: ["data"], icon: icons.r },
-  { id: "julia", name: "Julia", href: "/tools/data-runner?lang=julia", categories: ["data", "systems"], icon: icons.julia },
-  { id: "sqlite", name: "SQLite", href: "/tools/data-runner?lang=sqlite", categories: ["data", "database"], icon: icons.sqlite },
-  { id: "cobol", name: "COBOL", href: "/tools/other-runner?lang=cobol", categories: ["data"], icon: icons.cobol },
-  { id: "mysql", name: "MySQL", href: "/tools/database-runner?lang=mysql", categories: ["database"], icon: icons.mysql },
-  { id: "postgresql", name: "PostgreSQL", href: "/tools/database-runner?lang=postgresql", categories: ["database"], icon: icons.postgresql },
-  { id: "mongodb", name: "MongoDB", href: "/tools/database-runner?lang=mongodb", categories: ["database"], icon: icons.mongodb },
-  { id: "nasm64", name: "NASM x64", href: "/tools/other-runner?lang=nasm", categories: ["lowlevel"], icon: icons.assembly },
-  { id: "pascal", name: "Pascal", href: "/tools/other-runner?lang=pascal", categories: ["systems"], icon: icons.pascal },
-  { id: "rscript", name: "R Script", href: "/tools/data-runner?lang=r", categories: ["data"], icon: icons.rscript },
+  { id: 45, name: "Assembly", version: "NASM 2.14.02", categories: ["popular", "lowlevel"], icon: icons.assembly },
+  { id: 46, name: "Bash", version: "5.0.0", categories: ["popular", "scripting"], icon: icons.bash },
+  { id: 47, name: "Basic", version: "FBC 1.07.1", categories: ["systems"], icon: icons.basic },
+  { id: 50, name: "C", version: "GCC 9.2.0", categories: ["popular", "systems"], icon: icons.c },
+  { id: 49, name: "C", version: "GCC 8.3.0", categories: ["systems"], icon: icons.c },
+  { id: 48, name: "C", version: "GCC 7.4.0", categories: ["systems"], icon: icons.c },
+  { id: 75, name: "C", version: "Clang 7.0.1", categories: ["systems"], icon: icons.c },
+  { id: 54, name: "C++", version: "GCC 9.2.0", categories: ["popular", "systems"], icon: icons.cpp },
+  { id: 53, name: "C++", version: "GCC 8.3.0", categories: ["systems"], icon: icons.cpp },
+  { id: 52, name: "C++", version: "GCC 7.4.0", categories: ["systems"], icon: icons.cpp },
+  { id: 76, name: "C++", version: "Clang 7.0.1", categories: ["systems"], icon: icons.cpp },
+  { id: 51, name: "C#", version: "Mono 6.6.0", categories: ["popular", "jvm"], icon: icons.csharp },
+  { id: 86, name: "Clojure", version: "1.10.1", categories: ["functional", "jvm"], icon: icons.clojure },
+  { id: 77, name: "COBOL", version: "GnuCOBOL 2.2", categories: ["data"], icon: icons.cobol },
+  { id: 55, name: "Common Lisp", version: "SBCL 2.0.0", categories: ["functional"], icon: icons.commonlisp },
+  { id: 56, name: "D", version: "DMD 2.089.1", categories: ["systems"], icon: icons.d },
+  { id: 57, name: "Elixir", version: "1.9.4", categories: ["functional"], icon: icons.elixir },
+  { id: 58, name: "Erlang", version: "OTP 22.2", categories: ["functional"], icon: icons.erlang },
+  { id: 87, name: "F#", version: ".NET Core SDK 3.1.202", categories: ["functional", "jvm"], icon: icons.fsharp },
+  { id: 59, name: "Fortran", version: "GFortran 9.2.0", categories: ["systems", "data"], icon: icons.fortran },
+  { id: 60, name: "Go", version: "1.13.5", categories: ["popular", "systems"], icon: icons.go },
+  { id: 88, name: "Groovy", version: "3.0.3", categories: ["jvm"], icon: icons.groovy },
+  { id: 61, name: "Haskell", version: "GHC 8.8.1", categories: ["functional"], icon: icons.haskell },
+  { id: 62, name: "Java", version: "OpenJDK 13.0.1", categories: ["popular", "jvm"], icon: icons.java },
+  { id: 63, name: "JavaScript", version: "Node.js 12.14.0", categories: ["popular", "web", "scripting"], icon: icons.javascript },
+  { id: 78, name: "Kotlin", version: "1.3.70", categories: ["popular", "jvm"], icon: icons.kotlin },
+  { id: 64, name: "Lua", version: "5.3.5", categories: ["scripting"], icon: icons.lua },
+  { id: 79, name: "Objective-C", version: "Clang 7.0.1", categories: ["systems"], icon: icons.objc },
+  { id: 65, name: "OCaml", version: "4.09.0", categories: ["functional"], icon: icons.ocaml },
+  { id: 66, name: "Octave", version: "5.1.0", categories: ["data"], icon: icons.octave },
+  { id: 67, name: "Pascal", version: "FPC 3.0.4", categories: ["systems"], icon: icons.pascal },
+  { id: 85, name: "Perl", version: "5.28.1", categories: ["scripting"], icon: icons.perl },
+  { id: 68, name: "PHP", version: "7.4.1", categories: ["popular", "scripting", "web"], icon: icons.php },
+  { id: 69, name: "Prolog", version: "GNU Prolog 1.4.5", categories: ["functional"], icon: icons.prolog },
+  { id: 71, name: "Python 3", version: "3.8.1", categories: ["popular", "scripting", "data"], icon: icons.python },
+  { id: 70, name: "Python 2", version: "2.7.17", categories: ["scripting", "data"], icon: icons.python },
+  { id: 80, name: "R", version: "4.0.0", categories: ["data"], icon: icons.r },
+  { id: 72, name: "Ruby", version: "2.7.0", categories: ["popular", "scripting"], icon: icons.ruby },
+  { id: 73, name: "Rust", version: "1.40.0", categories: ["popular", "systems"], icon: icons.rust },
+  { id: 81, name: "Scala", version: "2.13.2", categories: ["jvm", "functional"], icon: icons.scala },
+  { id: 82, name: "SQL", version: "SQLite 3.27.2", categories: ["popular", "database", "data"], icon: icons.sqlite },
+  { id: 83, name: "Swift", version: "5.2.3", categories: ["popular", "systems"], icon: icons.swift },
+  { id: 74, name: "TypeScript", version: "3.7.4", categories: ["popular", "web"], icon: icons.typescript },
+  { id: 84, name: "Visual Basic", version: "vbnc 0.0.0.5943", categories: ["jvm"], icon: icons.basic },
 ];
 
 export default function CompilersPage() {
@@ -139,7 +136,7 @@ export default function CompilersPage() {
           Code online with <span className="text-emerald-600 dark:text-emerald-400">DevTools Compilers</span>
         </h1>
         <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-          42+ languages. Run code instantly in your browser. No setup required.
+          60+ languages. Run code instantly in your browser.
         </p>
         <div className="mx-auto mt-6 max-w-lg">
           <div className="relative">
@@ -152,6 +149,26 @@ export default function CompilersPage() {
               className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
             />
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-8">
+        <div className="flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900 md:flex-row md:items-center md:justify-between">
+          <div className="flex justify-center -space-x-3 md:justify-start">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-950 [&>svg]:h-10 [&>svg]:w-10">{icons.html}</div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-950 [&>svg]:h-10 [&>svg]:w-10">{icons.css}</div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-950 [&>svg]:h-10 [&>svg]:w-10">{icons.javascript}</div>
+          </div>
+          <div className="text-center md:flex-1 md:text-left">
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">Web Compiler</h2>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Write HTML, CSS and JavaScript with live preview</p>
+          </div>
+          <Link
+            href="/tools/code?tab=web"
+            className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 md:w-auto"
+          >
+            Open Web Compiler →
+          </Link>
         </div>
       </section>
 
@@ -176,38 +193,23 @@ export default function CompilersPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {filtered.map((lang) =>
-            lang.unavailable ? (
-              <div
-                key={lang.id}
-                aria-disabled="true"
-                className="flex cursor-not-allowed flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-100 p-4 text-center opacity-70 grayscale dark:border-zinc-800 dark:bg-zinc-900"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
-                  {lang.icon}
-                </div>
-                <span className="text-sm font-medium text-zinc-500 dark:text-zinc-500">
-                  {lang.name}
-                </span>
-                <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-700 dark:text-zinc-500">
-                  Unavailable
-                </span>
+          {filtered.map((lang) => (
+            <Link
+              key={lang.id}
+              href={`/tools/code?lang=${lang.id}`}
+              className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-center transition hover:border-emerald-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
+                {lang.icon}
               </div>
-            ) : (
-              <Link
-                key={lang.id}
-                href={lang.href!}
-                className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-center transition hover:border-emerald-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
-                  {lang.icon}
-                </div>
-                <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                  {lang.name}
-                </span>
-              </Link>
-            )
-          )}
+              <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                {lang.name}
+              </span>
+              <span className="text-xs text-zinc-500 dark:text-zinc-500">
+                {lang.version}
+              </span>
+            </Link>
+          ))}
         </div>
         {filtered.length === 0 && (
           <div className="py-16 text-center text-zinc-500">
