@@ -24,14 +24,12 @@ import {
   Network,
   Palette,
   PenLine,
-  Play,
   SearchCheck,
   Send,
   Server,
   Shield,
   ShieldCheck,
   Sparkles,
-  Terminal,
   Timer,
   Trophy,
   Type,
@@ -170,14 +168,6 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "Config Tools", slug: "config", description: "Validate Docker, Nginx, systemd, env, gitignore, and badges.", href: "/tools/config", implemented: true, workspaceToolCount: 7 },
     ],
   },
-  {
-    name: "Code Runners",
-    slug: "code-runners",
-    description: "Run code in 40+ languages across unified coding modes.",
-    tools: [
-      { name: "Code Runner", slug: "code", description: "Run code in 40+ languages with web, notebook and test modes.", href: "/tools/code", implemented: true, workspaceToolCount: 13 },
-    ],
-  },
 ];
 
 const inspectTools = new Set([
@@ -216,7 +206,6 @@ const textTools = new Set([
   "datetime",
   "regex",
   "formatter",
-  "code",
 ]);
 
 const popularTools = new Set([
@@ -230,7 +219,6 @@ const popularTools = new Set([
   "datetime",
   "network",
   "text",
-  "code",
   "api",
   "ssl",
 ]);
@@ -250,7 +238,6 @@ const newTools = new Set([
   "network",
   "config",
   "text",
-  "code",
   "api",
   "share",
   "formatter",
@@ -274,7 +261,6 @@ const iconBySlug: Record<string, LucideIcon> = {
   "css-color": Palette,
   regex: SearchCheck,
   formatter: Code2,
-  code: Terminal,
   encode: ArrowLeftRight,
 };
 
@@ -288,7 +274,6 @@ const explicitTags: Record<string, string[]> = {
   config: ["config", "docker", "nginx", "systemd", "env", "gitignore", "yaml", "validate", "generate", "compose", "service", "badge", "status", "shield"],
   text: ["text", "case", "convert", "diff", "markdown", "word count", "sort", "clean", "ascii", "mime", "semver", "units", "roman"],
   formatter: ["format", "beautify", "html", "javascript", "sql", "indent", "prettier", "minify", "tidy", "js", "code"],
-  code: ["code", "run", "execute", "python", "javascript", "java", "rust", "go", "c", "c++", "compiler", "interpreter", "sql", "html", "css", "notebook", "multifile", "test", "challenge"],
   api: ["api", "rest", "http", "graphql", "curl", "webhook", "request", "response", "postman", "collections", "headers"],
   share: ["secret", "encrypt", "share", "one-time", "zero-knowledge", "file", "paste", "notes", "aes", "self-destruct", "private"],
   generators: ["password", "secure", "random", "entropy", "uuid", "ulid", "nanoid", "qr", "slug", "lorem"],

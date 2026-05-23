@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { ChevronDown, Code2, Github, Menu, Search, X } from "lucide-react";
+import { ChevronDown, Code2, Github, Globe, Grid2x2, Menu, Play, Search, X } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { allTools, intentDefinitions } from "@/lib/tools";
 import type { IntentGroupId } from "@/lib/tools";
@@ -29,7 +29,9 @@ const pasteLinks = [
 ];
 
 const compilerLinks = [
-  { name: "Code Runner", href: "/tools/code", description: "Single file, web, multi-file, notebook, tests, database" },
+  { name: "All Languages", href: "/compilers", description: "Browse all 60+ supported languages", icon: Grid2x2 },
+  { name: "Web Compiler", href: "/compilers/web?mode=combine", description: "HTML, CSS, JavaScript with live preview", icon: Globe },
+  { name: "Run Code", href: "/compilers/run?lang=71", description: "Write and execute code instantly", icon: Play },
 ];
 
 const navClass =
@@ -330,8 +332,13 @@ export function Header() {
               <SmallDropdown menu={compilers} width="w-[280px]">
                 {compilerLinks.map((item) => (
                   <Link key={item.href} href={item.href} className={menuLinkClass} onClick={() => compilers.setOpen(false)}>
-                    <span className="block font-medium">{item.name}</span>
-                    <span className="block text-xs text-zinc-400 dark:text-zinc-600">{item.description}</span>
+                    <span className="flex items-start gap-2">
+                      <item.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                      <span className="min-w-0">
+                        <span className="block font-medium">{item.name}</span>
+                        <span className="block text-xs text-zinc-400 dark:text-zinc-600">{item.description}</span>
+                      </span>
+                    </span>
                   </Link>
                 ))}
               </SmallDropdown>
@@ -426,8 +433,13 @@ export function Header() {
               <MobileAccordion title="Compilers" open={openMobileGroup === "compilers"} onToggle={() => setOpenMobileGroup(openMobileGroup === "compilers" ? null : "compilers")}>
                 {compilerLinks.map((item) => (
                   <MobilePlainLink key={item.href} href={item.href} onClick={() => setMobile(false)}>
-                    <span className="block">{item.name}</span>
-                    <span className="block text-xs text-neutral-400 dark:text-neutral-500">{item.description}</span>
+                    <span className="flex items-start gap-2">
+                      <item.icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
+                      <span className="min-w-0">
+                        <span className="block">{item.name}</span>
+                        <span className="block text-xs text-neutral-400 dark:text-neutral-500">{item.description}</span>
+                      </span>
+                    </span>
                   </MobilePlainLink>
                 ))}
               </MobileAccordion>
