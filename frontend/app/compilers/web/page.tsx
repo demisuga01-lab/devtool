@@ -29,6 +29,13 @@ type ConsoleEntry = {
   method: "log" | "error" | "warn";
   text: string;
 };
+type TypeScriptRunResult = {
+  stdout: string;
+  stderr: string;
+  time: string;
+  exitCode: string;
+  status: string;
+};
 
 const HTML_STARTER = `<!DOCTYPE html>
 <html lang="en">
@@ -190,6 +197,13 @@ const SINGLE_NAMES: Record<Exclude<Mode, "combined">, string> = {
   typescript: "main.ts",
 };
 
+const SINGLE_ACCEPTS: Record<Exclude<Mode, "combined">, string> = {
+  html: ".html",
+  css: ".css",
+  javascript: ".js",
+  typescript: ".ts",
+};
+
 const MAX_PANEL_FILES = 20;
 const MAX_UPLOAD_FILE_SIZE = 500 * 1024;
 
@@ -256,6 +270,23 @@ const injectIntoTag = (html: string, tag: "head" | "body", snippet: string) => {
   return html;
 };
 
+const prependIntoTag = (html: string, tag: "body", snippet: string) => {
+  const openPattern = new RegExp(`<${tag}[^>]*>`, "i");
+  if (openPattern.test(html)) {
+    return html.replace(openPattern, (match) => `${match}${snippet}`);
+  }
+
+  const headClosePattern = /<\/head>/i;
+  if (headClosePattern.test(html)) {
+    return html.replace(headClosePattern, `</head><body>${snippet}`);
+  }
+
+  return html;
+};
+
+const joinFileContents = (files: FileEntry[]) =>
+  files.length === 1 ? files[0]?.content || "" : files.map((file) => file.content).join("\n");
+
 const buildCombinedPreviewDoc = (htmlFiles: FileEntry[], cssFiles: FileEntry[], jsFiles: FileEntry[]) => {
   const combinedHtml = htmlFiles.map((file) => file.content).join("\n");
   const combinedCss = cssFiles.map((file) => file.content).join("\n");
@@ -272,6 +303,66 @@ const buildCombinedPreviewDoc = (htmlFiles: FileEntry[], cssFiles: FileEntry[], 
   }
 
   return `<!DOCTYPE html><html><head>${styleBlock}</head><body>${combinedHtml}${consoleBlock}${scriptBlock}</body></html>`;
+};
+
+const buildSingleHtmlPreviewDoc = (files: FileEntry[]) => {
+  const mergedHtml = joinFileContents(files);
+  const consoleBlock = `<script>${CONSOLE_CAPTURE_SCRIPT}</script>`;
+
+  if (/<\!doctype/i.test(mergedHtml)) {
+    return prependIntoTag(mergedHtml, "body", consoleBlock);
+  }
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${consoleBlock}${mergedHtml}</body></html>`;
+};
+
+const buildCssPreviewDoc = (files: FileEntry[]) => {
+  const combinedCss = joinFileContents(files);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 32px; font-family: system-ui, sans-serif; color: #111827; background: #ffffff; }
+    main { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; }
+    .preview-card { padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
+    input { min-height: 36px; padding: 0 10px; }
+  </style>
+  <style>${escapeTagContent(combinedCss, "style")}</style>
+</head>
+<body>
+  <main>
+    <h1>Style Preview</h1>
+    <p>This paragraph is here so typography, spacing, and color rules have something natural to affect.</p>
+    <button type="button">Preview Button</button>
+    <div class="card preview-card">This card has padding and a border for layout and component styles.</div>
+    <input type="text" placeholder="Preview input field" />
+    <ul>
+      <li>First item</li>
+      <li>Second item</li>
+      <li>Third item</li>
+    </ul>
+    <a href="#">Example link</a>
+  </main>
+</body>
+</html>`;
+};
+
+const buildSingleJsPreviewDoc = (files: FileEntry[]) => {
+  const combinedJs = joinFileContents(files);
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body><script>${CONSOLE_CAPTURE_SCRIPT}</script><script>${escapeTagContent(combinedJs, "script")}</script></body></html>`;
+};
+
+const readRunField = (data: Record<string, unknown>, keys: string[]) => {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "string" && value.length > 0) return value;
+    if (typeof value === "number") return String(value);
+  }
+  return "";
 };
 
 export default function WebCompilerPage() {
@@ -295,6 +386,9 @@ export default function WebCompilerPage() {
   const [singleFiles, setSingleFiles] = useState<FileEntry[]>([{ name: "index.html", content: HTML_STARTER }]);
   const [activeSingle, setActiveSingle] = useState(0);
   const [singleOutput, setSingleOutput] = useState("");
+  const [singlePreviewKey, setSinglePreviewKey] = useState(0);
+  const [isSingleRunning, setIsSingleRunning] = useState(false);
+  const [typeScriptRunResult, setTypeScriptRunResult] = useState<TypeScriptRunResult | null>(null);
   const [splitPos, setSplitPos] = useState(58);
   const [isDraggingSplit, setIsDraggingSplit] = useState(false);
 
@@ -323,6 +417,8 @@ export default function WebCompilerPage() {
     setSingleFiles([{ name: SINGLE_NAMES[mode], content: SINGLE_STARTERS[mode] }]);
     setActiveSingle(0);
     setSingleOutput("");
+    setConsoleEntries([]);
+    setTypeScriptRunResult(null);
   }, [mode]);
 
   useEffect(() => {
@@ -365,18 +461,6 @@ export default function WebCompilerPage() {
     setPreviewSrc(finalDoc);
     setPreviewReloadKey((value) => value + 1);
   }, [htmlFiles, cssFiles, jsFiles]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (mode !== "combined") return;
-      if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
-      event.preventDefault();
-      runCombinedPreview();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [mode, runCombinedPreview]);
 
   const IconBtn = ({
     onClick,
@@ -606,14 +690,139 @@ export default function WebCompilerPage() {
     }
   };
 
-  const uploadToSingle = async (file: File | null) => {
-    if (!file) return;
-    const content = await readFile(file);
+  const runSingleMode = React.useCallback(async () => {
+    if (mode === "combined") return;
+    if (mode === "typescript" && isSingleRunning) return;
+
+    setConsoleEntries([]);
+    setTypeScriptRunResult(null);
+
+    if (mode === "html") {
+      const doc = buildSingleHtmlPreviewDoc(singleFiles);
+      setSingleOutput(doc);
+      setSinglePreviewKey((value) => value + 1);
+      return;
+    }
+
+    if (mode === "css") {
+      const doc = buildCssPreviewDoc(singleFiles);
+      setSingleOutput(doc);
+      setSinglePreviewKey((value) => value + 1);
+      return;
+    }
+
+    if (mode === "javascript") {
+      const doc = buildSingleJsPreviewDoc(singleFiles);
+      setSingleOutput(doc);
+      setSinglePreviewKey((value) => value + 1);
+      return;
+    }
+
+    setIsSingleRunning(true);
+    setSingleOutput("");
+    setSinglePreviewKey((value) => value + 1);
+
+    try {
+      const response = await fetch("/api/tools/run-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: "typescript",
+          version: "3.7.4",
+          code: joinFileContents(singleFiles),
+          stdin: "",
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      const stdout = readRunField(data, ["stdout", "output"]);
+      const stderr = readRunField(data, ["stderr", "compile_output", "compile_stderr", "message"]);
+      const fallbackStderr = response.ok ? "" : `Run failed with status ${response.status}`;
+      const time = readRunField(data, ["wall_time", "cpu_time"]) || "-";
+      const exitCodeValue = data.exit_code;
+      const exitCode =
+        typeof exitCodeValue === "number" || typeof exitCodeValue === "string"
+          ? String(exitCodeValue)
+          : stderr || fallbackStderr
+          ? "1"
+          : "0";
+      const status = readRunField(data, ["status_description", "status"]) || (response.ok ? "completed" : "error");
+      const finalStderr = stderr || fallbackStderr;
+
+      setTypeScriptRunResult({
+        stdout,
+        stderr: finalStderr,
+        time,
+        exitCode,
+        status,
+      });
+      setSingleOutput([stdout, finalStderr].filter(Boolean).join("\n"));
+    } catch {
+      const result = {
+        stdout: "",
+        stderr: "Failed to connect to execution service.",
+        time: "-",
+        exitCode: "1",
+        status: "Network Error",
+      };
+      setTypeScriptRunResult(result);
+      setSingleOutput(result.stderr);
+    } finally {
+      setIsSingleRunning(false);
+    }
+  }, [isSingleRunning, mode, singleFiles]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
+      event.preventDefault();
+      if (mode === "combined") {
+        runCombinedPreview();
+      } else {
+        void runSingleMode();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mode, runCombinedPreview, runSingleMode]);
+
+  const uploadToSingle = async (files: FileList | null) => {
+    const selectedFiles = Array.from(files ?? []);
+    if (selectedFiles.length === 0) return;
+
+    const acceptedFiles: FileEntry[] = [];
+    let skippedLarge = 0;
+
+    for (const file of selectedFiles) {
+      if (file.size > MAX_UPLOAD_FILE_SIZE) {
+        skippedLarge += 1;
+        continue;
+      }
+
+      try {
+        const content = await readFile(file);
+        acceptedFiles.push({ name: file.name, content });
+      } catch {
+        continue;
+      }
+    }
+
+    const remainingSlots = MAX_PANEL_FILES - singleFiles.length;
+    const skippedCount = Math.max(0, acceptedFiles.length - Math.max(0, remainingSlots));
+
     setSingleFiles((prev) => {
-      const next = [...prev];
-      next[activeSingle] = { name: file.name, content };
+      const remaining = MAX_PANEL_FILES - prev.length;
+      if (remaining <= 0) return prev;
+      const additions = acceptedFiles.slice(0, remaining);
+      if (additions.length === 0) return prev;
+      const next = [...prev, ...additions];
+      setActiveSingle(prev.length);
       return next;
     });
+
+    if (skippedLarge > 0 || skippedCount > 0) {
+      window.alert("Some files were skipped. Single modes support up to 20 files, and files larger than 500KB are ignored.");
+    }
   };
 
   const handleSingleContent = (content: string) => {
@@ -1143,10 +1352,11 @@ export default function WebCompilerPage() {
               <input
                 ref={uploadSingleRef}
                 type="file"
-                accept={singleMode === "html" ? ".html,.htm" : singleMode === "css" ? ".css" : singleMode === "javascript" ? ".js,.mjs" : ".ts,.tsx"}
+                accept={SINGLE_ACCEPTS[singleMode]}
+                multiple
                 style={{ display: "none" }}
                 onChange={async (e) => {
-                  await uploadToSingle(e.target.files?.[0] || null);
+                  await uploadToSingle(e.target.files);
                   e.target.value = "";
                 }}
               />
@@ -1259,6 +1469,8 @@ export default function WebCompilerPage() {
 
             <button
               type="button"
+              disabled={isSingleRunning && singleMode === "typescript"}
+              onClick={() => void runSingleMode()}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -1275,7 +1487,7 @@ export default function WebCompilerPage() {
               }}
             >
               <Play size={12} />
-              Run
+              {isSingleRunning && singleMode === "typescript" ? "Running..." : "Run"}
               <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 4 }}>Ctrl+Enter</span>
             </button>
 
@@ -1291,6 +1503,7 @@ export default function WebCompilerPage() {
           <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", position: "relative" }}>
             {singleMode === "html" || singleMode === "css" ? (
               <iframe
+                key={singlePreviewKey}
                 title={`${singleMode}-preview`}
                 sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
                 srcDoc={singlePreviewDoc}
@@ -1309,12 +1522,17 @@ export default function WebCompilerPage() {
                   overflowY: "auto",
                 }}
               >
-                {singleOutput ? (
-                  singleOutput.split("\n").map((line, index) => (
-                    <div key={index} style={{ whiteSpace: "pre-wrap" }}>
-                      {line}
-                    </div>
-                  ))
+                {singleOutput && (
+                  <iframe
+                    key={singlePreviewKey}
+                    title="javascript-runner"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+                    srcDoc={singleOutput}
+                    style={{ display: "none" }}
+                  />
+                )}
+                {consoleEntries.length > 0 ? (
+                  consoleEntries.map((entry, index) => renderConsoleLine(entry, index))
                 ) : (
                   <div
                     style={{
@@ -1353,7 +1571,7 @@ export default function WebCompilerPage() {
                     borderBottom: "1px solid var(--border)",
                   }}
                 >
-                  Transpiled JavaScript
+                  Execution Result
                 </div>
                 <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
                   <pre
@@ -1371,10 +1589,28 @@ export default function WebCompilerPage() {
                       whiteSpace: "pre-wrap",
                     }}
                   >
-                    {singleOutput || (
+                    {typeScriptRunResult ? (
+                      <>
+                        {typeScriptRunResult.stdout && (
+                          <span style={{ color: "#d4d4d4" }}>{typeScriptRunResult.stdout}</span>
+                        )}
+                        {typeScriptRunResult.stdout && typeScriptRunResult.stderr && "\n"}
+                        {typeScriptRunResult.stderr && (
+                          <span style={{ color: "#f48771" }}>{typeScriptRunResult.stderr}</span>
+                        )}
+                        {!typeScriptRunResult.stdout && !typeScriptRunResult.stderr && (
+                          <span style={{ color: "var(--muted-foreground)" }}>No output.</span>
+                        )}
+                        <span style={{ color: "var(--muted-foreground)" }}>
+                          {`\n\nTime: ${typeScriptRunResult.time}\nExit code: ${typeScriptRunResult.exitCode}\nStatus: ${typeScriptRunResult.status}`}
+                        </span>
+                      </>
+                    ) : isSingleRunning ? (
+                      <span style={{ color: "var(--muted-foreground)" }}>Running TypeScript...</span>
+                    ) : (
                       <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, color: "var(--muted-foreground)" }}>
                         <FileCode size={22} />
-                        <span>Click Run to transpile TypeScript</span>
+                        <span>Click Run to execute TypeScript</span>
                       </span>
                     )}
                   </pre>
@@ -1389,14 +1625,32 @@ export default function WebCompilerPage() {
                       overflowY: "auto",
                     }}
                   >
-                    {singleOutput ? (
-                      singleOutput.split("\n").map((line, index) => (
-                        <div key={index} style={{ whiteSpace: "pre-wrap" }}>
-                          {line}
+                    {typeScriptRunResult ? (
+                      <>
+                        <div style={{ whiteSpace: "pre-wrap", color: "var(--muted-foreground)" }}>
+                          Time: {typeScriptRunResult.time}
                         </div>
-                      ))
+                        <div style={{ whiteSpace: "pre-wrap", color: "var(--muted-foreground)" }}>
+                          Exit code: {typeScriptRunResult.exitCode}
+                        </div>
+                        <div style={{ whiteSpace: "pre-wrap", color: "var(--muted-foreground)" }}>
+                          Status: {typeScriptRunResult.status}
+                        </div>
+                        {typeScriptRunResult.stdout && (
+                          <div style={{ whiteSpace: "pre-wrap", marginTop: 10, color: "#d4d4d4" }}>
+                            {typeScriptRunResult.stdout}
+                          </div>
+                        )}
+                        {typeScriptRunResult.stderr && (
+                          <div style={{ whiteSpace: "pre-wrap", marginTop: 10, color: "#f48771" }}>
+                            {typeScriptRunResult.stderr}
+                          </div>
+                        )}
+                      </>
+                    ) : isSingleRunning ? (
+                      <div style={{ color: "var(--muted-foreground)" }}>Running TypeScript...</div>
                     ) : (
-                      <div style={{ color: "var(--muted-foreground)" }}>Console output will appear here</div>
+                      <div style={{ color: "var(--muted-foreground)" }}>Execution output will appear here</div>
                     )}
                   </div>
                 </div>
@@ -1502,7 +1756,7 @@ export default function WebCompilerPage() {
           <iframe
             title="preview-fullscreen"
             sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
-            key={mode === "combined" ? previewReloadKey : "fullscreen-preview"}
+            key={mode === "combined" ? previewReloadKey : singlePreviewKey}
             srcDoc={mode === "combined" ? combinedPreviewDoc : singlePreviewDoc}
             style={{ width: "100vw", height: "100vh", border: "none" }}
           />
