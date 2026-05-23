@@ -232,7 +232,7 @@ export function Header() {
 
             {tools.open && (
               <div ref={toolsMenuRef} className="absolute left-0 top-full z-[110] w-[480px] max-w-[calc(100vw-24px)] pt-3" onMouseEnter={tools.show} onMouseLeave={tools.hide}>
-                <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_48px_rgba(0,0,0,0.15)] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-[0_20px_48px_rgba(0,0,0,0.4)]" style={{ animation: "navDropdownIn 180ms ease-out both" }}>
+                <div className="max-h-[calc(100vh-80px)] overflow-y-auto rounded-2xl border border-zinc-200 bg-white px-4 pb-4 pt-4 shadow-[0_20px_48px_rgba(0,0,0,0.15)] [scrollbar-color:rgb(var(--border))_rgb(var(--background))] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-background [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-[0_20px_48px_rgba(0,0,0,0.4)]" style={{ animation: "navDropdownIn 180ms ease-out both" }}>
                   <label className="relative block">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <input
@@ -259,7 +259,7 @@ export function Header() {
                     ))}
                   </div>
                   <p className="mb-2 mt-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-500">Workspace tools</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {workspaceCards.map((tool) => {
                       const ToolIcon = tool.icon;
                       return (

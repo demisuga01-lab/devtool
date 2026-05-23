@@ -558,6 +558,8 @@ class MongoDBRequest(BaseModel):
 
 JUDGE0_URL = "http://localhost:2358/submissions"
 JUDGE0_LANGUAGES_URL = "http://localhost:2358/languages"
+_JUDGE0_LANGUAGE_CACHE: tuple[float, dict[str, int]] | None = None
+_JUDGE0_LANGUAGE_CACHE_SECONDS = 300
 
 
 # Judge0 language ID mapping
@@ -589,7 +591,7 @@ JUDGE0_LANGUAGE_MAP: dict[str, int] = {
     "swift": 83,
     "r": 80,
     "rscript": 80,
-    "julia": 0,  # not available in judge0 v1.13.1
+    "julia": 0,
     "octave": 66,
     "sqlite3": 82,
     "sql": 82,
@@ -622,6 +624,68 @@ JUDGE0_LANGUAGE_MAP: dict[str, int] = {
     "visualbasic": 84,
 }
 
+JUDGE0_DYNAMIC_ALIASES: dict[str, tuple[str, ...]] = {
+    "dart": ("dart",),
+    "julia": ("julia",),
+}
+
+
+def _normalize_judge0_language_name(name: str) -> str:
+    return _re.sub(r"[^a-z0-9+#]+", " ", name.lower()).strip()
+
+
+async def _fetch_judge0_language_ids() -> dict[str, int]:
+    global _JUDGE0_LANGUAGE_CACHE
+    now = time.time()
+    if _JUDGE0_LANGUAGE_CACHE and now - _JUDGE0_LANGUAGE_CACHE[0] < _JUDGE0_LANGUAGE_CACHE_SECONDS:
+        return _JUDGE0_LANGUAGE_CACHE[1]
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(JUDGE0_LANGUAGES_URL)
+            if not resp.is_success:
+                return {}
+            languages = resp.json()
+    except Exception:
+        return {}
+
+    language_ids: dict[str, int] = {}
+    if isinstance(languages, list):
+        for item in languages:
+            if not isinstance(item, dict):
+                continue
+            language_id = item.get("id")
+            name = item.get("name")
+            if not isinstance(language_id, int) or not isinstance(name, str):
+                continue
+            normalized = _normalize_judge0_language_name(name)
+            base_name = normalized.split("(", 1)[0].strip()
+            first_word = base_name.split(" ", 1)[0] if base_name else ""
+            for alias in (base_name, first_word):
+                if alias:
+                    language_ids.setdefault(alias, language_id)
+            if "sqlite" in normalized:
+                language_ids.setdefault("sqlite3", language_id)
+                language_ids.setdefault("sql", language_id)
+
+    _JUDGE0_LANGUAGE_CACHE = (now, language_ids)
+    return language_ids
+
+
+async def _resolve_judge0_language_id(language: str) -> int | None:
+    candidates = [language, language.split()[0], *JUDGE0_DYNAMIC_ALIASES.get(language, ())]
+    for candidate in candidates:
+        language_id = JUDGE0_LANGUAGE_MAP.get(candidate)
+        if language_id:
+            return language_id
+
+    runtime_language_ids = await _fetch_judge0_language_ids()
+    for candidate in candidates:
+        language_id = runtime_language_ids.get(candidate)
+        if language_id:
+            return language_id
+    return None
+
 
 @router.post("/run-code")
 async def run_code(payload: RunCodeRequest) -> dict:
@@ -637,12 +701,8 @@ async def run_code(payload: RunCodeRequest) -> dict:
     if len(stdin) > 10000:
         raise HTTPException(status_code=400, detail="Stdin too large. Maximum 10,000 characters.")
 
-    # Get language ID from map
-    language_id = JUDGE0_LANGUAGE_MAP.get(language)
+    language_id = await _resolve_judge0_language_id(language)
     if language_id is None:
-        # Try to match by version string for Piston compatibility
-        language_id = JUDGE0_LANGUAGE_MAP.get(language.split()[0])
-    if language_id is None or language_id == 0:
         raise HTTPException(status_code=400, detail=f"Language '{language}' is not available in this environment.")
 
     request_body: dict = {

@@ -7,7 +7,7 @@ import { RefreshCw } from "lucide-react";
 import { TabBar, ToolShell } from "@/components/tool-ui";
 import { API_BASE } from "@/lib/api";
 
-type Mode = "sqlite" | "mysql" | "postgresql" | "mongodb";
+type Mode = "sqlite" | "julia" | "r" | "mysql" | "postgresql" | "mongodb";
 type OutputTab = "output" | "errors";
 
 type RunResult = {
@@ -47,6 +47,37 @@ FROM employees
 GROUP BY department
 ORDER BY avg_salary DESC;`;
 
+const juliaCode = `# Julia data analysis
+values = [42, 37, 58, 63, 49, 71, 55]
+
+mean_value = sum(values) / length(values)
+sorted_values = sort(values)
+
+println("count | mean | min | max")
+println("$(length(values)) | $(round(mean_value, digits=2)) | $(minimum(values)) | $(maximum(values))")
+
+println()
+println("value | centered")
+for value in sorted_values
+    println("$(value) | $(round(value - mean_value, digits=2))")
+end`;
+
+const rCode = `# R data summary
+values <- c(42, 37, 58, 63, 49, 71, 55)
+
+summary <- data.frame(
+  count = length(values),
+  mean = round(mean(values), 2),
+  min = min(values),
+  max = max(values)
+)
+
+print(summary)
+print(data.frame(
+  value = sort(values),
+  centered = round(sort(values) - mean(values), 2)
+))`;
+
 const mysqlCode = `-- MySQL Query
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -83,6 +114,8 @@ print("Total users: " + db.users.countDocuments({}));`;
 
 const defaultCodeByMode: Record<Mode, string> = {
   sqlite: sqliteCode,
+  julia: juliaCode,
+  r: rCode,
   mysql: mysqlCode,
   postgresql: postgresqlCode,
   mongodb: mongodbCode,
@@ -108,6 +141,24 @@ const modeMeta: Record<
     activeClass: "bg-emerald-600 text-white",
     runButtonClass: "bg-emerald-600 hover:bg-emerald-700",
     isDatabase: true,
+  },
+  julia: {
+    label: "Julia",
+    editorLabel: "Julia Script",
+    runLabel: "Run Julia",
+    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><circle cx="16" cy="32" r="8" fill="#CB3C33"/><circle cx="32" cy="32" r="8" fill="#389826"/><circle cx="24" cy="18" r="8" fill="#9558B2"/></svg>,
+    activeClass: "bg-purple-600 text-white",
+    runButtonClass: "bg-purple-600 hover:bg-purple-700",
+    isDatabase: false,
+  },
+  r: {
+    label: "R",
+    editorLabel: "R Script",
+    runLabel: "Run R",
+    icon: <svg viewBox="0 0 48 48" className="h-4 w-4"><rect width="48" height="48" rx="4" fill="#276DC3"/><path d="M14 12h12c4 0 8 2 8 7 0 3.5-2 6-5 7l6 10h-5l-5.5-9.5H19V36h-5V12zm5 5v9.5h6c2.5 0 4-1.5 4-4.5 0-3-1.5-5-4-5h-6z" fill="white"/><circle cx="36" cy="34" r="5" fill="#8CC4E5"/></svg>,
+    activeClass: "bg-blue-600 text-white",
+    runButtonClass: "bg-blue-600 hover:bg-blue-700",
+    isDatabase: false,
   },
   mysql: {
     label: "MySQL",
@@ -352,7 +403,7 @@ function DataRunnerPageContent() {
   const currentMode = modeMeta[mode];
 
   useEffect(() => {
-    if (langParam === "sqlite" || langParam === "mysql" || langParam === "postgresql" || langParam === "mongodb") {
+    if (langParam === "sqlite" || langParam === "julia" || langParam === "r" || langParam === "mysql" || langParam === "postgresql" || langParam === "mongodb") {
       setMode(langParam);
     }
   }, [langParam]);
@@ -383,7 +434,27 @@ function DataRunnerPageContent() {
                 stdin: "",
               },
             }
-          : mode === "mysql"
+          : mode === "julia"
+            ? {
+                url: `${API_BASE}/tools/run-code`,
+                body: {
+                  language: "julia",
+                  version: "latest",
+                  code,
+                  stdin: "",
+                },
+              }
+            : mode === "r"
+              ? {
+                  url: `${API_BASE}/tools/run-code`,
+                  body: {
+                    language: "rscript",
+                    version: "4.x",
+                    code,
+                    stdin: "",
+                  },
+                }
+              : mode === "mysql"
               ? {
                   url: `${API_BASE}/tools/run-mysql`,
                   body: {
@@ -450,11 +521,11 @@ function DataRunnerPageContent() {
 
         <header className="mt-6">
           <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">Data Runner</h1>
-          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Run SQLite, MySQL, PostgreSQL, and MongoDB workflows for data analysis.</p>
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Run SQLite queries, Julia scripts, R summaries, and database workflows for data analysis.</p>
         </header>
 
         <TabBar
-          tabs={(["sqlite", "mysql", "postgresql", "mongodb"] as const).map((value) => ({ value, label: modeMeta[value].label, icon: modeMeta[value].icon }))}
+          tabs={(["sqlite", "julia", "r", "mysql", "postgresql", "mongodb"] as const).map((value) => ({ value, label: modeMeta[value].label, icon: modeMeta[value].icon }))}
           active={mode}
           onChange={(value) => setMode(value as Mode)}
           className="mt-6 border-b border-zinc-200 pb-3 dark:border-zinc-800"

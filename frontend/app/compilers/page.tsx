@@ -111,7 +111,7 @@ const languages: Language[] = [
   { id: "commonlisp", name: "Common Lisp", href: "/tools/other-runner?lang=commonlisp", categories: ["functional"], icon: icons.commonlisp },
   { id: "octave", name: "Octave", href: "/tools/other-runner?lang=octave", categories: ["data"], icon: icons.octave },
   { id: "r", name: "R", href: "/tools/data-runner?lang=r", categories: ["data"], icon: icons.r },
-  { id: "julia", name: "Julia", categories: ["data", "systems"], icon: icons.julia, unavailable: true },
+  { id: "julia", name: "Julia", href: "/tools/data-runner?lang=julia", categories: ["data", "systems"], icon: icons.julia },
   { id: "sqlite", name: "SQLite", href: "/tools/data-runner?lang=sqlite", categories: ["data", "database"], icon: icons.sqlite },
   { id: "cobol", name: "COBOL", href: "/tools/other-runner?lang=cobol", categories: ["data"], icon: icons.cobol },
   { id: "mysql", name: "MySQL", href: "/tools/database-runner?lang=mysql", categories: ["database"], icon: icons.mysql },
