@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Box, Cpu, GitBranch, GitCompare, KeyRound, Server, Settings } from "lucide-react";
+import { Award, Box, Cpu, Download, GitBranch, GitCompare, KeyRound, Server, Settings } from "lucide-react";
 import { CopyButton } from "@/components/tool-ui";
 import { NewToolPage } from "../_components/new-tool-pages";
 import {
@@ -15,7 +15,7 @@ import {
   type WorkspaceTab,
 } from "../_components/workspace-ui";
 
-type Tab = "yaml" | "docker" | "nginx" | "systemd" | "env" | "gitignore";
+type Tab = "yaml" | "docker" | "nginx" | "systemd" | "env" | "gitignore" | "badges";
 type EnvRow = { id: string; key: string; value: string; hidden: boolean };
 type ExportMode = "env" | "json" | "shell" | "docker" | "k8s";
 
@@ -26,6 +26,7 @@ const tabs: WorkspaceTab<Tab>[] = [
   { id: "systemd", label: "Systemd", icon: Cpu },
   { id: "env", label: "Env Manager", icon: KeyRound },
   { id: "gitignore", label: "Gitignore", icon: GitBranch },
+  { id: "badges", label: "Badges", icon: Award },
 ];
 
 const gitignoreTemplates: Record<string, string> = {
@@ -76,6 +77,7 @@ export default function ConfigWorkspacePage() {
       {active === "systemd" && <NewToolPage slug="systemd-unit-generator" embedded />}
       {active === "env" && <EnvManagerTab />}
       {active === "gitignore" && <GitignoreTab />}
+      {active === "badges" && <StatusBadgesTab />}
     </WorkspaceShell>
   );
 }
@@ -213,6 +215,107 @@ function GitignoreTab() {
   );
 }
 
+function StatusBadgesTab() {
+  const [label, setLabel] = useState("build");
+  const [status, setStatus] = useState("passing");
+  const [color, setColor] = useState("green");
+  const [customColor, setCustomColor] = useState("#10b981");
+  const [style, setStyle] = useState("flat");
+  const actualColor = color === "custom" ? customColor : color;
+  const svg = badgeSvg(label, status, actualColor, style);
+  const svgData = svgDataUri(svg);
+  const shields = `https://img.shields.io/badge/${encodeURIComponent(label)}-${encodeURIComponent(status)}-${encodeURIComponent(actualColor.replace("#", ""))}?style=${style}`;
+  const markdown = `[![${label}](${shields})](https://devtools.wellfriend.online/status)`;
+  const html = `<img src="${shields}" alt="${label}: ${status}">`;
+  const presets = [
+    ["build", "passing", "green"],
+    ["build", "failing", "red"],
+    ["uptime", "99.9%", "green"],
+    ["version", "1.0", "blue"],
+    ["license", "MIT", "gray"],
+  ];
+
+  return (
+    <div className="space-y-5">
+      <WorkspaceCard>
+        <div className="grid gap-4 lg:grid-cols-5">
+          <div>
+            <FieldLabel>Label</FieldLabel>
+            <input value={label} onChange={(event) => setLabel(event.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <FieldLabel>Status</FieldLabel>
+            <input value={status} onChange={(event) => setStatus(event.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <FieldLabel>Color</FieldLabel>
+            <select value={color} onChange={(event) => setColor(event.target.value)} className={inputClass}>
+              {["green", "yellow", "red", "blue", "gray", "orange", "custom"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </div>
+          <div>
+            <FieldLabel>Style</FieldLabel>
+            <select value={style} onChange={(event) => setStyle(event.target.value)} className={inputClass}>
+              {["flat", "flat-square", "for-the-badge"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </div>
+          <div>
+            <FieldLabel>Custom hex</FieldLabel>
+            <input type="color" value={customColor} onChange={(event) => setCustomColor(event.target.value)} className={`${inputClass} h-11 p-1`} />
+          </div>
+        </div>
+      </WorkspaceCard>
+      <div className="flex flex-wrap gap-2">
+        {presets.map(([presetLabel, presetStatus, presetColor]) => (
+          <SecondaryButton key={`${presetLabel}-${presetStatus}`} onClick={() => { setLabel(presetLabel); setStatus(presetStatus); setColor(presetColor); }}>
+            {presetLabel} {presetStatus}
+          </SecondaryButton>
+        ))}
+      </div>
+      <WorkspaceCard className="text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={svgData} alt={`${label}: ${status}`} className="mx-auto h-auto max-w-full" />
+      </WorkspaceCard>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <BadgeOutput label="SVG code" value={svg} />
+        <BadgeOutput label="Markdown" value={markdown} />
+        <BadgeOutput label="HTML img tag" value={html} />
+        <BadgeOutput label="Shields URL" value={shields} />
+      </div>
+      <SecondaryButton onClick={() => downloadText(`${label}-${status}.svg`, svg)}>
+        <Download className="h-4 w-4" />
+        Download SVG
+      </SecondaryButton>
+    </div>
+  );
+}
+
+function BadgeOutput({ label, value }: { label: string; value: string }) {
+  return (
+    <WorkspaceCard>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <FieldLabel>{label}</FieldLabel>
+        <CopyButton value={value} label="Copy" />
+      </div>
+      <textarea value={value} readOnly className={`${textareaClass} min-h-[140px]`} />
+    </WorkspaceCard>
+  );
+}
+
+function badgeSvg(label: string, status: string, color: string, style: string) {
+  const colors: Record<string, string> = { green: "#10b981", yellow: "#f59e0b", red: "#ef4444", blue: "#3b82f6", gray: "#71717a", orange: "#f97316" };
+  const right = colors[color] ?? color;
+  const labelWidth = Math.max(60, label.length * 9 + 20);
+  const statusWidth = Math.max(70, status.length * 9 + 20);
+  const height = style === "for-the-badge" ? 28 : 22;
+  const radius = style === "flat-square" ? 0 : 3;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${labelWidth + statusWidth}" height="${height}" role="img" aria-label="${escapeXml(label)}: ${escapeXml(status)}"><rect width="${labelWidth}" height="${height}" fill="#555" rx="${radius}"/><rect x="${labelWidth}" width="${statusWidth}" height="${height}" fill="${right}" rx="${radius}"/><text x="${labelWidth / 2}" y="${height / 2 + 4}" text-anchor="middle" fill="#fff" font-family="Verdana,sans-serif" font-size="11">${escapeXml(label)}</text><text x="${labelWidth + statusWidth / 2}" y="${height / 2 + 4}" text-anchor="middle" fill="#fff" font-family="Verdana,sans-serif" font-size="11">${escapeXml(status)}</text></svg>`;
+}
+
+function svgDataUri(svg: string) {
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+}
+
 function exportRows(rows: EnvRow[], mode: ExportMode) {
   const clean = rows.map((row) => [row.key.trim(), row.value] as const).filter(([key]) => key);
   if (mode === "json") return JSON.stringify(Object.fromEntries(clean), null, 2);
@@ -224,6 +327,10 @@ function exportRows(rows: EnvRow[], mode: ExportMode) {
 
 function quoteEnv(value: string) {
   return /[\s#"'\\]/.test(value) ? JSON.stringify(value) : value;
+}
+
+function escapeXml(value: string) {
+  return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char);
 }
 
 function toBase64(value: string) {

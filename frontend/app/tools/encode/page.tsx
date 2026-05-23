@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, Binary, Code2, Cpu, Database, FileCode, Hash, Link, Radio, Type } from "lucide-react";
+import Papa from "papaparse";
+import { ArrowLeftRight, Binary, Code2, Cpu, Database, File as FileIcon, FileCode, Hash, Link, Radio, Table, Type } from "lucide-react";
 import { CopyButton } from "@/components/tool-ui";
 import {
   FieldLabel,
@@ -15,7 +16,7 @@ import {
   type WorkspaceTab,
 } from "../_components/workspace-ui";
 
-type Tab = "base64" | "url" | "html" | "javascript" | "sql" | "unicode" | "hex" | "binary" | "morse";
+type Tab = "base64" | "url" | "html" | "javascript" | "sql" | "unicode" | "hex" | "binary" | "morse" | "csv" | "file";
 
 const tabs: WorkspaceTab<Tab>[] = [
   { id: "base64", label: "Base64", icon: Binary },
@@ -27,6 +28,8 @@ const tabs: WorkspaceTab<Tab>[] = [
   { id: "hex", label: "Hex", icon: Hash },
   { id: "binary", label: "Binary", icon: Cpu },
   { id: "morse", label: "Morse", icon: Radio },
+  { id: "csv", label: "CSV", icon: Table },
+  { id: "file", label: "File Encoding", icon: FileIcon },
 ];
 
 export default function EncodeWorkspacePage() {
@@ -53,7 +56,236 @@ export default function EncodeWorkspacePage() {
       {active === "hex" && <HexTab />}
       {active === "binary" && <BinaryTab />}
       {active === "morse" && <MorseTab />}
+      {active === "csv" && <CsvTab />}
+      {active === "file" && <FileEncodingTab />}
     </WorkspaceShell>
+  );
+}
+
+function CsvTab() {
+  const [mode, setMode] = useState<"csv-json" | "json-csv">("csv-json");
+  const [input, setInput] = useState("name,role\nAda Lovelace,Mathematician\nGrace Hopper,Computer scientist");
+  const [output, setOutput] = useState("");
+  const [delimiter, setDelimiter] = useState(",");
+  const [headers, setHeaders] = useState(true);
+  const [pretty, setPretty] = useState(true);
+  const [error, setError] = useState("");
+  const [warnings, setWarnings] = useState<Papa.ParseError[]>([]);
+
+  function convert() {
+    if (!input.trim()) {
+      setError("Paste CSV or JSON before converting.");
+      setOutput("");
+      return;
+    }
+    setError("");
+    setWarnings([]);
+    try {
+      if (mode === "csv-json") {
+        const parsed = Papa.parse<Record<string, unknown> | string[]>(input.trim(), {
+          header: headers,
+          delimiter,
+          skipEmptyLines: true,
+        });
+        setWarnings(parsed.errors);
+        setOutput(JSON.stringify(parsed.data, null, pretty ? 2 : 0));
+        return;
+      }
+      const data = JSON.parse(input) as unknown[] | Record<string, unknown>;
+      const rows = Array.isArray(data) ? data : [data];
+      setOutput(Papa.unparse(rows, { delimiter, header: headers }));
+    } catch (err) {
+      setOutput("");
+      setError(err instanceof Error ? err.message : "Could not convert the input.");
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      <WorkspaceCard>
+        <div className="flex flex-wrap items-end gap-3">
+          <Segmented value={mode} onChange={setMode} options={[["csv-json", "CSV to JSON"], ["json-csv", "JSON to CSV"]]} />
+          <div>
+            <FieldLabel>Delimiter</FieldLabel>
+            <select value={delimiter} onChange={(event) => setDelimiter(event.target.value)} className={inputClass}>
+              <option value=",">Comma</option>
+              <option value="\t">Tab</option>
+              <option value=";">Semicolon</option>
+              <option value="|">Pipe</option>
+            </select>
+          </div>
+          <Checkbox checked={headers} onChange={setHeaders} label="Include headers" />
+          <Checkbox checked={pretty} onChange={setPretty} label="Pretty print JSON" />
+          <PrimaryButton onClick={convert}>Convert</PrimaryButton>
+        </div>
+      </WorkspaceCard>
+      <SplitTextareas
+        inputLabel={mode === "csv-json" ? "CSV input" : "JSON input"}
+        outputLabel={mode === "csv-json" ? "JSON output" : "CSV output"}
+        input={input}
+        setInput={setInput}
+        output={output}
+        error={error}
+        minHeight="min-h-[350px]"
+      />
+      {warnings.length > 0 && (
+        <WorkspaceCard className="border-amber-500/50 text-sm text-amber-700 dark:text-amber-300">
+          Parsed with {warnings.length} warning(s): {warnings.slice(0, 3).map((warning) => warning.message).join("; ")}
+        </WorkspaceCard>
+      )}
+      {output && <p className="text-sm text-muted-foreground">Output size: {formatBytes(new TextEncoder().encode(output).length)}</p>}
+    </div>
+  );
+}
+
+function FileEncodingTab() {
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
+  const [fileName, setFileName] = useState("converted.txt");
+  const [sourceEncoding, setSourceEncoding] = useState("utf-8");
+  const [targetEncoding, setTargetEncoding] = useState("utf-8");
+  const [fileInfo, setFileInfo] = useState<{ bytes: number; detected: string; bom: string; confidence: number } | null>(null);
+  const [error, setError] = useState("");
+
+  async function loadFile(file: File) {
+    try {
+      const buffer = await file.arrayBuffer();
+      const info = inspectBuffer(buffer);
+      const decoder = new TextDecoder(sourceEncoding);
+      setInput(decoder.decode(buffer));
+      setFileInfo({ bytes: buffer.byteLength, ...info });
+      setFileName(file.name.replace(/(\.[^.]+)?$/, `-${targetEncoding}$1`) || "converted.txt");
+      setOutput("");
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not decode this file.");
+    }
+  }
+
+  function convert() {
+    if (!input) {
+      setError("Upload a text file or paste text before converting.");
+      return;
+    }
+    setOutput(input);
+    setError("");
+  }
+
+  function download() {
+    downloadBytes(fileName || "converted.txt", encodeText(input, targetEncoding));
+  }
+
+  return (
+    <div className="space-y-5">
+      <WorkspaceCard className={`border-dashed ${error && !input ? "border-red-500" : ""}`}>
+        <div
+          className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            const file = event.dataTransfer.files.item(0);
+            if (file) void loadFile(file);
+          }}
+        >
+          <div>
+            <p className="text-sm font-semibold text-foreground">Upload a text file</p>
+            <p className="text-xs text-muted-foreground">Drag and drop or choose a file to inspect and convert locally.</p>
+          </div>
+          <input
+            type="file"
+            accept=".txt,.csv,.xml,.json,.html,.js,.css,.md,.log"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void loadFile(file);
+            }}
+            className="text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-sm dark:file:bg-zinc-800 dark:file:text-zinc-100"
+          />
+        </div>
+      </WorkspaceCard>
+      <div className="grid gap-3 md:grid-cols-4">
+        <Metric label="Detected encoding" value={fileInfo?.detected || "manual text / UTF-8"} />
+        <Metric label="Confidence" value={fileInfo ? `${fileInfo.confidence}%` : "estimated"} />
+        <Metric label="BOM" value={fileInfo?.bom || (input.charCodeAt(0) === 0xfeff ? "present" : "absent")} />
+        <Metric label="Size / lines" value={`${formatBytes(fileInfo?.bytes ?? new TextEncoder().encode(input).length)} / ${lineEnding(input)}`} />
+      </div>
+      <WorkspaceCard>
+        <div className="flex flex-wrap items-end gap-3">
+          <div>
+            <FieldLabel>Source encoding</FieldLabel>
+            <select value={sourceEncoding} onChange={(event) => setSourceEncoding(event.target.value)} className={inputClass}>
+              {encodingOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+          <div>
+            <FieldLabel>Convert to</FieldLabel>
+            <select value={targetEncoding} onChange={(event) => setTargetEncoding(event.target.value)} className={inputClass}>
+              {encodingOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+          <PrimaryButton onClick={convert}>Convert</PrimaryButton>
+          <SecondaryButton onClick={download} disabled={!input}>Download converted file</SecondaryButton>
+        </div>
+      </WorkspaceCard>
+      <SplitTextareas
+        inputLabel="Text input"
+        outputLabel="Converted preview"
+        input={input}
+        setInput={setInput}
+        output={output}
+        error={error}
+        minHeight="min-h-[320px]"
+      />
+      <WorkspaceCard className="text-sm text-muted-foreground">
+        Browser downloads are generated locally. UTF-8 and UTF-16 output are byte-encoded directly; ASCII and Latin-1 replace unsupported characters.
+      </WorkspaceCard>
+    </div>
+  );
+}
+
+function SplitTextareas({
+  inputLabel,
+  outputLabel,
+  input,
+  setInput,
+  output,
+  error,
+  minHeight,
+}: {
+  inputLabel: string;
+  outputLabel: string;
+  input: string;
+  setInput: (value: string) => void;
+  output: string;
+  error: string;
+  minHeight: string;
+}) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div>
+        <div className="flex items-center justify-between">
+          <FieldLabel>{inputLabel}</FieldLabel>
+          <button type="button" onClick={() => setInput("")} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+        </div>
+        <textarea value={input} onChange={(event) => setInput(event.target.value)} className={`${textareaClass} ${minHeight} ${error ? "border-red-500" : ""}`} />
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      </div>
+      <div>
+        <div className="flex items-center justify-between">
+          <FieldLabel>{outputLabel}</FieldLabel>
+          <CopyButton value={output} label="Copy" />
+        </div>
+        <textarea value={output} readOnly className={`${textareaClass} ${minHeight}`} placeholder="Converted output appears here." />
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <WorkspaceCard className="py-3">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 break-all font-mono text-sm text-foreground">{value}</p>
+    </WorkspaceCard>
   );
 }
 
@@ -498,6 +730,46 @@ function textToMorse(value: string) {
 
 function morseToText(value: string) {
   return value.split(" / ").map((word) => word.trim().split(/\s+/).map((code) => reverseMorse[code] || "").join("")).join(" ");
+}
+
+const encodingOptions = [
+  ["utf-8", "UTF-8"],
+  ["utf-16le", "UTF-16"],
+  ["ascii", "ASCII"],
+  ["iso-8859-1", "Latin-1"],
+];
+
+function inspectBuffer(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) return { bom: "UTF-8 BOM", detected: "UTF-8", confidence: 95 };
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return { bom: "UTF-16 LE BOM", detected: "UTF-16", confidence: 95 };
+  const ascii = bytes.every((byte) => byte < 0x80);
+  return { bom: "absent", detected: ascii ? "ASCII / UTF-8" : "UTF-8 or legacy encoding", confidence: ascii ? 90 : 60 };
+}
+
+function lineEnding(value: string) {
+  const crlf = (value.match(/\r\n/g) || []).length;
+  const lf = (value.match(/(?<!\r)\n/g) || []).length;
+  const cr = (value.match(/\r(?!\n)/g) || []).length;
+  if (crlf >= lf && crlf >= cr && crlf > 0) return "CRLF";
+  if (lf >= cr && lf > 0) return "LF";
+  if (cr > 0) return "CR";
+  return "none";
+}
+
+function encodeText(value: string, encoding: string) {
+  if (encoding === "utf-16le") {
+    const bytes = new Uint8Array(value.length * 2);
+    for (let index = 0; index < value.length; index += 1) {
+      const code = value.charCodeAt(index);
+      bytes[index * 2] = code & 0xff;
+      bytes[index * 2 + 1] = code >> 8;
+    }
+    return bytes;
+  }
+  if (encoding === "ascii") return Uint8Array.from(Array.from(value), (char) => (char.charCodeAt(0) < 128 ? char.charCodeAt(0) : 63));
+  if (encoding === "iso-8859-1") return Uint8Array.from(Array.from(value), (char) => (char.charCodeAt(0) <= 255 ? char.charCodeAt(0) : 63));
+  return new TextEncoder().encode(value);
 }
 
 async function playMorse(value: string) {

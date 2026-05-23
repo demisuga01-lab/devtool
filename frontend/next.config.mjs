@@ -136,6 +136,12 @@ const nextConfig = {
       { source: "/tools/encrypted-file-paste", destination: "/tools/share", permanent: true },
       { source: "/tools/recent-pastes", destination: "/tools/share", permanent: true },
       { source: "/tools/collab-notes", destination: "/tools/share", permanent: true },
+      { source: "/tools/html-formatter", destination: "/tools/formatter", permanent: true },
+      { source: "/tools/js-beautifier", destination: "/tools/formatter", permanent: true },
+      { source: "/tools/sql-formatter", destination: "/tools/formatter", permanent: true },
+      { source: "/tools/csv-to-json", destination: "/tools/encode", permanent: true },
+      { source: "/tools/file-encoding", destination: "/tools/encode", permanent: true },
+      { source: "/tools/status-badges", destination: "/tools/config", permanent: true },
     ];
   },
 };

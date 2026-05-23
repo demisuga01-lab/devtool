@@ -99,7 +99,7 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "Regex Tools", slug: "regex", description: "Test, escape, replace, and learn regular expressions.", href: "/tools/regex", implemented: true, workspaceToolCount: 5 },
       { name: "CSS & Color Tools", slug: "css-color", description: "Pick colors, generate gradients, check contrast, and format CSS.", href: "/tools/css-color", implemented: true, workspaceToolCount: 7 },
       { name: "Text Tools", slug: "text", description: "Case convert, clean, analyze, diff and preview markdown.", href: "/tools/text", implemented: true, workspaceToolCount: 16 },
-      { name: "HTML Formatter", slug: "html-formatter", description: "Format and tidy HTML markup.", href: "/tools/html-formatter", implemented: true },
+      { name: "Code Formatter", slug: "formatter", description: "Format and beautify HTML, JavaScript and SQL.", href: "/tools/formatter", implemented: true, workspaceToolCount: 3 },
     ],
   },
   {
@@ -126,9 +126,7 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "encode",
     description: "Convert between encodings and data formats.",
     tools: [
-      { name: "Encode & Decode", slug: "encode", description: "Base64, URL, HTML, hex, binary encoding and escaping.", href: "/tools/encode", implemented: true, workspaceToolCount: 12 },
-      { name: "CSV to JSON", slug: "csv-to-json", description: "Convert CSV data into structured JSON.", href: "/tools/csv-to-json", implemented: true },
-      { name: "File Encoding", slug: "file-encoding", description: "Convert text files between encodings.", href: "/tools/file-encoding", implemented: true },
+      { name: "Encode & Decode", slug: "encode", description: "Base64, URL, HTML, hex, binary, CSV, and file encoding tools.", href: "/tools/encode", implemented: true, workspaceToolCount: 14 },
     ],
   },
   {
@@ -162,9 +160,6 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "reference",
     description: "Look up references and run common utility transformations.",
     tools: [
-      { name: "SQL Formatter", slug: "sql-formatter", description: "Format SQL queries for readability.", href: "/tools/sql-formatter", implemented: true },
-      { name: "JS Beautifier", slug: "js-beautifier", description: "Format and beautify JavaScript code.", href: "/tools/js-beautifier", implemented: true },
-      { name: "Status Badges/Widgets", slug: "status-badges", description: "Generate embeddable status badges and widgets.", href: "/tools/status-badges", implemented: true },
     ],
   },
   {
@@ -172,7 +167,7 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "devops",
     description: "Validate and generate deployment configuration files.",
     tools: [
-      { name: "Config Tools", slug: "config", description: "Validate Docker, Nginx, systemd, env and gitignore files.", href: "/tools/config", implemented: true, workspaceToolCount: 6 },
+      { name: "Config Tools", slug: "config", description: "Validate Docker, Nginx, systemd, env, gitignore, and badges.", href: "/tools/config", implemented: true, workspaceToolCount: 7 },
     ],
   },
   {
@@ -189,17 +184,14 @@ const inspectTools = new Set([
   "json",
   "xml",
   "config",
-  "html-formatter",
   "jwt",
   "toml",
   "openapi",
-  "file-encoding",
   "ssl",
 ]);
 
 const convertTools = new Set([
   "encode",
-  "csv-to-json",
 ]);
 
 const securityTools = new Set([
@@ -211,7 +203,6 @@ const securityTools = new Set([
 const generateTools = new Set([
   "generators",
   "css-color",
-  "status-badges",
 ]);
 
 const networkTools = new Set([
@@ -224,8 +215,7 @@ const textTools = new Set([
   "text",
   "datetime",
   "regex",
-  "sql-formatter",
-  "js-beautifier",
+  "formatter",
   "code",
 ]);
 
@@ -236,6 +226,7 @@ const popularTools = new Set([
   "jwt",
   "hash",
   "regex",
+  "formatter",
   "datetime",
   "network",
   "text",
@@ -262,7 +253,7 @@ const newTools = new Set([
   "code",
   "api",
   "share",
-  "status-badges",
+  "formatter",
 ]);
 
 const iconBySlug: Record<string, LucideIcon> = {
@@ -280,26 +271,23 @@ const iconBySlug: Record<string, LucideIcon> = {
   jwt: Key,
   generators: Sparkles,
   share: Lock,
-  "status-badges": Layers,
   "css-color": Palette,
   regex: SearchCheck,
-  "sql-formatter": Database,
-  "js-beautifier": Code2,
+  formatter: Code2,
   code: Terminal,
   encode: ArrowLeftRight,
-  "csv-to-json": Database,
-  "file-encoding": FileText,
 };
 
 const explicitTags: Record<string, string[]> = {
   json: ["json", "format", "prettify", "validate", "diff", "convert", "yaml", "csv", "typescript", "jsonpath", "tree"],
   xml: ["xml", "format", "validate", "xpath", "xslt", "xsd", "convert", "escape", "json", "transform"],
-  encode: ["encode", "decode", "base64", "url", "html", "hex", "binary", "morse", "unicode", "escape", "unescape", "sql", "js"],
+  encode: ["encode", "decode", "base64", "url", "html", "hex", "binary", "morse", "unicode", "escape", "unescape", "sql", "js", "csv", "file", "encoding"],
   hash: ["hash", "md5", "sha", "sha256", "hmac", "bcrypt", "blake2", "totp", "crypto", "checksum", "verify", "otp"],
   datetime: ["date", "time", "timestamp", "unix", "timezone", "cron", "schedule", "age", "diff", "duration", "heartbeat", "quartz"],
   network: ["dns", "whois", "ip", "http", "headers", "redirect", "ssl", "spf", "dkim", "security", "network", "domain", "og"],
-  config: ["config", "docker", "nginx", "systemd", "env", "gitignore", "yaml", "validate", "generate", "compose", "service"],
+  config: ["config", "docker", "nginx", "systemd", "env", "gitignore", "yaml", "validate", "generate", "compose", "service", "badge", "status", "shield"],
   text: ["text", "case", "convert", "diff", "markdown", "word count", "sort", "clean", "ascii", "mime", "semver", "units", "roman"],
+  formatter: ["format", "beautify", "html", "javascript", "sql", "indent", "prettier", "minify", "tidy", "js", "code"],
   code: ["code", "run", "execute", "python", "javascript", "java", "rust", "go", "c", "c++", "compiler", "interpreter", "sql", "html", "css", "notebook", "multifile", "test", "challenge"],
   api: ["api", "rest", "http", "graphql", "curl", "webhook", "request", "response", "postman", "collections", "headers"],
   share: ["secret", "encrypt", "share", "one-time", "zero-knowledge", "file", "paste", "notes", "aes", "self-destruct", "private"],
@@ -327,14 +315,14 @@ function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
   if (slug === "api") return ["url", "code", "json"];
   if (slug === "code") return ["code"];
   if (slug === "share") return ["text", "file"];
-  if (["generators", "status-badges"].includes(slug)) return ["none"];
+  if (slug === "formatter") return ["code", "text"];
+  if (["generators"].includes(slug)) return ["none"];
   if (slug === "datetime") return ["text", "none"];
   if (["config"].includes(slug)) return ["text", "code"];
-  if (slug.includes("runner") || ["js-beautifier", "html-formatter", "sql-formatter"].includes(slug)) return ["code"];
+  if (slug.includes("runner")) return ["code"];
   if (slug === "json" || slug.includes("json") || ["jwt", "openapi"].includes(slug)) return ["json", "text"];
   if (slug === "hash") return ["text", "file"];
   if (["network", "ssl"].includes(slug)) return ["url"];
-  if (["file-encoding"].includes(slug)) return ["file", "text"];
   return ["text"];
 }
 
@@ -343,6 +331,7 @@ function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOut
   if (slug === "code") return ["executed"];
   if (slug === "api") return ["analyzed"];
   if (slug === "share") return ["generated"];
+  if (slug === "formatter") return ["formatted"];
   if (slug.includes("runner")) return ["executed"];
   if (slug === "json") return ["formatted", "validated", "converted", "analyzed"];
   if (slug === "xml") return ["formatted", "validated", "converted"];
@@ -353,7 +342,7 @@ function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOut
   if (slug === "config") return ["validated", "generated"];
   if (slug === "text") return ["converted", "analyzed", "formatted"];
   if (slug.includes("validator") || ["jwt"].includes(slug)) return ["validated"];
-  if (slug.includes("formatter") || ["js-beautifier"].includes(slug)) return ["formatted"];
+  if (slug.includes("formatter")) return ["formatted"];
   if (intentGroup === "convert" || slug.includes("-to-") || slug.includes("converter")) return ["converted"];
   if (intentGroup === "generate" || intentGroup === "security" && ["jwt", "share"].includes(slug)) return ["generated"];
   return ["analyzed"];
