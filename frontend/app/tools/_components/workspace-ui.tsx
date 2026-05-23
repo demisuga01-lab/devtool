@@ -21,6 +21,7 @@ export function WorkspaceShell<T extends string>({
   children,
   visitIcon,
   intentGroup,
+  toolbar,
 }: {
   title: string;
   subtitle: string;
@@ -32,6 +33,7 @@ export function WorkspaceShell<T extends string>({
   children: ReactNode;
   visitIcon: string;
   intentGroup: string;
+  toolbar?: ReactNode;
 }) {
   const active = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
@@ -43,6 +45,7 @@ export function WorkspaceShell<T extends string>({
         description={subtitle}
         icon={<Icon className="h-5 w-5" />}
       />
+      {toolbar && <div className="mb-4">{toolbar}</div>}
       <div className="overflow-x-auto border-b border-border [scrollbar-width:none] md:sticky md:top-16 md:z-20 md:bg-background/95 md:backdrop-blur [&::-webkit-scrollbar]:hidden">
         <div className="flex min-w-max gap-4">
           {tabs.map((tab) => {

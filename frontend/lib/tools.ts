@@ -100,10 +100,6 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "CSS & Color Tools", slug: "css-color", description: "Pick colors, generate gradients, check contrast, and format CSS.", href: "/tools/css-color", implemented: true, workspaceToolCount: 7 },
       { name: "Text Tools", slug: "text", description: "Case convert, clean, analyze, diff and preview markdown.", href: "/tools/text", implemented: true, workspaceToolCount: 16 },
       { name: "HTML Formatter", slug: "html-formatter", description: "Format and tidy HTML markup.", href: "/tools/html-formatter", implemented: true },
-      { name: "stdin/Test Cases Runner", slug: "testcase-runner", description: "Run code against multiple test cases.", href: "/tools/testcase-runner", implemented: true },
-      { name: "Code Sharing", slug: "code-share", description: "Share runnable code snippets with a link.", href: "/tools/code-share", implemented: true },
-      { name: "Zero-Knowledge Paste", slug: "zk-paste", description: "Share text with end-to-end encryption.", href: "/tools/zk-paste", implemented: true },
-      { name: "Local Notes", slug: "collab-notes", description: "Write and save markdown notes locally.", href: "/tools/collab-notes", implemented: true },
     ],
   },
   {
@@ -114,8 +110,7 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "JWT Tools", slug: "jwt", description: "Decode, build and verify JSON Web Tokens.", href: "/tools/jwt", implemented: true, workspaceToolCount: 3 },
       { name: "Generators", slug: "generators", description: "Generate passwords, tokens, IDs, QR codes, and more.", href: "/tools/generators", implemented: true, workspaceToolCount: 9 },
       { name: "Hash & Crypto", slug: "hash", description: "MD5, SHA, HMAC, bcrypt, BLAKE2 and TOTP generation.", href: "/tools/hash", implemented: true, workspaceToolCount: 6 },
-      { name: "One-Time Secret", slug: "one-time-secret", description: "Share secrets that self-destruct after reading.", href: "/tools/one-time-secret", implemented: true },
-      { name: "Encrypted File Paste", slug: "encrypted-file-paste", description: "Share encrypted files with self-destruct.", href: "/tools/encrypted-file-paste", implemented: true },
+      { name: "Secure Sharing", slug: "share", description: "Share secrets and files with end-to-end encryption.", href: "/tools/share", implemented: true, workspaceToolCount: 5 },
     ],
   },
   {
@@ -159,13 +154,7 @@ const seedToolGroups: ToolSeedGroup[] = [
     tools: [
       { name: "Network Tools", slug: "network", description: "DNS, WHOIS, HTTP headers, redirects and security checks.", href: "/tools/network", implemented: true, workspaceToolCount: 9 },
       { name: "SSL & Certificate Tools", slug: "ssl", description: "Check SSL certificates, chains, and TLS configuration.", href: "/tools/ssl", implemented: true, workspaceToolCount: 2 },
-      { name: "cURL Builder", slug: "curl-builder", description: "Build cURL commands visually or convert cURL to fetch.", href: "/tools/curl-builder", implemented: true },
-      { name: "Request History", slug: "request-history", description: "Browse your recent HTTP tool requests.", href: "/tools/request-history", implemented: true },
-      { name: "REST Client", slug: "rest-client", description: "Make HTTP requests and inspect responses.", href: "/tools/rest-client", implemented: true },
-      { name: "GraphQL Client", slug: "graphql-client", description: "Query GraphQL APIs with schema explorer.", href: "/tools/graphql-client", implemented: true },
-      { name: "API Collections", slug: "api-collections", description: "Save and organize API requests.", href: "/tools/api-collections", implemented: true },
-      { name: "Webhook Inbox", slug: "webhook-inbox", description: "Capture and inspect incoming webhooks.", href: "/tools/webhook-inbox", implemented: true },
-      { name: "Webhook Payload Viewer", slug: "webhook-viewer", description: "Parse and inspect HTTP request payloads.", href: "/tools/webhook-viewer", implemented: true },
+      { name: "API Client", slug: "api", description: "REST, GraphQL, cURL, webhooks and request collections.", href: "/tools/api", implemented: true, workspaceToolCount: 7 },
     ],
   },
   {
@@ -173,7 +162,6 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "reference",
     description: "Look up references and run common utility transformations.",
     tools: [
-      { name: "Recent Pastes", slug: "recent-pastes", description: "View locally stored recent paste history.", href: "/tools/recent-pastes", implemented: true },
       { name: "SQL Formatter", slug: "sql-formatter", description: "Format SQL queries for readability.", href: "/tools/sql-formatter", implemented: true },
       { name: "JS Beautifier", slug: "js-beautifier", description: "Format and beautify JavaScript code.", href: "/tools/js-beautifier", implemented: true },
       { name: "Status Badges/Widgets", slug: "status-badges", description: "Generate embeddable status badges and widgets.", href: "/tools/status-badges", implemented: true },
@@ -190,71 +178,9 @@ const seedToolGroups: ToolSeedGroup[] = [
   {
     name: "Code Runners",
     slug: "code-runners",
-    description: "Run code in 20+ languages across 6 specialized environments.",
+    description: "Run code in 40+ languages across unified coding modes.",
     tools: [
-      {
-        name: "Web Runner",
-        slug: "web-runner",
-        description: "Run HTML, CSS, and JavaScript with a live preview. Supports combined and solo modes.",
-        href: "/tools/web-runner",
-        implemented: true,
-      },
-      {
-        name: "Systems Runner",
-        slug: "systems-runner",
-        description: "Compile and run C, C++, Rust, and Go code.",
-        href: "/tools/systems-runner",
-        implemented: true,
-      },
-      {
-        name: "Scripting Runner",
-        slug: "scripting-runner",
-        description: "Run Python, Ruby, PHP, Perl, Bash, and Lua scripts.",
-        href: "/tools/scripting-runner",
-        implemented: true,
-      },
-      {
-        name: "JVM Runner",
-        slug: "jvm-runner",
-        description: "Run Java, Kotlin, Scala, C#, and Basic code.",
-        href: "/tools/jvm-runner",
-        implemented: true,
-      },
-      {
-        name: "Data Runner",
-        slug: "data-runner",
-        description: "Run SQLite queries and Julia scripts.",
-        href: "/tools/data-runner",
-        implemented: true,
-      },
-      {
-        name: "Multi-file Runner",
-        slug: "multifile-runner",
-        description: "Run multi-file projects in one execution.",
-        href: "/tools/multifile-runner",
-        implemented: true,
-      },
-      {
-        name: "Notebook Runner",
-        slug: "notebook",
-        description: "Interactive code cells with inline outputs.",
-        href: "/tools/notebook",
-        implemented: true,
-      },
-      {
-        name: "Challenges",
-        slug: "challenges",
-        description: "Solve coding challenges with test cases.",
-        href: "/tools/challenges",
-        implemented: true,
-      },
-      {
-        name: "Other Languages",
-        slug: "other-runner",
-        description: "Run Swift, Dart, Fortran, and D code.",
-        href: "/tools/other-runner",
-        implemented: true,
-      },
+      { name: "Code Runner", slug: "code", description: "Run code in 40+ languages with web, notebook and test modes.", href: "/tools/code", implemented: true, workspaceToolCount: 13 },
     ],
   },
 ];
@@ -269,7 +195,6 @@ const inspectTools = new Set([
   "openapi",
   "file-encoding",
   "ssl",
-  "webhook-viewer",
 ]);
 
 const convertTools = new Set([
@@ -280,9 +205,7 @@ const convertTools = new Set([
 const securityTools = new Set([
   "hash",
   "jwt",
-  "one-time-secret",
-  "encrypted-file-paste",
-  "zk-paste",
+  "share",
 ]);
 
 const generateTools = new Set([
@@ -294,12 +217,7 @@ const generateTools = new Set([
 const networkTools = new Set([
   "network",
   "ssl",
-  "curl-builder",
-  "rest-client",
-  "graphql-client",
-  "api-collections",
-  "webhook-inbox",
-  "request-history",
+  "api",
 ]);
 
 const textTools = new Set([
@@ -308,20 +226,7 @@ const textTools = new Set([
   "regex",
   "sql-formatter",
   "js-beautifier",
-  "code-share",
-  "collab-notes",
-  "testcase-runner",
-  "code-runner",
-  "web-runner",
-  "scripting-runner",
-  "jvm-runner",
-  "systems-runner",
-  "other-runner",
-  "data-runner",
-  "multifile-runner",
-  "notebook",
-  "challenges",
-  "recent-pastes",
+  "code",
 ]);
 
 const popularTools = new Set([
@@ -334,8 +239,8 @@ const popularTools = new Set([
   "datetime",
   "network",
   "text",
-  "scripting-runner",
-  "web-runner",
+  "code",
+  "api",
   "ssl",
 ]);
 
@@ -354,23 +259,10 @@ const newTools = new Set([
   "network",
   "config",
   "text",
-  "recent-pastes",
+  "code",
+  "api",
+  "share",
   "status-badges",
-  "testcase-runner",
-  "code-share",
-  "request-history",
-  "zk-paste",
-  "collab-notes",
-  "one-time-secret",
-  "encrypted-file-paste",
-  "rest-client",
-  "graphql-client",
-  "api-collections",
-  "webhook-inbox",
-  "webhook-viewer",
-  "multifile-runner",
-  "notebook",
-  "challenges",
 ]);
 
 const iconBySlug: Record<string, LucideIcon> = {
@@ -383,41 +275,20 @@ const iconBySlug: Record<string, LucideIcon> = {
   toml: FileText,
   openapi: FileCode2,
   ssl: Lock,
-  "curl-builder": Terminal,
-  "rest-client": Send,
-  "graphql-client": Workflow,
-  "api-collections": FolderOpen,
-  "request-history": Clock,
-  "webhook-inbox": Server,
-  "webhook-viewer": SearchCheck,
+  api: Send,
   hash: Hash,
   jwt: Key,
   generators: Sparkles,
-  "one-time-secret": Lock,
-  "encrypted-file-paste": ShieldCheck,
-  "zk-paste": Lock,
+  share: Lock,
   "status-badges": Layers,
   "css-color": Palette,
   regex: SearchCheck,
   "sql-formatter": Database,
   "js-beautifier": Code2,
-  "code-share": Code2,
-  "collab-notes": PenLine,
-  "testcase-runner": Play,
-  "code-runner": Terminal,
-  "web-runner": Code2,
-  "scripting-runner": Terminal,
-  "jvm-runner": Cpu,
-  "systems-runner": Cpu,
-  "data-runner": Database,
-  "multifile-runner": Files,
-  notebook: LayoutList,
-  challenges: Trophy,
-  "other-runner": Terminal,
+  code: Terminal,
   encode: ArrowLeftRight,
   "csv-to-json": Database,
   "file-encoding": FileText,
-  "recent-pastes": Clock,
 };
 
 const explicitTags: Record<string, string[]> = {
@@ -429,6 +300,9 @@ const explicitTags: Record<string, string[]> = {
   network: ["dns", "whois", "ip", "http", "headers", "redirect", "ssl", "spf", "dkim", "security", "network", "domain", "og"],
   config: ["config", "docker", "nginx", "systemd", "env", "gitignore", "yaml", "validate", "generate", "compose", "service"],
   text: ["text", "case", "convert", "diff", "markdown", "word count", "sort", "clean", "ascii", "mime", "semver", "units", "roman"],
+  code: ["code", "run", "execute", "python", "javascript", "java", "rust", "go", "c", "c++", "compiler", "interpreter", "sql", "html", "css", "notebook", "multifile", "test", "challenge"],
+  api: ["api", "rest", "http", "graphql", "curl", "webhook", "request", "response", "postman", "collections", "headers"],
+  share: ["secret", "encrypt", "share", "one-time", "zero-knowledge", "file", "paste", "notes", "aes", "self-destruct", "private"],
   generators: ["password", "secure", "random", "entropy", "uuid", "ulid", "nanoid", "qr", "slug", "lorem"],
   jwt: ["jwt", "token", "json web token", "claims", "bearer", "auth", "decode", "build", "verify", "payload", "header"],
   regex: ["regex", "regexp", "pattern", "match", "test", "regular expression", "search", "replace", "escape"],
@@ -436,13 +310,6 @@ const explicitTags: Record<string, string[]> = {
   toml: ["toml", "format", "validate", "convert", "configuration"],
   ssl: ["ssl", "tls", "certificate", "https", "expiry", "cert", "security", "chain"],
   "css-color": ["css", "color", "gradient", "contrast", "box shadow", "clamp", "formatter"],
-  "webhook-inbox": ["webhook", "http", "request", "capture", "inspect", "endpoint", "listener"],
-  "rest-client": ["rest", "http", "api", "request", "get", "post", "client", "fetch", "curl", "endpoint", "test"],
-  "graphql-client": ["graphql", "gql", "query", "mutation", "schema", "introspection", "api", "graph"],
-  "api-collections": ["collection", "postman", "api", "requests", "save", "organize", "environment", "variables"],
-  "multifile-runner": ["multi file", "project", "runner", "code", "execute", "compile", "files", "judge0", "sandbox"],
-  notebook: ["notebook", "cells", "code", "runner", "interactive", "execute", "inline output", "judge0"],
-  challenges: ["challenge", "testcase", "coding", "practice", "judge", "submit", "tests", "score", "hidden cases"],
 };
 
 function intentForSlug(slug: string): IntentGroupId {
@@ -457,23 +324,26 @@ function intentForSlug(slug: string): IntentGroupId {
 
 function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
   const slug = tool.slug;
-  if (["rest-client", "graphql-client", "api-collections"].includes(slug)) return ["url", "text", "json"];
-  if (["multifile-runner", "notebook", "challenges"].includes(slug)) return ["code"];
+  if (slug === "api") return ["url", "code", "json"];
+  if (slug === "code") return ["code"];
+  if (slug === "share") return ["text", "file"];
   if (["generators", "status-badges"].includes(slug)) return ["none"];
   if (slug === "datetime") return ["text", "none"];
   if (["config"].includes(slug)) return ["text", "code"];
-  if (slug.includes("runner") || ["code-share", "testcase-runner", "js-beautifier", "html-formatter", "sql-formatter"].includes(slug)) return ["code"];
-  if (slug === "json" || slug.includes("json") || ["jwt", "openapi", "webhook-viewer"].includes(slug)) return ["json", "text"];
+  if (slug.includes("runner") || ["js-beautifier", "html-formatter", "sql-formatter"].includes(slug)) return ["code"];
+  if (slug === "json" || slug.includes("json") || ["jwt", "openapi"].includes(slug)) return ["json", "text"];
   if (slug === "hash") return ["text", "file"];
-  if (["network", "ssl", "webhook-inbox"].includes(slug)) return ["url"];
-  if (["file-encoding", "encrypted-file-paste", "collab-notes"].includes(slug)) return ["file", "text"];
+  if (["network", "ssl"].includes(slug)) return ["url"];
+  if (["file-encoding"].includes(slug)) return ["file", "text"];
   return ["text"];
 }
 
 function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOutputType[] {
   const slug = tool.slug;
-  if (slug.includes("runner") || ["testcase-runner", "notebook"].includes(slug)) return ["executed"];
-  if (slug === "challenges") return ["validated", "executed"];
+  if (slug === "code") return ["executed"];
+  if (slug === "api") return ["analyzed"];
+  if (slug === "share") return ["generated"];
+  if (slug.includes("runner")) return ["executed"];
   if (slug === "json") return ["formatted", "validated", "converted", "analyzed"];
   if (slug === "xml") return ["formatted", "validated", "converted"];
   if (slug === "encode") return ["converted"];
@@ -485,14 +355,14 @@ function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOut
   if (slug.includes("validator") || ["jwt"].includes(slug)) return ["validated"];
   if (slug.includes("formatter") || ["js-beautifier"].includes(slug)) return ["formatted"];
   if (intentGroup === "convert" || slug.includes("-to-") || slug.includes("converter")) return ["converted"];
-  if (intentGroup === "generate" || intentGroup === "security" && ["jwt", "one-time-secret", "encrypted-file-paste", "zk-paste"].includes(slug)) return ["generated"];
+  if (intentGroup === "generate" || intentGroup === "security" && ["jwt", "share"].includes(slug)) return ["generated"];
   return ["analyzed"];
 }
 
 function complexityForTool(tool: ToolSeed): ToolComplexity {
   if (
     tool.slug.includes("runner") ||
-    ["json", "xml", "openapi", "config", "webhook-inbox", "webhook-viewer", "rest-client", "graphql-client", "api-collections", "multifile-runner", "notebook", "challenges", "jwt", "testcase-runner", "code-share"].includes(tool.slug)
+    ["json", "xml", "openapi", "config", "api", "code", "share", "jwt"].includes(tool.slug)
   ) {
     return "advanced";
   }

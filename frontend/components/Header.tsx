@@ -29,12 +29,7 @@ const pasteLinks = [
 ];
 
 const compilerLinks = [
-  { name: "Web Runner", href: "/tools/web-runner", description: "HTML, CSS, JavaScript & TypeScript" },
-  { name: "Systems Runner", href: "/tools/systems-runner", description: "C, C++, Rust, Go" },
-  { name: "Scripting Runner", href: "/tools/scripting-runner", description: "Python, Ruby, PHP, Perl, Bash, Lua" },
-  { name: "JVM Runner", href: "/tools/jvm-runner", description: "Java, Kotlin, Scala, C#, Basic" },
-  { name: "Data Runner", href: "/tools/data-runner", description: "SQLite, Julia" },
-  { name: "Other Languages", href: "/tools/other-runner", description: "Swift, Dart, Fortran, D" },
+  { name: "Code Runner", href: "/tools/code", description: "Single file, web, multi-file, notebook, tests, database" },
 ];
 
 const navClass =
@@ -282,7 +277,7 @@ export function Header() {
                   </div>
                   <div className="mt-4 border-t border-zinc-200 pt-3 text-center dark:border-zinc-800">
                     <Link href="/tools" onClick={() => tools.setOpen(false)} className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
-                      Browse all {allTools.length} tools →
+                      Browse all {allTools.length} tools &gt;
                     </Link>
                   </div>
                 </div>
