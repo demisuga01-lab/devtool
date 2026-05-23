@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 
 type Language = {
-  id: number;
+  id: number | string;
   name: string;
   version: string;
   categories: string[];
@@ -73,6 +73,8 @@ const icons = {
 } satisfies Record<string, JSX.Element>;
 
 const languages: Language[] = [
+  { id: "html", name: "HTML", version: "Web preview", categories: ["popular", "web"], icon: icons.html },
+  { id: "css", name: "CSS", version: "Web preview", categories: ["popular", "web"], icon: icons.css },
   { id: 45, name: "Assembly", version: "NASM 2.14.02", categories: ["popular", "lowlevel"], icon: icons.assembly },
   { id: 46, name: "Bash", version: "5.0.0", categories: ["popular", "scripting"], icon: icons.bash },
   { id: 47, name: "Basic", version: "FBC 1.07.1", categories: ["systems"], icon: icons.basic },
@@ -119,6 +121,14 @@ const languages: Language[] = [
   { id: 84, name: "Visual Basic", version: "vbnc 0.0.0.5943", categories: ["jvm"], icon: icons.basic },
 ];
 
+function compilerHref(language: Language) {
+  const value = language.name.toLowerCase();
+  if (value === "html" || value === "css" || value === "javascript" || value === "typescript") {
+    return `/compilers/web?lang=${value}`;
+  }
+  return `/compilers/run?lang=${language.id}`;
+}
+
 export default function CompilersPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -164,7 +174,7 @@ export default function CompilersPage() {
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Write HTML, CSS and JavaScript with live preview</p>
           </div>
           <Link
-            href="/tools/code?tab=web"
+            href="/compilers/web?mode=combine"
             className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 md:w-auto"
           >
             Open Web Compiler →
@@ -196,7 +206,7 @@ export default function CompilersPage() {
           {filtered.map((lang) => (
             <Link
               key={lang.id}
-              href={`/tools/code?lang=${lang.id}`}
+              href={compilerHref(lang)}
               className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-center transition hover:border-emerald-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
