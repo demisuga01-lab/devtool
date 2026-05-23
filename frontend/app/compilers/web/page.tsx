@@ -10,6 +10,7 @@ import {
   ChevronUp,
   ExternalLink,
   FileCode,
+  Loader2,
   Maximize,
   Maximize2,
   Minimize2,
@@ -28,6 +29,7 @@ type MaximizedPanel = "html" | "css" | "js" | null;
 type ConsoleEntry = {
   method: "log" | "error" | "warn";
   text: string;
+  timestamp: string;
 };
 type TypeScriptRunResult = {
   stdout: string;
@@ -242,34 +244,6 @@ const CONSOLE_CAPTURE_SCRIPT = `(function() {
 const escapeTagContent = (content: string, tag: "script" | "style") =>
   content.replace(new RegExp(`</${tag}`, "gi"), `<\\/${tag}`);
 
-const injectIntoTag = (html: string, tag: "head" | "body", snippet: string) => {
-  const closePattern = new RegExp(`</${tag}>`, "i");
-  if (closePattern.test(html)) {
-    return html.replace(closePattern, `${snippet}</${tag}>`);
-  }
-
-  const openPattern = new RegExp(`<${tag}[^>]*>`, "i");
-  if (openPattern.test(html)) {
-    return html.replace(openPattern, (match) => `${match}${snippet}`);
-  }
-
-  if (tag === "head") {
-    const bodyPattern = /<body[^>]*>/i;
-    if (bodyPattern.test(html)) {
-      return html.replace(bodyPattern, (match) => `${snippet}${match}`);
-    }
-  }
-
-  if (tag === "body") {
-    const htmlPattern = /<\/html>/i;
-    if (htmlPattern.test(html)) {
-      return html.replace(htmlPattern, `${snippet}</html>`);
-    }
-  }
-
-  return html;
-};
-
 const prependIntoTag = (html: string, tag: "body", snippet: string) => {
   const openPattern = new RegExp(`<${tag}[^>]*>`, "i");
   if (openPattern.test(html)) {
@@ -287,22 +261,64 @@ const prependIntoTag = (html: string, tag: "body", snippet: string) => {
 const joinFileContents = (files: FileEntry[]) =>
   files.length === 1 ? files[0]?.content || "" : files.map((file) => file.content).join("\n");
 
+const extractBodyContent = (html: string) => {
+  const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) return bodyMatch[1];
+
+  return html
+    .replace(/<!doctype[^>]*>/gi, "")
+    .replace(/<html\b[^>]*>/gi, "")
+    .replace(/<\/html>/gi, "")
+    .replace(/<head\b[^>]*>[\s\S]*?<\/head>/gi, "")
+    .replace(/<body\b[^>]*>/gi, "")
+    .replace(/<\/body>/gi, "");
+};
+
+const injectIntoHead = (html: string, snippet: string) => {
+  if (!snippet) return html;
+  if (/<\/head>/i.test(html)) return html.replace(/<\/head>/i, `${snippet}</head>`);
+  if (/<head\b[^>]*>/i.test(html)) return html.replace(/<head\b[^>]*>/i, (match) => `${match}${snippet}`);
+  if (/<body\b[^>]*>/i.test(html)) return html.replace(/<body\b[^>]*>/i, (match) => `<head>${snippet}</head>${match}`);
+  if (/<html\b[^>]*>/i.test(html)) return html.replace(/<html\b[^>]*>/i, (match) => `${match}<head>${snippet}</head>`);
+  return `<head>${snippet}</head>${html}`;
+};
+
+const injectIntoBodyEnd = (html: string, snippet: string) => {
+  if (!snippet) return html;
+  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${snippet}</body>`);
+  if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, `<body>${snippet}</body></html>`);
+  if (/<body\b[^>]*>/i.test(html)) return html.replace(/<body\b[^>]*>/i, (match) => `${match}${snippet}`);
+  return `${html}<body>${snippet}</body>`;
+};
+
 const buildCombinedPreviewDoc = (htmlFiles: FileEntry[], cssFiles: FileEntry[], jsFiles: FileEntry[]) => {
-  const combinedHtml = htmlFiles.map((file) => file.content).join("\n");
+  const htmlContents = htmlFiles.map((file) => file.content).filter((content) => content.trim().length > 0);
   const combinedCss = cssFiles.map((file) => file.content).join("\n");
   const combinedJs = jsFiles.map((file) => file.content).join("\n");
-  const styleBlock = `<style>${escapeTagContent(combinedCss, "style")}</style>`;
+  const styleBlock = combinedCss.trim() ? `<style>${escapeTagContent(combinedCss, "style")}</style>` : "";
   const consoleBlock = `<script>${CONSOLE_CAPTURE_SCRIPT}</script>`;
-  const scriptBlock = `<script>${escapeTagContent(combinedJs, "script")}</script>`;
+  const scriptBlock = combinedJs.trim() ? `<script>${escapeTagContent(combinedJs, "script")}</script>` : "";
 
-  if (/<\!doctype/i.test(combinedHtml)) {
-    let doc = combinedHtml;
-    doc = injectIntoTag(doc, "head", styleBlock);
-    doc = injectIntoTag(doc, "body", `${consoleBlock}${scriptBlock}`);
+  if (htmlContents.length === 0) {
+    return `<!DOCTYPE html><html><head>${styleBlock}</head><body>${consoleBlock}${scriptBlock}</body></html>`;
+  }
+
+  const baseIndexWithDoctype = htmlContents.findIndex((content) => /<!doctype/i.test(content));
+  const baseIndexWithHtml = htmlContents.findIndex((content) => /<html\b/i.test(content));
+  const baseIndex = baseIndexWithDoctype >= 0 ? baseIndexWithDoctype : baseIndexWithHtml;
+
+  if (baseIndex >= 0) {
+    const extraBody = htmlContents
+      .filter((_, index) => index !== baseIndex)
+      .map(extractBodyContent)
+      .filter((content) => content.trim().length > 0)
+      .join("\n");
+    let doc = injectIntoHead(htmlContents[baseIndex], styleBlock);
+    doc = injectIntoBodyEnd(doc, [extraBody, consoleBlock, scriptBlock].filter(Boolean).join("\n"));
     return doc;
   }
 
-  return `<!DOCTYPE html><html><head>${styleBlock}</head><body>${combinedHtml}${consoleBlock}${scriptBlock}</body></html>`;
+  return `<!DOCTYPE html><html><head>${styleBlock}</head><body>${htmlContents.join("\n")}${consoleBlock}${scriptBlock}</body></html>`;
 };
 
 const buildSingleHtmlPreviewDoc = (files: FileEntry[]) => {
@@ -326,25 +342,74 @@ const buildCssPreviewDoc = (files: FileEntry[]) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { margin: 0; padding: 32px; font-family: system-ui, sans-serif; color: #111827; background: #ffffff; }
-    main { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; }
-    .preview-card { padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
-    input { min-height: 36px; padding: 0 10px; }
+    main { max-width: 860px; margin: 0 auto; display: grid; gap: 22px; }
+    section { display: grid; gap: 12px; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .preview-card { padding: 18px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; }
+    .button-secondary { background: transparent; color: #0f172a; border: 1px solid #cbd5e1; }
+    input, select { min-height: 36px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+    blockquote { margin: 0; padding-left: 14px; border-left: 4px solid #10b981; color: #475569; }
+    code { padding: 2px 5px; border-radius: 4px; background: #e2e8f0; }
+    .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 9px; background: #d1fae5; color: #065f46; font-size: 12px; font-weight: 700; }
   </style>
   <style>${escapeTagContent(combinedCss, "style")}</style>
 </head>
 <body>
   <main>
-    <h1>Style Preview</h1>
-    <p>This paragraph is here so typography, spacing, and color rules have something natural to affect.</p>
-    <button type="button">Preview Button</button>
-    <div class="card preview-card">This card has padding and a border for layout and component styles.</div>
-    <input type="text" placeholder="Preview input field" />
-    <ul>
-      <li>First item</li>
-      <li>Second item</li>
-      <li>Third item</li>
-    </ul>
-    <a href="#">Example link</a>
+    <section>
+      <h1>Style Preview</h1>
+      <h2>Interface Components</h2>
+      <h3>Typography and Controls</h3>
+      <p>This paragraph gives your CSS natural text to style across spacing, color, size, and line height.</p>
+      <p>Another paragraph includes an <a href="#">example link</a> and an inline <code>code</code> element.</p>
+    </section>
+
+    <section class="row">
+      <button type="button">Primary Button</button>
+      <button type="button" class="button-secondary">Secondary Button</button>
+      <span class="badge">Preview Badge</span>
+      <span class="badge">Pill Label</span>
+    </section>
+
+    <section class="preview-card">
+      <h2>Form Elements</h2>
+      <div class="row">
+        <input type="text" placeholder="Text input field" />
+        <select>
+          <option>Dropdown option</option>
+          <option>Second option</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="preview-card">
+      <h2>Lists</h2>
+      <ul>
+        <li>Unordered item one</li>
+        <li>Unordered item two</li>
+      </ul>
+      <ol>
+        <li>Ordered item one</li>
+        <li>Ordered item two</li>
+      </ol>
+    </section>
+
+    <blockquote>Blockquote content for border, spacing, and quote styles.</blockquote>
+
+    <section class="preview-card">
+      <h2>Data Table</h2>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Status</th><th>Score</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Alpha</td><td>Ready</td><td>98</td></tr>
+          <tr><td>Beta</td><td>Pending</td><td>84</td></tr>
+        </tbody>
+      </table>
+    </section>
   </main>
 </body>
 </html>`;
@@ -386,6 +451,9 @@ export default function WebCompilerPage() {
   const [isDark, setIsDark] = useState(() =>
     typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false,
   );
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1024,
+  );
 
   const [singleFiles, setSingleFiles] = useState<FileEntry[]>([{ name: "index.html", content: HTML_STARTER }]);
   const [activeSingle, setActiveSingle] = useState(0);
@@ -400,6 +468,7 @@ export default function WebCompilerPage() {
   const splitDragStartPos = useRef(58);
   const splitContainerRef = useRef<HTMLDivElement>(null);
   const previewSrcRef = useRef("");
+  const singleRunnerFrameRef = useRef<HTMLIFrameElement>(null);
 
   const uploadHtmlRef = useRef<HTMLInputElement>(null);
   const uploadCssRef = useRef<HTMLInputElement>(null);
@@ -411,6 +480,8 @@ export default function WebCompilerPage() {
   const outputBackground = isDark ? "#161616" : "#f5f5f5";
   const outputText = isDark ? "#d4d4d4" : "#1e1e1e";
   const hasCombinedPreview = Boolean(previewSrc || previewSrcRef.current);
+  const isNarrowLayout = viewportWidth <= 768;
+  const isMobileLayout = viewportWidth <= 480;
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
@@ -435,7 +506,24 @@ export default function WebCompilerPage() {
     updateTheme();
     const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "devtools-theme" || event.key === "theme") updateTheme();
+    };
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    media.addEventListener("change", updateTheme);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", updateTheme);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateViewport = () => setViewportWidth(window.innerWidth);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   useEffect(() => {
@@ -473,7 +561,13 @@ export default function WebCompilerPage() {
       if (data.method !== "log" && data.method !== "error" && data.method !== "warn") return;
       if (typeof data.text !== "string") return;
       const { method, text } = data;
-      setConsoleEntries((prev) => [...prev, { method, text }]);
+      const timestamp = new Date().toLocaleTimeString("en-US", {
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+      setConsoleEntries((prev) => [...prev, { method, text, timestamp }]);
     };
 
     window.addEventListener("message", handleMessage);
@@ -920,8 +1014,22 @@ export default function WebCompilerPage() {
     const Icon = entry.method === "error" ? AlertCircle : entry.method === "warn" ? AlertTriangle : null;
     return (
       <div key={index} style={{ display: "flex", gap: 8, padding: "1px 0", alignItems: "flex-start" }}>
+        <span
+          style={{
+            width: 64,
+            flexShrink: 0,
+            fontSize: 11,
+            fontFamily: "'JetBrains Mono', monospace",
+            lineHeight: 1.5,
+            color: "var(--muted-foreground)",
+          }}
+        >
+          {entry.timestamp}
+        </span>
         {Icon ? <Icon size={10} style={{ color, flexShrink: 0, marginTop: 3 }} /> : <span style={{ width: 10 }} />}
-        <span style={{ fontSize: 12, fontFamily: "monospace", lineHeight: 1.5, color }}>{entry.text}</span>
+        <span style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.5, color }}>
+          {entry.text}
+        </span>
       </div>
     );
   };
@@ -1086,15 +1194,27 @@ export default function WebCompilerPage() {
   };
 
   const renderCombinedMode = () => (
-    <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+    <div
+      key="combined-mode"
+      className="web-compiler-combined-main"
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: isNarrowLayout ? "column" : "row",
+        overflow: "hidden",
+      }}
+    >
       <div
+        className="web-compiler-combined-editors"
         style={{
-          width: "50%",
+          width: isNarrowLayout ? "100%" : "50%",
+          height: isNarrowLayout ? (isMobileLayout ? "50vh" : "52%") : undefined,
           display: "flex",
           flexDirection: "column",
           overflowX: "hidden",
           overflowY: "auto",
-          borderRight: "1px solid var(--border)",
+          borderRight: isNarrowLayout ? "none" : "1px solid var(--border)",
+          borderBottom: isNarrowLayout ? "1px solid var(--border)" : "none",
           minHeight: 0,
         }}
       >
@@ -1103,7 +1223,17 @@ export default function WebCompilerPage() {
         {renderCombinedPanel("js")}
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div
+        className="web-compiler-combined-preview"
+        style={{
+          flex: isNarrowLayout ? "none" : 1,
+          height: isNarrowLayout ? (isMobileLayout ? "40vh" : "48%") : undefined,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          minHeight: 0,
+        }}
+      >
         <div
           style={{
             height: 40,
@@ -1373,16 +1503,19 @@ export default function WebCompilerPage() {
 
     return (
       <div
+        key="single-mode"
+        className="web-compiler-single-main"
         ref={splitContainerRef}
         style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}
       >
         <div
+          className="web-compiler-single-editor"
           style={{
-            height: `${splitPos}%`,
+            height: isMobileLayout ? "50vh" : `${splitPos}%`,
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            minHeight: "25%",
+            minHeight: isMobileLayout ? "50vh" : "25%",
           }}
         >
           <div
@@ -1479,6 +1612,7 @@ export default function WebCompilerPage() {
         </div>
 
         <div
+          className="web-compiler-single-splitter"
           onMouseDown={startSplitDrag}
           style={{
             height: 4,
@@ -1486,6 +1620,7 @@ export default function WebCompilerPage() {
             cursor: "row-resize",
             backgroundColor: isDraggingSplit ? "#10b981" : "var(--border)",
             transition: "background-color 150ms",
+            display: isMobileLayout ? "none" : "block",
           }}
           onMouseEnter={(e) => {
             if (!isDraggingSplit) e.currentTarget.style.backgroundColor = "#10b981";
@@ -1495,7 +1630,17 @@ export default function WebCompilerPage() {
           }}
         />
 
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: "25%" }}>
+        <div
+          className="web-compiler-single-output"
+          style={{
+            flex: isMobileLayout ? "none" : 1,
+            height: isMobileLayout ? "40vh" : undefined,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            minHeight: isMobileLayout ? "40vh" : "25%",
+          }}
+        >
           <div
             style={{
               height: 38,
@@ -1529,12 +1674,21 @@ export default function WebCompilerPage() {
                 cursor: "pointer",
               }}
             >
-              <Play size={12} />
+              {isSingleRunning && singleMode === "typescript" ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Play size={12} />
+              )}
               {isSingleRunning && singleMode === "typescript" ? "Running..." : "Run"}
               <span style={{ fontSize: 11, opacity: 0.6, marginLeft: 4 }}>Ctrl+Enter</span>
             </button>
 
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {mode === "javascript" && (
+                <IconBtn title="Clear console" onClick={() => setConsoleEntries([])}>
+                  <Trash2 size={14} />
+                </IconBtn>
+              )}
               {(mode === "html" || mode === "css") && (
                 <IconBtn title="Fullscreen" onClick={openFullscreen}>
                   <Maximize size={14} />
@@ -1568,6 +1722,7 @@ export default function WebCompilerPage() {
               >
                 {singleOutput && (
                   <iframe
+                    ref={singleRunnerFrameRef}
                     key={singlePreviewKey}
                     title="javascript-runner"
                     sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
@@ -1615,88 +1770,85 @@ export default function WebCompilerPage() {
                 >
                   Execution Result
                 </div>
-                <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-                  <pre
-                    style={{
-                      flex: 1,
-                      margin: 0,
-                      padding: "10px 14px",
-                      background: editorBackground,
-                      color: editorText,
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 12,
-                      lineHeight: 1.65,
-                      overflow: "auto",
-                      borderRight: "1px solid var(--border)",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {typeScriptRunResult ? (
-                      <>
-                        {typeScriptRunResult.stdout && (
-                          <span style={{ color: outputText }}>{typeScriptRunResult.stdout}</span>
-                        )}
-                        {typeScriptRunResult.stdout && typeScriptRunResult.stderr && "\n"}
-                        {typeScriptRunResult.stderr && (
-                          <span style={{ color: "#f48771" }}>{typeScriptRunResult.stderr}</span>
-                        )}
-                        {!typeScriptRunResult.stdout && !typeScriptRunResult.stderr && (
-                          <span style={{ color: "var(--muted-foreground)" }}>No output.</span>
-                        )}
-                        <span style={{ color: "var(--muted-foreground)" }}>
-                          {`\n\nTime: ${typeScriptRunResult.time}\nExit code: ${typeScriptRunResult.exitCode}\nStatus: ${typeScriptRunResult.status}`}
-                        </span>
-                      </>
-                    ) : isSingleRunning ? (
-                      <span style={{ color: "var(--muted-foreground)" }}>Running TypeScript...</span>
-                    ) : (
-                      <span style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, color: "var(--muted-foreground)" }}>
-                        <FileCode size={22} />
-                        <span>Click Run to execute TypeScript</span>
-                      </span>
-                    )}
-                  </pre>
+                <div
+                  style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: "auto",
+                    background: outputBackground,
+                    color: outputText,
+                    padding: "12px 14px",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 12,
+                    lineHeight: 1.65,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {typeScriptRunResult ? (
+                    <>
+                      {typeScriptRunResult.stdout && (
+                        <div style={{ color: outputText }}>{typeScriptRunResult.stdout}</div>
+                      )}
+                      {typeScriptRunResult.stderr && (
+                        <div style={{ color: "#f48771", marginTop: typeScriptRunResult.stdout ? 8 : 0 }}>
+                          {typeScriptRunResult.stderr}
+                        </div>
+                      )}
+                      {!typeScriptRunResult.stdout && !typeScriptRunResult.stderr && (
+                        <span style={{ color: "var(--muted-foreground)" }}>No output.</span>
+                      )}
+                    </>
+                  ) : isSingleRunning ? (
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        color: "var(--muted-foreground)",
+                      }}
+                    >
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Running TypeScript...</span>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        color: "var(--muted-foreground)",
+                      }}
+                    >
+                      <FileCode size={22} />
+                      <span>Click Run to execute TypeScript</span>
+                    </div>
+                  )}
+                </div>
+                {typeScriptRunResult && (
                   <div
                     style={{
-                      flex: 1,
-                      minWidth: 0,
-                      background: outputBackground,
-                      color: outputText,
-                      padding: "10px 14px",
+                      flexShrink: 0,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 12,
+                      padding: "7px 14px",
+                      borderTop: "1px solid var(--border)",
+                      background: "var(--card)",
+                      color: "var(--muted-foreground)",
+                      fontSize: 11,
                       fontFamily: "'JetBrains Mono', monospace",
-                      fontSize: 12,
-                      overflowY: "auto",
                     }}
                   >
-                    {typeScriptRunResult ? (
-                      <>
-                        <div style={{ whiteSpace: "pre-wrap", color: "var(--muted-foreground)" }}>
-                          Time: {typeScriptRunResult.time}
-                        </div>
-                        <div style={{ whiteSpace: "pre-wrap", color: "var(--muted-foreground)" }}>
-                          Exit code: {typeScriptRunResult.exitCode}
-                        </div>
-                        <div style={{ whiteSpace: "pre-wrap", color: "var(--muted-foreground)" }}>
-                          Status: {typeScriptRunResult.status}
-                        </div>
-                        {typeScriptRunResult.stdout && (
-                          <div style={{ whiteSpace: "pre-wrap", marginTop: 10, color: outputText }}>
-                            {typeScriptRunResult.stdout}
-                          </div>
-                        )}
-                        {typeScriptRunResult.stderr && (
-                          <div style={{ whiteSpace: "pre-wrap", marginTop: 10, color: "#f48771" }}>
-                            {typeScriptRunResult.stderr}
-                          </div>
-                        )}
-                      </>
-                    ) : isSingleRunning ? (
-                      <div style={{ color: "var(--muted-foreground)" }}>Running TypeScript...</div>
-                    ) : (
-                      <div style={{ color: "var(--muted-foreground)" }}>Execution output will appear here</div>
-                    )}
+                    <span>Time: {typeScriptRunResult.time}</span>
+                    <span>Exit code: {typeScriptRunResult.exitCode}</span>
+                    <span>Status: {typeScriptRunResult.status}</span>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -1710,7 +1862,39 @@ export default function WebCompilerPage() {
       style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}
       className="fixed inset-0 z-[1000] bg-background text-foreground"
     >
-      <style>{`.web-compiler-tab-scroll::-webkit-scrollbar { display: none; }`}</style>
+      <style>{`
+        .web-compiler-tab-scroll::-webkit-scrollbar { display: none; }
+        .web-compiler-single-main { flex-direction: column !important; }
+        @media (max-width: 768px) {
+          .web-compiler-combined-main { flex-direction: column !important; }
+          .web-compiler-combined-editors {
+            width: 100% !important;
+            height: 52% !important;
+            border-right: none !important;
+            border-bottom: 1px solid var(--border) !important;
+          }
+          .web-compiler-combined-preview {
+            flex: none !important;
+            height: 48% !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .web-compiler-combined-editors,
+          .web-compiler-single-editor {
+            height: 50vh !important;
+            min-height: 50vh !important;
+          }
+          .web-compiler-combined-preview,
+          .web-compiler-single-output {
+            flex: none !important;
+            height: 40vh !important;
+            min-height: 40vh !important;
+          }
+          .web-compiler-single-splitter {
+            display: none !important;
+          }
+        }
+      `}</style>
       <div
         className="flex items-center justify-between border-b border-border bg-card px-3"
         style={{ height: 38, minHeight: 38 }}
@@ -1738,9 +1922,12 @@ export default function WebCompilerPage() {
           alignItems: "center",
           padding: "0 12px",
           gap: 4,
+          overflowX: "auto",
+          overflowY: "hidden",
           backgroundColor: "var(--card)",
           borderBottom: "1px solid var(--border)",
         }}
+        className="web-compiler-tab-scroll"
       >
         {modeButtons.map((item) => {
           const active = mode === item.mode;
@@ -1756,6 +1943,7 @@ export default function WebCompilerPage() {
                 border: "none",
                 fontSize: 12,
                 fontWeight: 500,
+                flexShrink: 0,
                 cursor: "pointer",
                 transition: "background-color 150ms, color 150ms, box-shadow 150ms ease",
                 backgroundColor: active ? "#10b981" : "transparent",

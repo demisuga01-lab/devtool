@@ -19,16 +19,16 @@ import {
 
 const LANGUAGES = [
   { id: 71, language: "python", version: "3.8.1", name: "Python 3", category: "popular" },
-  { id: 70, language: "python", version: "2.7.17", name: "Python 2", category: "scripting" },
+  { id: 70, language: "python2", version: "2.7.17", name: "Python 2", category: "scripting" },
   { id: 62, language: "java", version: "13.0.1", name: "Java", category: "popular" },
   { id: 50, language: "c", version: "9.2.0", name: "C (GCC 9.2.0)", category: "popular" },
-  { id: 49, language: "c", version: "8.3.0", name: "C (GCC 8.3.0)", category: "systems" },
-  { id: 48, language: "c", version: "7.4.0", name: "C (GCC 7.4.0)", category: "systems" },
-  { id: 75, language: "c", version: "7.0.1", name: "C (Clang 7.0.1)", category: "systems" },
+  { id: 49, language: "c_gcc_8", version: "8.3.0", name: "C (GCC 8.3.0)", category: "systems" },
+  { id: 48, language: "c_gcc_7", version: "7.4.0", name: "C (GCC 7.4.0)", category: "systems" },
+  { id: 75, language: "c_clang_7", version: "7.0.1", name: "C (Clang 7.0.1)", category: "systems" },
   { id: 54, language: "cpp", version: "9.2.0", name: "C++ (GCC 9.2.0)", category: "popular" },
-  { id: 53, language: "cpp", version: "8.3.0", name: "C++ (GCC 8.3.0)", category: "systems" },
-  { id: 52, language: "cpp", version: "7.4.0", name: "C++ (GCC 7.4.0)", category: "systems" },
-  { id: 76, language: "cpp", version: "7.0.1", name: "C++ (Clang 7.0.1)", category: "systems" },
+  { id: 53, language: "cpp_gcc_8", version: "8.3.0", name: "C++ (GCC 8.3.0)", category: "systems" },
+  { id: 52, language: "cpp_gcc_7", version: "7.4.0", name: "C++ (GCC 7.4.0)", category: "systems" },
+  { id: 76, language: "cpp_clang_7", version: "7.0.1", name: "C++ (Clang 7.0.1)", category: "systems" },
   { id: 51, language: "csharp", version: "6.6.0", name: "C#", category: "popular" },
   { id: 73, language: "rust", version: "1.40.0", name: "Rust", category: "popular" },
   { id: 60, language: "go", version: "1.13.5", name: "Go", category: "popular" },
@@ -176,7 +176,8 @@ const iconButtonClass =
 function editorPlaceholder(language: { language: string; name: string }) {
   if (language.language === "python") return "# Write Python code here...";
   if (language.language === "java") return "// Write Java code here...";
-  if (language.language === "c" || language.language === "cpp") return "// Write C code here...";
+  if (language.language.startsWith("c_") || language.language.startsWith("cpp_")) return "// Write C/C++ code here...";
+  if (language.language === "c" || language.language === "cpp") return "// Write C/C++ code here...";
   return "// Start coding here...";
 }
 
@@ -198,6 +199,9 @@ export default function RunPage() {
   const [isDark, setIsDark] = useState(() =>
     typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false,
   );
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1024,
+  );
   const [isMac, setIsMac] = useState(() =>
     typeof navigator !== "undefined" ? navigator.platform.includes("Mac") : false,
   );
@@ -217,6 +221,8 @@ export default function RunPage() {
   const outputText = isDark ? "#d4d4d4" : "#1e1e1e";
   const shortcutLabel = isMac ? "⌘↵" : "Ctrl+↵";
   const placeholderText = editorPlaceholder(selectedLang);
+  const isNarrowLayout = viewportWidth <= 768;
+  const isMobileLayout = viewportWidth <= 480;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -231,7 +237,17 @@ export default function RunPage() {
     updateTheme();
     const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "devtools-theme" || event.key === "theme") updateTheme();
+    };
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    media.addEventListener("change", updateTheme);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener("change", updateTheme);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   useEffect(() => {
@@ -239,12 +255,21 @@ export default function RunPage() {
   }, []);
 
   useEffect(() => {
+    const updateViewport = () => setViewportWidth(window.innerWidth);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
+
+  useEffect(() => {
     const starter = STARTER_CODE[selectedLangId] || "// Start coding here...";
     setCode(starter);
+    setStdin("");
     setLineCount(starter.split("\n").length);
     setStdout("");
     setStderr("");
     setRunInfo(null);
+    setActiveOutputTab("stdout");
   }, [selectedLangId]);
 
   useEffect(() => {
@@ -673,9 +698,40 @@ export default function RunPage() {
       }}
       className="fixed inset-0 z-[1000] bg-background text-foreground"
     >
+      <style>{`
+        @media (max-width: 768px) {
+          .run-compiler-main { flex-direction: column !important; }
+          .run-compiler-editor {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            height: 52% !important;
+            border-right: none !important;
+            border-bottom: 1px solid var(--border) !important;
+          }
+          .run-compiler-divider { display: none !important; }
+          .run-compiler-output {
+            flex: none !important;
+            height: 48% !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .run-compiler-editor {
+            height: 50vh !important;
+          }
+          .run-compiler-output {
+            height: 40vh !important;
+          }
+        }
+      `}</style>
       <div
-        className="flex items-center justify-between border-b border-border bg-card bg-white px-3 dark:bg-zinc-900"
-        style={{ height: 38, minHeight: 38 }}
+        className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-card bg-white px-3 dark:bg-zinc-900"
+        style={{
+          height: isMobileLayout ? "auto" : 38,
+          minHeight: 38,
+          paddingTop: isMobileLayout ? 5 : undefined,
+          paddingBottom: isMobileLayout ? 5 : undefined,
+        }}
       >
         <div className="flex min-w-0 items-center gap-2">
           <Link
@@ -694,7 +750,7 @@ export default function RunPage() {
           <select
             value={selectedLangId}
             onChange={(e) => setSelectedLangId(Number(e.target.value))}
-            className="h-[28px] w-[220px] cursor-pointer rounded-md border border-border bg-background px-2 text-[12px] font-medium text-foreground focus:border-emerald-500 focus:outline-none"
+            className="h-[28px] w-[220px] max-w-[48vw] cursor-pointer rounded-md border border-border bg-background px-2 text-[12px] font-medium text-foreground focus:border-emerald-500 focus:outline-none"
           >
             {CATEGORIES.map((cat) => {
               const langs = LANGUAGES.filter((l) => l.category === cat);
@@ -745,20 +801,22 @@ export default function RunPage() {
 
       <div
         ref={containerRef}
+        className="run-compiler-main"
         style={{
           flex: 1,
           overflow: "hidden",
           display: "flex",
-          flexDirection: "row",
+          flexDirection: isNarrowLayout ? "column" : "row",
         }}
       >
         <div
           style={{
-            width: `${leftWidth}%`,
-            minWidth: "30%",
-            maxWidth: "70%",
+            width: isNarrowLayout ? "100%" : `${leftWidth}%`,
+            minWidth: isNarrowLayout ? "100%" : "30%",
+            maxWidth: isNarrowLayout ? "100%" : "70%",
+            height: isNarrowLayout ? (isMobileLayout ? "50vh" : "52%") : undefined,
           }}
-          className="flex flex-col overflow-hidden border-r border-border"
+          className={`run-compiler-editor flex flex-col overflow-hidden border-border ${isNarrowLayout ? "border-b" : "border-r"}`}
         >
           <div
             className="flex items-center justify-between border-b border-border bg-card bg-white px-2.5 dark:bg-zinc-900"
@@ -919,21 +977,30 @@ export default function RunPage() {
 
         <div
           onMouseDown={handleMouseDown}
+          className="run-compiler-divider group relative hover:bg-emerald-500"
           style={{
             width: 4,
             flexShrink: 0,
             cursor: "col-resize",
             backgroundColor: isDragging ? "#10b981" : "rgb(var(--border))",
             transition: isDragging ? "none" : "background-color 150ms",
+            display: isNarrowLayout ? "none" : "block",
           }}
-          className="group relative hover:bg-emerald-500"
         >
           <div className="pointer-events-none absolute left-1/2 top-1/2 flex h-8 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-muted-foreground/40 opacity-0 transition-opacity group-hover:opacity-100">
             <GripVertical size={12} />
           </div>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }} className="flex flex-col overflow-hidden">
+        <div
+          className="run-compiler-output flex flex-col overflow-hidden"
+          style={{
+            flex: isNarrowLayout ? "none" : 1,
+            minWidth: 0,
+            height: isNarrowLayout ? (isMobileLayout ? "40vh" : "48%") : undefined,
+            minHeight: isNarrowLayout ? 0 : undefined,
+          }}
+        >
           <div
             className="flex items-center justify-between border-b border-border bg-card bg-white px-2.5 dark:bg-zinc-900"
             style={{ height: 38, minHeight: 38 }}
