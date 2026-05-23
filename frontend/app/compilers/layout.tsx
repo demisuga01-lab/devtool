@@ -1,3 +1,5 @@
-export default function CompilersLayout({ children }: { children: React.ReactNode }) {
+import type { ReactNode } from "react";
+
+export default function CompilersLayout({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }

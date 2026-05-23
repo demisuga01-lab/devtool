@@ -343,7 +343,7 @@ export function Header() {
                     onClick={() => compilers.setOpen(false)}
                   >
                     <span className="flex items-start gap-2.5">
-                      <item.icon className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${item.iconColor}`} />
+                      <item.icon className={`mt-0.5 h-[14px] w-[14px] flex-shrink-0 ${item.iconColor}`} />
                       <span className="min-w-0">
                         <span className="block text-[13px] font-medium text-foreground">{item.name}</span>
                         <span className="block text-[11px] text-muted-foreground">{item.description}</span>
@@ -444,7 +444,7 @@ export function Header() {
                 {compilerLinks.map((item) => (
                   <MobilePlainLink key={item.href} href={item.href} onClick={() => setMobile(false)}>
                     <span className="flex items-start gap-2">
-                      <item.icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" />
+                      <item.icon className={`mt-0.5 h-[14px] w-[14px] flex-shrink-0 ${item.iconColor}`} />
                       <span className="min-w-0">
                         <span className="block">{item.name}</span>
                         <span className="block text-xs text-neutral-400 dark:text-neutral-500">{item.description}</span>

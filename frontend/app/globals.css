@@ -36,7 +36,7 @@ pre, code {
 }
 
 .font-code {
-  font-family: var(--font-mono);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
 }
 
 .scrollbar-thin {
