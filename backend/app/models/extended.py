@@ -155,3 +155,43 @@ class HeartbeatPing(Base):
     monitor_id = Column(String(12), ForeignKey("heartbeat_monitors.id", ondelete="CASCADE"), nullable=False)
     pinged_at = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(Text, default="up")
+
+
+class ApiCollection(Base):
+    __tablename__ = "api_collections"
+
+    id = Column(String(12), primary_key=True)
+    name = Column(Text, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+    admin_key_hash = Column(Text, nullable=False)
+    request_count = Column(Integer, default=0)
+
+
+class CollectionRequest(Base):
+    __tablename__ = "collection_requests"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    collection_id = Column(String(12), ForeignKey("api_collections.id", ondelete="CASCADE"), nullable=False)
+    name = Column(Text, nullable=False)
+    method = Column(Text, nullable=False)
+    url = Column(Text, nullable=False)
+    headers = Column(JSONB, default=list)
+    body = Column(Text, nullable=True)
+    body_type = Column(Text, default="none")
+    auth_type = Column(Text, default="none")
+    auth_config = Column(JSONB, default=dict)
+    params = Column(JSONB, default=list)
+    sort_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    folder = Column(Text, nullable=True)
+
+
+class CollectionEnvironment(Base):
+    __tablename__ = "collection_environments"
+
+    id = Column(String(36), primary_key=True, default=uuid_string)
+    collection_id = Column(String(12), ForeignKey("api_collections.id", ondelete="CASCADE"), nullable=False)
+    name = Column(Text, nullable=False)
+    variables = Column(JSONB, default=list)

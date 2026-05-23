@@ -13,6 +13,7 @@ import {
   FileJson,
   FileText,
   Fingerprint,
+  FolderOpen,
   GitCompare,
   Globe,
   Hash,
@@ -27,6 +28,7 @@ import {
   Play,
   QrCode,
   SearchCheck,
+  Send,
   Server,
   Shield,
   ShieldCheck,
@@ -36,6 +38,7 @@ import {
   Type,
   Wand2,
   Wifi,
+  Workflow,
   Zap,
 } from "lucide-react";
 
@@ -229,6 +232,9 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "Open Graph Preview", slug: "og-preview", description: "Preview how a URL looks when shared on social media.", href: "/tools/og-preview", implemented: true },
       { name: "cURL Builder", slug: "curl-builder", description: "Build cURL commands visually or convert cURL to fetch.", href: "/tools/curl-builder", implemented: true },
       { name: "Request History", slug: "request-history", description: "Browse your recent HTTP tool requests.", href: "/tools/request-history", implemented: true },
+      { name: "REST Client", slug: "rest-client", description: "Make HTTP requests and inspect responses.", href: "/tools/rest-client", implemented: true },
+      { name: "GraphQL Client", slug: "graphql-client", description: "Query GraphQL APIs with schema explorer.", href: "/tools/graphql-client", implemented: true },
+      { name: "API Collections", slug: "api-collections", description: "Save and organize API requests.", href: "/tools/api-collections", implemented: true },
       { name: "Webhook Inbox", slug: "webhook-inbox", description: "Capture and inspect incoming webhooks.", href: "/tools/webhook-inbox", implemented: true },
       { name: "Webhook Payload Viewer", slug: "webhook-viewer", description: "Parse and inspect HTTP request payloads.", href: "/tools/webhook-viewer", implemented: true },
       { name: "Heartbeat Monitoring", slug: "heartbeat", description: "Monitor cron jobs and scheduled tasks.", href: "/tools/heartbeat", implemented: true },
@@ -430,6 +436,9 @@ const networkTools = new Set([
   "curl-builder",
   "url-parser",
   "url-query-builder",
+  "rest-client",
+  "graphql-client",
+  "api-collections",
   "webhook-inbox",
   "heartbeat",
   "request-history",
@@ -545,6 +554,9 @@ const newTools = new Set([
   "collab-notes",
   "one-time-secret",
   "encrypted-file-paste",
+  "rest-client",
+  "graphql-client",
+  "api-collections",
   "webhook-inbox",
   "webhook-viewer",
   "heartbeat",
@@ -591,6 +603,9 @@ const iconBySlug: Record<string, LucideIcon> = {
   "curl-builder": Terminal,
   "url-parser": Link2,
   "url-query-builder": Link2,
+  "rest-client": Send,
+  "graphql-client": Workflow,
+  "api-collections": FolderOpen,
   "request-history": Clock,
   "webhook-inbox": Server,
   "webhook-viewer": SearchCheck,
@@ -695,6 +710,9 @@ const explicitTags: Record<string, string[]> = {
   "bcrypt-generator": ["bcrypt", "hash", "password", "salt", "cost", "encrypt", "secure"],
   "webhook-inbox": ["webhook", "http", "request", "capture", "inspect", "endpoint", "listener"],
   "cron-parser": ["cron", "schedule", "interval", "job", "task", "timing", "expression"],
+  "rest-client": ["rest", "http", "api", "request", "get", "post", "client", "fetch", "curl", "endpoint", "test"],
+  "graphql-client": ["graphql", "gql", "query", "mutation", "schema", "introspection", "api", "graph"],
+  "api-collections": ["collection", "postman", "api", "requests", "save", "organize", "environment", "variables"],
 };
 
 function intentForSlug(slug: string): IntentGroupId {
@@ -709,6 +727,7 @@ function intentForSlug(slug: string): IntentGroupId {
 
 function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
   const slug = tool.slug;
+  if (["rest-client", "graphql-client", "api-collections"].includes(slug)) return ["url", "text", "json"];
   if (["uuid-generator", "ulid-generator", "nanoid-generator", "random-token-generator", "passphrase-generator", "password-generator", "lorem-ipsum", "qr-generator", "status-badges"].includes(slug)) return ["none"];
   if (slug.includes("runner") || ["code-share", "testcase-runner", "js-beautifier", "css-formatter", "html-formatter", "sql-formatter", "nginx-config-checker", "docker-compose-validator", "systemd-unit-generator"].includes(slug)) return ["code"];
   if (slug.includes("json") || ["jwt-builder", "jwt-decoder", "jwt-verifier", "openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-viewer"].includes(slug)) return ["json", "text"];
@@ -730,7 +749,7 @@ function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOut
 function complexityForTool(tool: ToolSeed): ToolComplexity {
   if (
     tool.slug.includes("runner") ||
-    ["openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-inbox", "webhook-viewer", "heartbeat", "jwt-builder", "jwt-verifier", "xsd-generator", "xslt-transformer", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
+    ["openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-inbox", "webhook-viewer", "heartbeat", "rest-client", "graphql-client", "api-collections", "jwt-builder", "jwt-verifier", "xsd-generator", "xslt-transformer", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
   ) {
     return "advanced";
   }

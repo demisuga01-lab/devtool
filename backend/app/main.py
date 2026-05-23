@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.core.config import get_settings
 from app.api.routes import (
+    api_collections,
     api_keys,
     auth,
     collections,
@@ -15,6 +16,7 @@ from app.api.routes import (
     heartbeats,
     paste,
     reports,
+    rest_client,
     secrets,
     sla,
     status,
@@ -88,9 +90,11 @@ async def hibp_check(payload: HibpCheckRequest) -> dict:
 
 
 app.include_router(tools.router, prefix="/api")
+app.include_router(rest_client.router, prefix="/api")
 app.include_router(paste.router, prefix="/api")
 app.include_router(secrets.router, prefix="/api")
 app.include_router(file_paste.router, prefix="/api")
+app.include_router(api_collections.router, prefix="/api")
 app.include_router(collections.router, prefix="/api")
 app.include_router(gists.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
