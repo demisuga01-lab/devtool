@@ -13,7 +13,9 @@ import {
   useState,
 } from "react";
 import { AlertCircle, Check, ChevronRight, Copy, Play, RefreshCw } from "lucide-react";
-import { getGroupOfTool, getTool } from "@/lib/tools";
+import { usePathname } from "next/navigation";
+import { RecordVisit } from "@/components/record-visit";
+import { allTools, getGroupOfTool, getTool } from "@/lib/tools";
 
 type Breadcrumb = { label: string; href?: string };
 type BadgeVariant = "default" | "success" | "error" | "warning" | "info";
@@ -33,17 +35,34 @@ export function ToolShell({
   className = "",
   slug,
   footer = false,
+  toolName,
+  toolHref,
+  iconName,
+  intentGroup,
 }: {
   children: ReactNode;
   className?: string;
   slug?: string;
   footer?: boolean;
+  toolName?: string;
+  toolHref?: string;
+  iconName?: string;
+  intentGroup?: string;
 }) {
+  const pathname = usePathname();
   const tool = slug ? getTool(slug) : undefined;
+  const pathTool = tool ?? allTools.find((item) => item.href === pathname);
   const group = slug ? getGroupOfTool(slug) : undefined;
+  const visitName = toolName ?? pathTool?.name;
+  const visitHref = toolHref ?? pathTool?.href;
+  const visitIcon = iconName ?? pathTool?.slug ?? "";
+  const visitIntent = intentGroup ?? pathTool?.intentGroup ?? "";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      {visitName && visitHref && (
+        <RecordVisit toolName={visitName} toolHref={visitHref} iconName={visitIcon} intentGroup={visitIntent} />
+      )}
       <div className={joinClasses("mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8", className)}>
         {slug && (
           <ToolHeader

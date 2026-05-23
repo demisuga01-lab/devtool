@@ -1,10 +1,68 @@
-export type Tool = {
+import type { LucideIcon } from "lucide-react";
+import {
+  AlignLeft,
+  ArrowLeftRight,
+  Braces,
+  Calendar,
+  Clock,
+  Code2,
+  Cpu,
+  Database,
+  Diff,
+  FileCode2,
+  FileJson,
+  FileText,
+  Fingerprint,
+  GitCompare,
+  Globe,
+  Hash,
+  Key,
+  Layers,
+  Link2,
+  Lock,
+  Network,
+  Paintbrush,
+  Palette,
+  PenLine,
+  Play,
+  QrCode,
+  SearchCheck,
+  Server,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  Timer,
+  Type,
+  Wand2,
+  Wifi,
+  Zap,
+} from "lucide-react";
+
+export type IntentGroupId = "inspect" | "convert" | "security" | "generate" | "network" | "text";
+export type ToolInputType = "text" | "file" | "url" | "code" | "json" | "none";
+export type ToolOutputType = "formatted" | "generated" | "converted" | "analyzed" | "validated" | "executed";
+export type ToolComplexity = "simple" | "advanced";
+
+type ToolSeed = {
   name: string;
   slug: string;
   description: string;
   href: string;
   implemented: boolean;
 };
+
+export interface Tool extends ToolSeed {
+  category: string;
+  intentGroup: IntentGroupId;
+  icon: LucideIcon;
+  tags: string[];
+  inputType: ToolInputType[];
+  outputType: ToolOutputType[];
+  complexity: ToolComplexity;
+  isNew: boolean;
+  isPopular: boolean;
+}
 
 export type ToolGroup = {
   name: string;
@@ -13,7 +71,23 @@ export type ToolGroup = {
   tools: Tool[];
 };
 
-export const toolGroups: ToolGroup[] = [
+type ToolSeedGroup = {
+  name: string;
+  slug: string;
+  description: string;
+  tools: ToolSeed[];
+};
+
+export const intentDefinitions: { id: IntentGroupId; label: string; shortLabel: string }[] = [
+  { id: "inspect", label: "Inspect & Validate", shortLabel: "Inspect" },
+  { id: "convert", label: "Convert & Transform", shortLabel: "Convert" },
+  { id: "security", label: "Security & Crypto", shortLabel: "Security" },
+  { id: "generate", label: "Generate & Build", shortLabel: "Generate" },
+  { id: "network", label: "Network & Web", shortLabel: "Network" },
+  { id: "text", label: "Text & Code", shortLabel: "Text" },
+];
+
+const seedToolGroups: ToolSeedGroup[] = [
   {
     name: "Text & Format",
     slug: "text",
@@ -252,6 +326,450 @@ export const toolGroups: ToolGroup[] = [
     ],
   },
 ];
+
+const inspectTools = new Set([
+  "json-formatter",
+  "json-validator",
+  "xml-formatter",
+  "xml-validator",
+  "yaml-diff",
+  "html-formatter",
+  "css-formatter",
+  "jwt-decoder",
+  "jwt-verifier",
+  "hash-verifier",
+  "toml-formatter",
+  "toml-validator",
+  "nginx-config-checker",
+  "docker-compose-validator",
+  "contrast-checker",
+  "file-encoding",
+  "ssl-checker",
+  "security-headers",
+  "spf-checker",
+  "openapi-viewer",
+  "openapi-validator",
+  "openapi-schema-explorer",
+  "redoc-viewer",
+  "webhook-viewer",
+]);
+
+const convertTools = new Set([
+  "base64",
+  "url-encoder",
+  "hex-encoder",
+  "binary-converter",
+  "csv-to-json",
+  "json-to-csv",
+  "json-to-yaml",
+  "yaml-to-json",
+  "xml-to-json",
+  "json-to-xml",
+  "toml-to-json",
+  "unicode-escape",
+  "hex-rgb-hsl-converter",
+  "morse-code",
+  "number-base",
+  "roman-numerals",
+  "json-to-typescript",
+  "case-converter",
+  "text-case",
+  "html-entities",
+  "html-escape",
+  "js-escape",
+  "xml-escape",
+  "json-escape",
+  "sql-escape",
+  "xslt-transformer",
+]);
+
+const securityTools = new Set([
+  "hash-generator",
+  "blake2-generator",
+  "hmac-generator",
+  "bcrypt-generator",
+  "password-generator",
+  "jwt-builder",
+  "random-token-generator",
+  "totp-generator",
+  "one-time-secret",
+  "encrypted-file-paste",
+  "zk-paste",
+]);
+
+const generateTools = new Set([
+  "uuid-generator",
+  "ulid-generator",
+  "nanoid-generator",
+  "passphrase-generator",
+  "qr-generator",
+  "lorem-ipsum",
+  "cron-builder",
+  "quartz-cron",
+  "slug-generator",
+  "gitignore-generator",
+  "systemd-unit-generator",
+  "xsd-generator",
+  "css-gradient",
+  "css-box-shadow",
+  "css-clamp-calculator",
+  "color-picker",
+  "status-badges",
+  "env-manager",
+]);
+
+const networkTools = new Set([
+  "http-headers",
+  "dns-lookup",
+  "dns-propagation",
+  "whois-lookup",
+  "ssl-chain",
+  "redirect-checker",
+  "ip-lookup",
+  "og-preview",
+  "curl-builder",
+  "url-parser",
+  "url-query-builder",
+  "webhook-inbox",
+  "heartbeat",
+  "request-history",
+]);
+
+const textTools = new Set([
+  "text-diff",
+  "code-diff",
+  "word-counter",
+  "line-sorter",
+  "markdown-preview",
+  "regex-tester",
+  "java-regex",
+  "regex-replace",
+  "regex-escape",
+  "string-utilities",
+  "jsonpath-tester",
+  "json-tree-viewer",
+  "xpath-tester",
+  "sql-formatter",
+  "js-beautifier",
+  "duplicate-line-remover",
+  "timestamp",
+  "date-diff",
+  "duration-calculator",
+  "age-calculator",
+  "timezone-converter",
+  "cron-parser",
+  "semver-checker",
+  "mime-types",
+  "i18n-standards",
+  "unit-converter",
+  "ascii-table",
+  "code-share",
+  "collab-notes",
+  "testcase-runner",
+  "code-runner",
+  "web-runner",
+  "scripting-runner",
+  "jvm-runner",
+  "systems-runner",
+  "other-runner",
+  "data-runner",
+  "recent-pastes",
+]);
+
+const popularTools = new Set([
+  "json-formatter",
+  "json-validator",
+  "password-generator",
+  "uuid-generator",
+  "base64",
+  "jwt-decoder",
+  "hash-generator",
+  "regex-tester",
+  "url-encoder",
+  "timestamp",
+  "scripting-runner",
+  "web-runner",
+  "dns-lookup",
+  "ssl-checker",
+  "markdown-preview",
+  "text-diff",
+  "qr-generator",
+  "bcrypt-generator",
+  "hmac-generator",
+  "cron-parser",
+  "json-to-yaml",
+  "yaml-to-json",
+  "xml-formatter",
+]);
+
+const newTools = new Set([
+  "ulid-generator",
+  "nanoid-generator",
+  "random-token-generator",
+  "passphrase-generator",
+  "duplicate-line-remover",
+  "case-converter",
+  "regex-replace",
+  "regex-escape",
+  "timezone-converter",
+  "duration-calculator",
+  "hex-rgb-hsl-converter",
+  "contrast-checker",
+  "css-clamp-calculator",
+  "unicode-escape",
+  "blake2-generator",
+  "hash-verifier",
+  "jwt-verifier",
+  "jsonpath-tester",
+  "json-tree-viewer",
+  "yaml-diff",
+  "code-diff",
+  "recent-pastes",
+  "url-query-builder",
+  "docker-compose-validator",
+  "nginx-config-checker",
+  "systemd-unit-generator",
+  "toml-formatter",
+  "toml-validator",
+  "toml-to-json",
+  "env-manager",
+  "openapi-viewer",
+  "redoc-viewer",
+  "openapi-validator",
+  "openapi-schema-explorer",
+  "status-badges",
+  "testcase-runner",
+  "code-share",
+  "request-history",
+  "zk-paste",
+  "collab-notes",
+  "one-time-secret",
+  "encrypted-file-paste",
+  "webhook-inbox",
+  "webhook-viewer",
+  "heartbeat",
+]);
+
+const iconBySlug: Record<string, LucideIcon> = {
+  "json-formatter": Braces,
+  "json-validator": FileJson,
+  "json-diff": GitCompare,
+  "json-to-typescript": FileCode2,
+  "jsonpath-tester": SearchCheck,
+  "json-tree-viewer": Braces,
+  "json-to-csv": Database,
+  "json-to-yaml": Braces,
+  "json-to-xml": Braces,
+  "json-escape": Braces,
+  "xml-formatter": FileCode2,
+  "xml-validator": SearchCheck,
+  "xml-to-json": FileJson,
+  "xml-escape": FileCode2,
+  "xpath-tester": SearchCheck,
+  "xsd-generator": Wand2,
+  "xslt-transformer": ArrowLeftRight,
+  "yaml-to-json": FileJson,
+  "yaml-diff": Diff,
+  "toml-formatter": AlignLeft,
+  "toml-validator": SearchCheck,
+  "toml-to-json": FileJson,
+  "openapi-viewer": Server,
+  "redoc-viewer": FileText,
+  "openapi-validator": SearchCheck,
+  "openapi-schema-explorer": Braces,
+  "http-headers": Globe,
+  "redirect-checker": ArrowLeftRight,
+  "ssl-checker": Shield,
+  "ssl-chain": ShieldCheck,
+  "dns-lookup": Wifi,
+  "dns-propagation": Network,
+  "whois-lookup": Globe,
+  "security-headers": ShieldCheck,
+  "ip-lookup": Globe,
+  "spf-checker": Shield,
+  "og-preview": Link2,
+  "curl-builder": Terminal,
+  "url-parser": Link2,
+  "url-query-builder": Link2,
+  "request-history": Clock,
+  "webhook-inbox": Server,
+  "webhook-viewer": SearchCheck,
+  heartbeat: Zap,
+  "hash-generator": Hash,
+  "blake2-generator": Hash,
+  "hmac-generator": Key,
+  "bcrypt-generator": Lock,
+  "password-generator": Key,
+  "jwt-builder": Fingerprint,
+  "jwt-decoder": Fingerprint,
+  "jwt-verifier": ShieldCheck,
+  "hash-verifier": ShieldCheck,
+  "random-token-generator": Key,
+  "totp-generator": Lock,
+  "one-time-secret": Lock,
+  "encrypted-file-paste": ShieldCheck,
+  "zk-paste": Lock,
+  "uuid-generator": Sparkles,
+  "ulid-generator": Sparkles,
+  "nanoid-generator": Sparkles,
+  "passphrase-generator": Key,
+  "qr-generator": QrCode,
+  "lorem-ipsum": FileText,
+  "cron-builder": Clock,
+  "quartz-cron": Clock,
+  "slug-generator": Wand2,
+  "gitignore-generator": FileCode2,
+  "systemd-unit-generator": Server,
+  "env-manager": FileCode2,
+  "status-badges": Layers,
+  "css-gradient": Paintbrush,
+  "css-box-shadow": Layers,
+  "css-clamp-calculator": Type,
+  "color-picker": Palette,
+  "text-diff": GitCompare,
+  "code-diff": Diff,
+  "word-counter": Type,
+  "line-sorter": AlignLeft,
+  "markdown-preview": FileText,
+  "regex-tester": SearchCheck,
+  "java-regex": SearchCheck,
+  "regex-replace": SearchCheck,
+  "regex-escape": SearchCheck,
+  "string-utilities": Type,
+  "sql-formatter": Database,
+  "js-beautifier": Code2,
+  "duplicate-line-remover": AlignLeft,
+  timestamp: Clock,
+  "date-diff": Calendar,
+  "duration-calculator": Timer,
+  "age-calculator": Calendar,
+  "timezone-converter": Clock,
+  "cron-parser": Clock,
+  "semver-checker": SearchCheck,
+  "mime-types": FileText,
+  "i18n-standards": Globe,
+  "unit-converter": ArrowLeftRight,
+  "ascii-table": Type,
+  "code-share": Code2,
+  "collab-notes": PenLine,
+  "testcase-runner": Play,
+  "code-runner": Terminal,
+  "web-runner": Code2,
+  "scripting-runner": Terminal,
+  "jvm-runner": Cpu,
+  "systems-runner": Cpu,
+  "data-runner": Database,
+  "other-runner": Terminal,
+  base64: ArrowLeftRight,
+  "url-encoder": Link2,
+  "hex-encoder": Hash,
+  "binary-converter": ArrowLeftRight,
+  "csv-to-json": Database,
+  "hex-rgb-hsl-converter": Palette,
+  "number-base": ArrowLeftRight,
+  "morse-code": ArrowLeftRight,
+  "roman-numerals": ArrowLeftRight,
+  "case-converter": Type,
+  "text-case": Type,
+  "html-entities": FileText,
+  "html-escape": FileCode2,
+  "js-escape": Code2,
+  "sql-escape": Database,
+  "file-encoding": FileText,
+  "unicode-escape": Type,
+  "recent-pastes": Clock,
+};
+
+const explicitTags: Record<string, string[]> = {
+  "json-formatter": ["json", "format", "prettify", "minify", "indent", "beautify", "lint", "pretty print"],
+  "json-validator": ["json", "validate", "lint", "syntax", "schema", "parse", "error", "debug"],
+  "password-generator": ["password", "secure", "random", "entropy", "strength", "credentials", "passphrase"],
+  "jwt-decoder": ["jwt", "token", "json web token", "claims", "bearer", "auth", "decode", "payload", "header"],
+  "dns-lookup": ["dns", "domain", "nameserver", "mx", "txt", "a record", "cname", "nslookup", "dig"],
+  base64: ["base64", "encode", "decode", "binary", "text", "convert", "encoding"],
+  "regex-tester": ["regex", "regexp", "pattern", "match", "test", "regular expression", "search"],
+  "hash-generator": ["hash", "md5", "sha", "sha256", "sha512", "checksum", "digest", "crypto"],
+  "uuid-generator": ["uuid", "guid", "unique", "identifier", "random", "v4", "generate"],
+  timestamp: ["timestamp", "unix", "epoch", "date", "time", "convert", "utc"],
+  "ssl-checker": ["ssl", "tls", "certificate", "https", "expiry", "cert", "security"],
+  "bcrypt-generator": ["bcrypt", "hash", "password", "salt", "cost", "encrypt", "secure"],
+  "webhook-inbox": ["webhook", "http", "request", "capture", "inspect", "endpoint", "listener"],
+  "cron-parser": ["cron", "schedule", "interval", "job", "task", "timing", "expression"],
+};
+
+function intentForSlug(slug: string): IntentGroupId {
+  if (inspectTools.has(slug)) return "inspect";
+  if (convertTools.has(slug)) return "convert";
+  if (securityTools.has(slug)) return "security";
+  if (generateTools.has(slug)) return "generate";
+  if (networkTools.has(slug)) return "network";
+  if (textTools.has(slug)) return "text";
+  return "text";
+}
+
+function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
+  const slug = tool.slug;
+  if (["uuid-generator", "ulid-generator", "nanoid-generator", "random-token-generator", "passphrase-generator", "password-generator", "lorem-ipsum", "qr-generator", "status-badges"].includes(slug)) return ["none"];
+  if (slug.includes("runner") || ["code-share", "testcase-runner", "js-beautifier", "css-formatter", "html-formatter", "sql-formatter", "nginx-config-checker", "docker-compose-validator", "systemd-unit-generator"].includes(slug)) return ["code"];
+  if (slug.includes("json") || ["jwt-builder", "jwt-decoder", "jwt-verifier", "openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-viewer"].includes(slug)) return ["json", "text"];
+  if (["http-headers", "redirect-checker", "ssl-checker", "ssl-chain", "dns-lookup", "dns-propagation", "whois-lookup", "security-headers", "ip-lookup", "spf-checker", "og-preview", "url-parser", "url-query-builder", "webhook-inbox", "heartbeat"].includes(slug)) return ["url"];
+  if (["file-encoding", "hash-verifier", "encrypted-file-paste", "collab-notes"].includes(slug)) return ["file", "text"];
+  return ["text"];
+}
+
+function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOutputType[] {
+  const slug = tool.slug;
+  if (slug.includes("runner") || ["testcase-runner"].includes(slug)) return ["executed"];
+  if (slug.includes("validator") || ["jwt-verifier", "hash-verifier", "contrast-checker", "nginx-config-checker", "docker-compose-validator", "security-headers", "spf-checker"].includes(slug)) return ["validated"];
+  if (slug.includes("formatter") || ["js-beautifier", "line-sorter", "duplicate-line-remover"].includes(slug)) return ["formatted"];
+  if (intentGroup === "convert" || slug.includes("-to-") || slug.includes("converter") || ["base64", "url-encoder", "hex-encoder", "binary-converter", "unicode-escape", "morse-code", "number-base", "roman-numerals", "case-converter", "text-case"].includes(slug)) return ["converted"];
+  if (intentGroup === "generate" || intentGroup === "security" && ["hash-generator", "blake2-generator", "hmac-generator", "bcrypt-generator", "password-generator", "jwt-builder", "random-token-generator", "totp-generator", "one-time-secret", "encrypted-file-paste", "zk-paste"].includes(slug)) return ["generated"];
+  return ["analyzed"];
+}
+
+function complexityForTool(tool: ToolSeed): ToolComplexity {
+  if (
+    tool.slug.includes("runner") ||
+    ["openapi-viewer", "openapi-validator", "openapi-schema-explorer", "redoc-viewer", "webhook-inbox", "webhook-viewer", "heartbeat", "jwt-builder", "jwt-verifier", "xsd-generator", "xslt-transformer", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
+  ) {
+    return "advanced";
+  }
+  return "simple";
+}
+
+function tagsForTool(tool: ToolSeed, category: string, intentGroup: IntentGroupId): string[] {
+  const generated = [
+    ...tool.name.toLowerCase().split(/[^a-z0-9+#]+/),
+    ...tool.slug.split("-"),
+    ...tool.description.toLowerCase().split(/[^a-z0-9+#]+/),
+    category.toLowerCase(),
+    intentGroup,
+    "developer",
+    "tool",
+  ].filter((tag) => tag.length > 1);
+  return Array.from(new Set([...(explicitTags[tool.slug] ?? []), ...generated])).slice(0, 16);
+}
+
+function enrichTool(tool: ToolSeed, category: string): Tool {
+  const intentGroup = intentForSlug(tool.slug);
+  return {
+    ...tool,
+    category,
+    intentGroup,
+    icon: iconBySlug[tool.slug] ?? FileText,
+    tags: tagsForTool(tool, category, intentGroup),
+    inputType: inputTypesForTool(tool),
+    outputType: outputTypesForTool(tool, intentGroup),
+    complexity: complexityForTool(tool),
+    isNew: newTools.has(tool.slug),
+    isPopular: popularTools.has(tool.slug),
+  };
+}
+
+export const toolGroups: ToolGroup[] = seedToolGroups.map((group) => ({
+  ...group,
+  tools: group.tools.map((tool) => enrichTool(tool, group.name)),
+}));
 
 export const allTools: Tool[] = toolGroups.flatMap((g) => g.tools);
 
