@@ -378,10 +378,14 @@ export default function WebCompilerPage() {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [previewSrc, setPreviewSrc] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const [responsive, setResponsive] = useState<"mobile" | "tablet" | "desktop">("desktop");
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
   const [previewReloadKey, setPreviewReloadKey] = useState(0);
+  const [isDark, setIsDark] = useState(() =>
+    typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false,
+  );
 
   const [singleFiles, setSingleFiles] = useState<FileEntry[]>([{ name: "index.html", content: HTML_STARTER }]);
   const [activeSingle, setActiveSingle] = useState(0);
@@ -402,6 +406,20 @@ export default function WebCompilerPage() {
   const uploadJsRef = useRef<HTMLInputElement>(null);
   const uploadSingleRef = useRef<HTMLInputElement>(null);
 
+  const editorBackground = isDark ? "#1e1e1e" : "#ffffff";
+  const editorText = isDark ? "#d4d4d4" : "#1e1e1e";
+  const outputBackground = isDark ? "#161616" : "#f5f5f5";
+  const outputText = isDark ? "#d4d4d4" : "#1e1e1e";
+  const hasCombinedPreview = Boolean(previewSrc || previewSrcRef.current);
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    color: "var(--muted-foreground)",
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const m = params.get("mode");
@@ -410,6 +428,14 @@ export default function WebCompilerPage() {
     } else if (m && ["combined", "html", "css", "javascript", "typescript"].includes(m)) {
       setMode(m as Mode);
     }
+  }, []);
+
+  useEffect(() => {
+    const updateTheme = () => setIsDark(document.documentElement.classList.contains("dark"));
+    updateTheme();
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -461,6 +487,17 @@ export default function WebCompilerPage() {
     setPreviewSrc(finalDoc);
     setPreviewReloadKey((value) => value + 1);
   }, [htmlFiles, cssFiles, jsFiles]);
+
+  const openFullscreen = () => {
+    setIsFullscreen(true);
+    setFullscreenVisible(false);
+    requestAnimationFrame(() => setFullscreenVisible(true));
+  };
+
+  const closeFullscreen = () => {
+    setFullscreenVisible(false);
+    window.setTimeout(() => setIsFullscreen(false), 150);
+  };
 
   const IconBtn = ({
     onClick,
@@ -846,7 +883,7 @@ export default function WebCompilerPage() {
 
   const setModeButtonHover = (e: React.MouseEvent<HTMLButtonElement>, active: boolean) => {
     if (active) return;
-    e.currentTarget.style.backgroundColor = "var(--muted)";
+    e.currentTarget.style.backgroundColor = "color-mix(in srgb, var(--muted) 60%, transparent)";
     e.currentTarget.style.color = "var(--foreground)";
   };
 
@@ -879,7 +916,7 @@ export default function WebCompilerPage() {
 
   const renderConsoleLine = (entry: ConsoleEntry, index: number) => {
     const color =
-      entry.method === "error" ? "#f48771" : entry.method === "warn" ? "#dca040" : "#d4d4d4";
+      entry.method === "error" ? "#f48771" : entry.method === "warn" ? "#dca040" : outputText;
     const Icon = entry.method === "error" ? AlertCircle : entry.method === "warn" ? AlertTriangle : null;
     return (
       <div key={index} style={{ display: "flex", gap: 8, padding: "1px 0", alignItems: "flex-start" }}>
@@ -933,22 +970,30 @@ export default function WebCompilerPage() {
 
     const collapsedPanel = collapsed.has(panel);
     const isMaxed = maximized === panel;
-    const otherIsMaxed = maximized !== null && maximized !== panel;
-    const flexValue = isMaxed ? 3 : otherIsMaxed ? 1 : 1;
+    const collapsedCount = collapsed.size;
+    const openCount = Math.max(1, 3 - collapsedCount);
+    const panelHeight = collapsedPanel
+      ? 38
+      : collapsedCount > 0
+      ? `calc((100% - ${collapsedCount * 38}px) / ${openCount})`
+      : maximized
+      ? isMaxed
+        ? "60%"
+        : "20%"
+      : "33.3333%";
 
     return (
       <div
         key={panel}
         style={{
-          flex: collapsedPanel ? undefined : flexValue,
-          height: collapsedPanel ? 38 : undefined,
-          flexShrink: collapsedPanel ? 0 : undefined,
+          height: panelHeight,
+          flexShrink: 0,
           display: "flex",
           flexDirection: "column",
           overflow: "hidden",
           borderBottom: "1px solid var(--border)",
-          transition: "flex 200ms ease",
-          minHeight: collapsedPanel ? 38 : 100,
+          transition: "height 200ms ease, min-height 200ms ease",
+          minHeight: collapsedPanel ? 38 : 150,
         }}
       >
         <div
@@ -966,17 +1011,7 @@ export default function WebCompilerPage() {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <WebBadge lang={data.badge} />
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                color: "var(--muted-foreground)",
-              }}
-            >
-              {data.label}
-            </span>
+            <span style={labelStyle}>{data.label}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             <input
@@ -1040,8 +1075,8 @@ export default function WebCompilerPage() {
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 13,
               lineHeight: 1.65,
-              backgroundColor: "#1e1e1e",
-              color: "#d4d4d4",
+              backgroundColor: editorBackground,
+              color: editorText,
               tabSize: 2,
             }}
           />
@@ -1057,8 +1092,10 @@ export default function WebCompilerPage() {
           width: "50%",
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
+          overflowX: "hidden",
+          overflowY: "auto",
           borderRight: "1px solid var(--border)",
+          minHeight: 0,
         }}
       >
         {renderCombinedPanel("html")}
@@ -1080,21 +1117,24 @@ export default function WebCompilerPage() {
             borderBottom: "1px solid var(--border)",
           }}
         >
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "var(--muted-foreground)",
-            }}
-          >
-            Preview
-          </span>
+          <span style={labelStyle}>Preview</span>
 
           <button
             type="button"
             onClick={runCombinedPreview}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#047857";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#059669";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = "scale(0.97)";
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -1103,11 +1143,12 @@ export default function WebCompilerPage() {
               padding: "0 14px",
               borderRadius: 6,
               border: "none",
-              backgroundColor: "#10b981",
+              backgroundColor: "#059669",
               color: "white",
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: "pointer",
+              transition: "all 150ms ease",
             }}
           >
             <Play size={12} />
@@ -1181,7 +1222,7 @@ export default function WebCompilerPage() {
             >
               <ExternalLink size={14} />
             </IconBtn>
-            <IconBtn title="Fullscreen" onClick={() => setIsFullscreen(true)}>
+            <IconBtn title="Fullscreen" onClick={openFullscreen}>
               <Maximize size={14} />
             </IconBtn>
           </div>
@@ -1191,27 +1232,52 @@ export default function WebCompilerPage() {
           style={{
             flex: 1,
             overflow: "hidden",
-            backgroundColor: "white",
+            backgroundColor:
+              responsive === "desktop" ? "white" : "color-mix(in srgb, var(--muted) 40%, transparent)",
             display: "flex",
             justifyContent: "center",
-            alignItems: "stretch",
+            alignItems: "center",
+            position: "relative",
           }}
         >
-          <div
-            style={{
-              width: responsive === "mobile" ? 375 : responsive === "tablet" ? 768 : "100%",
-              height: "100%",
-              transition: "width 200ms ease",
-            }}
-          >
-            <iframe
-              key={previewReloadKey}
-              srcDoc={combinedPreviewDoc}
-              title="preview"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
-              style={{ width: "100%", height: "100%", border: "none" }}
-            />
-          </div>
+          {!hasCombinedPreview && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--muted-foreground)",
+                pointerEvents: "none",
+              }}
+            >
+              <Play size={32} style={{ opacity: 0.55 }} />
+              <div style={{ marginTop: 10, fontSize: 13 }}>Click Run to see your preview</div>
+              <div style={{ marginTop: 4, fontSize: 11, opacity: 0.6 }}>Ctrl+Enter</div>
+            </div>
+          )}
+          {hasCombinedPreview && (
+            <div
+              style={{
+                width: responsive === "mobile" ? 375 : responsive === "tablet" ? 768 : "100%",
+                height: "100%",
+                maxHeight: "100%",
+                transition: "width 200ms ease",
+                boxShadow: responsive === "desktop" ? "none" : "0 0 0 1px var(--border)",
+                backgroundColor: "white",
+              }}
+            >
+              <iframe
+                key={previewReloadKey}
+                srcDoc={combinedPreviewDoc}
+                title="preview"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+                style={{ width: "100%", height: "100%", maxHeight: "100%", border: "none" }}
+              />
+            </div>
+          )}
         </div>
 
         <div style={{ flexShrink: 0 }}>
@@ -1225,6 +1291,8 @@ export default function WebCompilerPage() {
               alignItems: "center",
               justifyContent: "space-between",
               padding: "0 10px",
+              background:
+                "linear-gradient(to bottom, color-mix(in srgb, var(--border) 18%, var(--card)), var(--card))",
               backgroundColor: "var(--card)",
               borderTop: "1px solid var(--border)",
               cursor: "pointer",
@@ -1239,13 +1307,7 @@ export default function WebCompilerPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Terminal size={12} style={{ color: "var(--muted-foreground)" }} />
               <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  color: "var(--muted-foreground)",
-                }}
+                style={labelStyle}
               >
                 Console
               </span>
@@ -1257,7 +1319,7 @@ export default function WebCompilerPage() {
                     borderRadius: 999,
                     backgroundColor: "#ef4444",
                     color: "white",
-                    fontSize: 9,
+                    fontSize: 10,
                     fontWeight: 700,
                     padding: "0 4px",
                     display: "inline-flex",
@@ -1285,12 +1347,13 @@ export default function WebCompilerPage() {
                 maxHeight: 120,
                 overflow: "auto",
                 flexShrink: 0,
-                backgroundColor: "#161616",
+                backgroundColor: outputBackground,
+                color: outputText,
                 padding: "6px 12px",
               }}
             >
               {consoleEntries.length === 0 ? (
-                <span style={{ fontSize: 12, color: "var(--muted-foreground)", fontFamily: "monospace" }}>
+                <span style={{ fontSize: 12, color: outputText, fontFamily: "monospace", opacity: 0.7 }}>
                   Console output will appear here
                 </span>
               ) : (
@@ -1336,17 +1399,7 @@ export default function WebCompilerPage() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <WebBadge lang={MODE_BADGES[singleMode]} />
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
-                  color: "var(--muted-foreground)",
-                }}
-              >
-                {label}
-              </span>
+              <span style={labelStyle}>{label}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
               <input
@@ -1418,8 +1471,8 @@ export default function WebCompilerPage() {
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 13,
               lineHeight: 1.65,
-              backgroundColor: "#1e1e1e",
-              color: "#d4d4d4",
+              backgroundColor: editorBackground,
+              color: editorText,
               tabSize: 2,
             }}
           />
@@ -1455,17 +1508,7 @@ export default function WebCompilerPage() {
               borderBottom: "1px solid var(--border)",
             }}
           >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                color: "var(--muted-foreground)",
-              }}
-            >
-              {bottomLabel}
-            </span>
+            <span style={labelStyle}>{bottomLabel}</span>
 
             <button
               type="button"
@@ -1482,7 +1525,7 @@ export default function WebCompilerPage() {
                 backgroundColor: "#10b981",
                 color: "white",
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 500,
                 cursor: "pointer",
               }}
             >
@@ -1493,7 +1536,7 @@ export default function WebCompilerPage() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
               {(mode === "html" || mode === "css") && (
-                <IconBtn title="Fullscreen" onClick={() => setIsFullscreen(true)}>
+                <IconBtn title="Fullscreen" onClick={openFullscreen}>
                   <Maximize size={14} />
                 </IconBtn>
               )}
@@ -1514,7 +1557,8 @@ export default function WebCompilerPage() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  background: "var(--output-bg)",
+                  background: outputBackground,
+                  color: outputText,
                   padding: "10px 14px",
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 13,
@@ -1556,15 +1600,13 @@ export default function WebCompilerPage() {
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
-                  background: "var(--output-bg)",
+                  background: outputBackground,
+                  color: outputText,
                 }}
               >
                 <div
                   style={{
-                    fontSize: 10,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                    fontWeight: 600,
+                    ...labelStyle,
                     color: "var(--muted-foreground)",
                     padding: "6px 14px",
                     background: "var(--card)",
@@ -1579,8 +1621,8 @@ export default function WebCompilerPage() {
                       flex: 1,
                       margin: 0,
                       padding: "10px 14px",
-                      background: "var(--editor-bg)",
-                      color: "var(--editor-fg)",
+                      background: editorBackground,
+                      color: editorText,
                       fontFamily: "'JetBrains Mono', monospace",
                       fontSize: 12,
                       lineHeight: 1.65,
@@ -1592,7 +1634,7 @@ export default function WebCompilerPage() {
                     {typeScriptRunResult ? (
                       <>
                         {typeScriptRunResult.stdout && (
-                          <span style={{ color: "#d4d4d4" }}>{typeScriptRunResult.stdout}</span>
+                          <span style={{ color: outputText }}>{typeScriptRunResult.stdout}</span>
                         )}
                         {typeScriptRunResult.stdout && typeScriptRunResult.stderr && "\n"}
                         {typeScriptRunResult.stderr && (
@@ -1618,7 +1660,8 @@ export default function WebCompilerPage() {
                     style={{
                       flex: 1,
                       minWidth: 0,
-                      background: "var(--output-bg)",
+                      background: outputBackground,
+                      color: outputText,
                       padding: "10px 14px",
                       fontFamily: "'JetBrains Mono', monospace",
                       fontSize: 12,
@@ -1637,7 +1680,7 @@ export default function WebCompilerPage() {
                           Status: {typeScriptRunResult.status}
                         </div>
                         {typeScriptRunResult.stdout && (
-                          <div style={{ whiteSpace: "pre-wrap", marginTop: 10, color: "#d4d4d4" }}>
+                          <div style={{ whiteSpace: "pre-wrap", marginTop: 10, color: outputText }}>
                             {typeScriptRunResult.stdout}
                           </div>
                         )}
@@ -1667,6 +1710,7 @@ export default function WebCompilerPage() {
       style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}
       className="fixed inset-0 z-[1000] bg-background text-foreground"
     >
+      <style>{`.web-compiler-tab-scroll::-webkit-scrollbar { display: none; }`}</style>
       <div
         className="flex items-center justify-between border-b border-border bg-card px-3"
         style={{ height: 38, minHeight: 38 }}
@@ -1713,9 +1757,10 @@ export default function WebCompilerPage() {
                 fontSize: 12,
                 fontWeight: 500,
                 cursor: "pointer",
-                transition: "background-color 150ms, color 150ms",
+                transition: "background-color 150ms, color 150ms, box-shadow 150ms ease",
                 backgroundColor: active ? "#10b981" : "transparent",
                 color: active ? "white" : "var(--muted-foreground)",
+                boxShadow: active ? "0 1px 3px rgba(16,185,129,0.3)" : "none",
               }}
               onMouseEnter={(e) => setModeButtonHover(e, active)}
               onMouseLeave={(e) => clearModeButtonHover(e, active)}
@@ -1729,9 +1774,18 @@ export default function WebCompilerPage() {
       {mode === "combined" ? renderCombinedMode() : renderSingleMode()}
 
       {isFullscreen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, backgroundColor: "white" }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            backgroundColor: "white",
+            opacity: fullscreenVisible ? 1 : 0,
+            transition: `opacity ${fullscreenVisible ? 200 : 150}ms ease`,
+          }}
+        >
           <button
-            onClick={() => setIsFullscreen(false)}
+            onClick={closeFullscreen}
             style={{
               position: "fixed",
               top: 12,
@@ -1815,11 +1869,14 @@ function FileTabs({
       }}
     >
       <div
+        className="web-compiler-tab-scroll"
         style={{
           display: "flex",
           flex: 1,
           overflowX: "auto",
           overflowY: "hidden",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
         {files.map((file, index) => (
@@ -1835,14 +1892,17 @@ function FileTabs({
               cursor: "pointer",
               whiteSpace: "nowrap",
               fontSize: 12,
-              fontWeight: 500,
+              fontWeight: 400,
               borderBottom: index === active ? "2px solid #10b981" : "2px solid transparent",
               color: index === active ? "var(--foreground)" : "var(--muted-foreground)",
               backgroundColor: "transparent",
               userSelect: "none",
+              flexShrink: 0,
             }}
           >
-            <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>{file.name}</span>
+            <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", fontWeight: 400 }}>
+              {file.name}
+            </span>
             {files.length > 1 && (
               <button
                 onClick={(e) => {
