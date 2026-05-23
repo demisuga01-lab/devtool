@@ -6,14 +6,19 @@ import type { ReactNode } from "react";
 import { AlertCircle, ChevronDown, ChevronRight, Copy, Eraser, FileUp, Loader2, Play, Terminal } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
-type LanguageGroup = "Popular" | "Scripting" | "JVM" | "Systems" | "Functional" | "Data" | "Database";
+type LanguageCategory = "popular" | "scripting" | "jvm" | "systems" | "functional" | "data" | "database" | "lowlevel";
+type LanguageGroup = "Popular" | "Scripting" | "JVM" | "Systems" | "Functional" | "Data" | "Database" | "Low-level";
 
-type CompilerLanguage = {
+type LanguageSeed = {
   id: number;
-  name: string;
+  language: string;
   version: string;
+  name: string;
+  category: LanguageCategory;
+};
+
+type CompilerLanguage = LanguageSeed & {
   group: LanguageGroup;
-  alias: string;
   badge: string;
   extensions: string[];
   accent: string;
@@ -52,78 +57,186 @@ const hello = {
   sql: 'CREATE TABLE users (id INTEGER, name TEXT);\nINSERT INTO users VALUES (1, "Ada"), (2, "Grace");\nSELECT * FROM users;',
 };
 
-const languages: CompilerLanguage[] = [
-  { id: 71, name: "Python 3", version: "3.8.1", group: "Popular", alias: "python", badge: "py", extensions: [".py"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: hello.python },
-  { id: 62, name: "Java", version: "OpenJDK 13.0.1", group: "Popular", alias: "java", badge: "java", extensions: [".java"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: hello.java },
-  { id: 50, name: "C", version: "GCC 9.2.0", group: "Popular", alias: "c", badge: "c", extensions: [".c", ".h"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 54, name: "C++", version: "GCC 9.2.0", group: "Popular", alias: "cpp", badge: "cpp", extensions: [".cpp", ".cc", ".cxx", ".hpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 73, name: "Rust", version: "1.40.0", group: "Popular", alias: "rust", badge: "rs", extensions: [".rs"], accent: "bg-orange-500/10 text-orange-600 dark:text-orange-300", starter: hello.rust },
-  { id: 60, name: "Go", version: "1.13.5", group: "Popular", alias: "go", badge: "go", extensions: [".go"], accent: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300", starter: hello.go },
-  { id: 68, name: "PHP", version: "7.4.1", group: "Popular", alias: "php", badge: "php", extensions: [".php"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: hello.php },
-  { id: 72, name: "Ruby", version: "2.7.0", group: "Popular", alias: "ruby", badge: "rb", extensions: [".rb"], accent: "bg-rose-500/10 text-rose-600 dark:text-rose-300", starter: hello.ruby },
-  { id: 46, name: "Bash", version: "5.0.0", group: "Scripting", alias: "bash", badge: "sh", extensions: [".sh", ".bash"], accent: "bg-lime-500/10 text-lime-700 dark:text-lime-300", starter: 'echo "Hello, World!"' },
-  { id: 85, name: "Perl", version: "5.28.1", group: "Scripting", alias: "perl", badge: "pl", extensions: [".pl", ".pm"], accent: "bg-slate-500/10 text-slate-600 dark:text-slate-300", starter: 'print "Hello, World!\\n";' },
-  { id: 64, name: "Lua", version: "5.3.5", group: "Scripting", alias: "lua", badge: "lua", extensions: [".lua"], accent: "bg-blue-500/10 text-blue-700 dark:text-blue-300", starter: 'print("Hello, World!")' },
-  { id: 70, name: "Python 2", version: "2.7.17", group: "Scripting", alias: "python", badge: "py2", extensions: [".py"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: 'print "Hello, World!"' },
-  { id: 63, name: "JavaScript", version: "Node.js 12.14.0", group: "Scripting", alias: "javascript", badge: "js", extensions: [".js", ".mjs"], accent: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300", starter: hello.js },
-  { id: 74, name: "TypeScript", version: "3.7.4", group: "Scripting", alias: "typescript", badge: "ts", extensions: [".ts"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: hello.ts },
-  { id: 51, name: "C#", version: "Mono 6.6.0", group: "JVM", alias: "csharp", badge: "cs", extensions: [".cs"], accent: "bg-purple-500/10 text-purple-600 dark:text-purple-300", starter: 'using System;\n\nclass MainClass {\n    public static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}' },
-  { id: 78, name: "Kotlin", version: "1.3.70", group: "JVM", alias: "kotlin", badge: "kt", extensions: [".kt", ".kts"], accent: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300", starter: 'fun main() {\n    println("Hello, World!")\n}' },
-  { id: 81, name: "Scala", version: "2.13.2", group: "JVM", alias: "scala", badge: "scala", extensions: [".scala"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: 'object Main extends App {\n    println("Hello, World!")\n}' },
-  { id: 86, name: "Clojure", version: "1.10.1", group: "JVM", alias: "clojure", badge: "clj", extensions: [".clj"], accent: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300", starter: '(println "Hello, World!")' },
-  { id: 88, name: "Groovy", version: "3.0.3", group: "JVM", alias: "groovy", badge: "gy", extensions: [".groovy"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: 'println "Hello, World!"' },
-  { id: 84, name: "Visual Basic", version: "vbnc 0.0.0.5943", group: "JVM", alias: "visualbasic", badge: "vb", extensions: [".vb"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: 'Module Main\n    Sub Main()\n        Console.WriteLine("Hello, World!")\n    End Sub\nEnd Module' },
-  { id: 48, name: "C", version: "GCC 7.4.0", group: "Systems", alias: "c", badge: "c", extensions: [".c", ".h"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 49, name: "C", version: "GCC 8.3.0", group: "Systems", alias: "c", badge: "c", extensions: [".c", ".h"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 75, name: "C", version: "Clang 7.0.1", group: "Systems", alias: "c", badge: "clang", extensions: [".c", ".h"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 52, name: "C++", version: "GCC 7.4.0", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp", ".cc", ".cxx", ".hpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 53, name: "C++", version: "GCC 8.3.0", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp", ".cc", ".cxx", ".hpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 76, name: "C++", version: "Clang 7.0.1", group: "Systems", alias: "cpp", badge: "clang++", extensions: [".cpp", ".cc", ".cxx", ".hpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 45, name: "Assembly", version: "NASM 2.14.02", group: "Systems", alias: "assembly", badge: "asm", extensions: [".asm", ".s"], accent: "bg-amber-500/10 text-amber-700 dark:text-amber-300", starter: 'section .data\n    msg db "Hello, World!", 10\n    len equ $ - msg\n\nsection .text\n    global _start\n_start:\n    mov eax, 4\n    mov ebx, 1\n    mov ecx, msg\n    mov edx, len\n    int 0x80\n    mov eax, 1\n    xor ebx, ebx\n    int 0x80' },
-  { id: 47, name: "Basic", version: "FBC 1.07.1", group: "Systems", alias: "basic", badge: "bas", extensions: [".bas"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: 'Print "Hello, World!"' },
-  { id: 56, name: "D", version: "DMD 2.089.1", group: "Systems", alias: "d", badge: "d", extensions: [".d"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: 'import std.stdio;\n\nvoid main() {\n    writeln("Hello, World!");\n}' },
-  { id: 59, name: "Fortran", version: "GFortran 9.2.0", group: "Systems", alias: "fortran", badge: "f90", extensions: [".f90", ".f", ".for"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: 'program hello\n    print *, "Hello, World!"\nend program hello' },
-  { id: 79, name: "Objective-C", version: "Clang 7.0.1", group: "Systems", alias: "objc", badge: "m", extensions: [".m"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: '#import <Foundation/Foundation.h>\n\nint main() {\n    NSLog(@"Hello, World!");\n    return 0;\n}' },
-  { id: 83, name: "Swift", version: "5.2.3", group: "Systems", alias: "swift", badge: "swift", extensions: [".swift"], accent: "bg-orange-500/10 text-orange-600 dark:text-orange-300", starter: 'print("Hello, World!")' },
-  { id: 55, name: "Common Lisp", version: "SBCL 2.0.0", group: "Functional", alias: "commonlisp", badge: "lisp", extensions: [".lisp", ".cl"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: '(write-line "Hello, World!")' },
-  { id: 57, name: "Elixir", version: "1.9.4", group: "Functional", alias: "elixir", badge: "ex", extensions: [".ex", ".exs"], accent: "bg-purple-500/10 text-purple-600 dark:text-purple-300", starter: 'IO.puts("Hello, World!")' },
-  { id: 58, name: "Erlang", version: "OTP 22.2", group: "Functional", alias: "erlang", badge: "erl", extensions: [".erl"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: 'main(_) ->\n    io:format("Hello, World!~n").' },
-  { id: 61, name: "Haskell", version: "GHC 8.8.1", group: "Functional", alias: "haskell", badge: "hs", extensions: [".hs"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: 'main = putStrLn "Hello, World!"' },
-  { id: 65, name: "OCaml", version: "4.09.0", group: "Functional", alias: "ocaml", badge: "ml", extensions: [".ml"], accent: "bg-orange-500/10 text-orange-600 dark:text-orange-300", starter: 'print_endline "Hello, World!";;' },
-  { id: 69, name: "Prolog", version: "GNU Prolog 1.4.5", group: "Functional", alias: "prolog", badge: "pl", extensions: [".pl"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: ':- initialization(main).\nmain :- write("Hello, World!"), nl, halt.' },
-  { id: 87, name: "F#", version: ".NET Core SDK 3.1.202", group: "Functional", alias: "fsharp", badge: "fs", extensions: [".fs"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: 'printfn "Hello, World!"' },
-  { id: 66, name: "Octave", version: "5.1.0", group: "Data", alias: "octave", badge: "m", extensions: [".m"], accent: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300", starter: 'disp("Hello, World!")' },
-  { id: 77, name: "COBOL", version: "GnuCOBOL 2.2", group: "Data", alias: "cobol", badge: "cbl", extensions: [".cob", ".cbl"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: 'IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\nDISPLAY "Hello, World!".\nSTOP RUN.' },
-  { id: 80, name: "R", version: "4.0.0", group: "Data", alias: "rscript", badge: "r", extensions: [".r", ".R"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: 'print("Hello, World!")' },
-  { id: 82, name: "SQL", version: "SQLite 3.27.2", group: "Database", alias: "sqlite3", badge: "sql", extensions: [".sql"], accent: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300", starter: hello.sql },
-  { id: 1, name: "Bash", version: "4.4.0", group: "Scripting", alias: "bash", badge: "sh", extensions: [".sh"], accent: "bg-lime-500/10 text-lime-700 dark:text-lime-300", starter: 'echo "Hello, World!"' },
-  { id: 4, name: "C", version: "GCC 7.2.0", group: "Systems", alias: "c", badge: "c", extensions: [".c"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 10, name: "C++", version: "GCC 7.2.0", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 15, name: "Java", version: "OpenJDK 9", group: "JVM", alias: "java", badge: "java", extensions: [".java"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: hello.java },
-  { id: 18, name: "JavaScript", version: "Node.js 9.2.0", group: "Scripting", alias: "javascript", badge: "js", extensions: [".js"], accent: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300", starter: hello.js },
-  { id: 26, name: "Python 3", version: "3.6.0", group: "Scripting", alias: "python", badge: "py", extensions: [".py"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: hello.python },
-  { id: 29, name: "Ruby", version: "2.4.0", group: "Scripting", alias: "ruby", badge: "rb", extensions: [".rb"], accent: "bg-rose-500/10 text-rose-600 dark:text-rose-300", starter: hello.ruby },
-  { id: 31, name: "Rust", version: "1.20.0", group: "Systems", alias: "rust", badge: "rs", extensions: [".rs"], accent: "bg-orange-500/10 text-orange-600 dark:text-orange-300", starter: hello.rust },
-  { id: 33, name: "Swift", version: "4.0.2", group: "Systems", alias: "swift", badge: "swift", extensions: [".swift"], accent: "bg-orange-500/10 text-orange-600 dark:text-orange-300", starter: 'print("Hello, World!")' },
-  { id: 2, name: "Bash", version: "4.0.0", group: "Scripting", alias: "bash", badge: "sh", extensions: [".sh"], accent: "bg-lime-500/10 text-lime-700 dark:text-lime-300", starter: 'echo "Hello, World!"' },
-  { id: 3, name: "Basic", version: "FBC 1.05.0", group: "Systems", alias: "basic", badge: "bas", extensions: [".bas"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: 'Print "Hello, World!"' },
-  { id: 5, name: "C", version: "GCC 6.4.0", group: "Systems", alias: "c", badge: "c", extensions: [".c"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 6, name: "C", version: "GCC 6.3.0", group: "Systems", alias: "c", badge: "c", extensions: [".c"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 7, name: "C", version: "GCC 5.4.0", group: "Systems", alias: "c", badge: "c", extensions: [".c"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 8, name: "C", version: "GCC 4.9.4", group: "Systems", alias: "c", badge: "c", extensions: [".c"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 9, name: "C", version: "GCC 4.8.5", group: "Systems", alias: "c", badge: "c", extensions: [".c"], accent: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300", starter: hello.c },
-  { id: 11, name: "C++", version: "GCC 6.4.0", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 12, name: "C++", version: "GCC 6.3.0", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 13, name: "C++", version: "GCC 5.4.0", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 14, name: "C++", version: "GCC 4.9.4", group: "Systems", alias: "cpp", badge: "cpp", extensions: [".cpp"], accent: "bg-sky-500/10 text-sky-600 dark:text-sky-300", starter: hello.cpp },
-  { id: 16, name: "Java", version: "OpenJDK 8", group: "JVM", alias: "java", badge: "java", extensions: [".java"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: hello.java },
-  { id: 17, name: "Java", version: "OpenJDK 7", group: "JVM", alias: "java", badge: "java", extensions: [".java"], accent: "bg-red-500/10 text-red-600 dark:text-red-300", starter: hello.java },
-  { id: 19, name: "PHP", version: "7.1.11", group: "Scripting", alias: "php", badge: "php", extensions: [".php"], accent: "bg-violet-500/10 text-violet-600 dark:text-violet-300", starter: hello.php },
-  { id: 20, name: "Python 2", version: "2.7.9", group: "Scripting", alias: "python", badge: "py2", extensions: [".py"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: 'print "Hello, World!"' },
-  { id: 21, name: "Python 3", version: "3.5.3", group: "Scripting", alias: "python", badge: "py", extensions: [".py"], accent: "bg-blue-500/10 text-blue-600 dark:text-blue-300", starter: hello.python },
+const LANGUAGES: LanguageSeed[] = [
+  { id: 71, language: "python", version: "3.8.1", name: "Python 3", category: "popular" },
+  { id: 70, language: "python", version: "2.7.17", name: "Python 2", category: "scripting" },
+  { id: 62, language: "java", version: "13.0.1", name: "Java", category: "popular" },
+  { id: 50, language: "c", version: "9.2.0", name: "C (GCC 9.2.0)", category: "popular" },
+  { id: 49, language: "c", version: "8.3.0", name: "C (GCC 8.3.0)", category: "systems" },
+  { id: 48, language: "c", version: "7.4.0", name: "C (GCC 7.4.0)", category: "systems" },
+  { id: 75, language: "c", version: "7.0.1", name: "C (Clang 7.0.1)", category: "systems" },
+  { id: 54, language: "cpp", version: "9.2.0", name: "C++ (GCC 9.2.0)", category: "popular" },
+  { id: 53, language: "cpp", version: "8.3.0", name: "C++ (GCC 8.3.0)", category: "systems" },
+  { id: 52, language: "cpp", version: "7.4.0", name: "C++ (GCC 7.4.0)", category: "systems" },
+  { id: 76, language: "cpp", version: "7.0.1", name: "C++ (Clang 7.0.1)", category: "systems" },
+  { id: 51, language: "csharp", version: "6.6.0", name: "C#", category: "popular" },
+  { id: 73, language: "rust", version: "1.40.0", name: "Rust", category: "popular" },
+  { id: 60, language: "go", version: "1.13.5", name: "Go", category: "popular" },
+  { id: 78, language: "kotlin", version: "1.3.70", name: "Kotlin", category: "popular" },
+  { id: 68, language: "php", version: "7.4.1", name: "PHP", category: "popular" },
+  { id: 72, language: "ruby", version: "2.7.0", name: "Ruby", category: "popular" },
+  { id: 83, language: "swift", version: "5.2.3", name: "Swift", category: "popular" },
+  { id: 63, language: "javascript", version: "12.14.0", name: "JavaScript", category: "popular" },
+  { id: 74, language: "typescript", version: "3.7.4", name: "TypeScript", category: "popular" },
+  { id: 46, language: "bash", version: "5.0.0", name: "Bash", category: "scripting" },
+  { id: 85, language: "perl", version: "5.28.1", name: "Perl", category: "scripting" },
+  { id: 64, language: "lua", version: "5.3.5", name: "Lua", category: "scripting" },
+  { id: 80, language: "r", version: "4.0.0", name: "R", category: "data" },
+  { id: 66, language: "octave", version: "5.1.0", name: "Octave", category: "data" },
+  { id: 82, language: "sql", version: "3.27.2", name: "SQL (SQLite)", category: "database" },
+  { id: 81, language: "scala", version: "2.13.2", name: "Scala", category: "jvm" },
+  { id: 86, language: "clojure", version: "1.10.1", name: "Clojure", category: "jvm" },
+  { id: 88, language: "groovy", version: "3.0.3", name: "Groovy", category: "jvm" },
+  { id: 47, language: "basic", version: "1.07.1", name: "Basic", category: "systems" },
+  { id: 84, language: "vb", version: "0.0.0.5943", name: "Visual Basic", category: "jvm" },
+  { id: 87, language: "fsharp", version: "3.1.202", name: "F#", category: "functional" },
+  { id: 61, language: "haskell", version: "8.8.1", name: "Haskell", category: "functional" },
+  { id: 57, language: "elixir", version: "1.9.4", name: "Elixir", category: "functional" },
+  { id: 58, language: "erlang", version: "22.2", name: "Erlang", category: "functional" },
+  { id: 65, language: "ocaml", version: "4.09.0", name: "OCaml", category: "functional" },
+  { id: 55, language: "commonlisp", version: "2.0.0", name: "Common Lisp", category: "functional" },
+  { id: 69, language: "prolog", version: "1.4.5", name: "Prolog", category: "functional" },
+  { id: 56, language: "d", version: "2.089.1", name: "D", category: "systems" },
+  { id: 59, language: "fortran", version: "9.2.0", name: "Fortran", category: "systems" },
+  { id: 67, language: "pascal", version: "3.0.4", name: "Pascal", category: "systems" },
+  { id: 79, language: "objectivec", version: "7.0.1", name: "Objective-C", category: "systems" },
+  { id: 77, language: "cobol", version: "2.2", name: "COBOL", category: "data" },
+  { id: 45, language: "nasm", version: "2.14.02", name: "Assembly (NASM)", category: "lowlevel" },
 ];
 
-const groups: LanguageGroup[] = ["Popular", "Scripting", "JVM", "Systems", "Functional", "Data", "Database"];
+const categoryLabels: Record<LanguageCategory, LanguageGroup> = {
+  popular: "Popular",
+  scripting: "Scripting",
+  jvm: "JVM",
+  systems: "Systems",
+  functional: "Functional",
+  data: "Data",
+  database: "Database",
+  lowlevel: "Low-level",
+};
+
+const groups: { category: LanguageCategory; label: LanguageGroup }[] = [
+  { category: "popular", label: "Popular" },
+  { category: "scripting", label: "Scripting" },
+  { category: "jvm", label: "JVM" },
+  { category: "systems", label: "Systems" },
+  { category: "functional", label: "Functional" },
+  { category: "data", label: "Data" },
+  { category: "database", label: "Database" },
+  { category: "lowlevel", label: "Low-level" },
+];
+
+const extensionByLanguage: Record<string, string[]> = {
+  bash: [".sh", ".bash"],
+  basic: [".bas"],
+  c: [".c", ".h"],
+  clojure: [".clj"],
+  cobol: [".cob", ".cbl"],
+  commonlisp: [".lisp", ".cl"],
+  cpp: [".cpp", ".cc", ".cxx", ".hpp"],
+  csharp: [".cs"],
+  d: [".d"],
+  elixir: [".ex", ".exs"],
+  erlang: [".erl"],
+  fortran: [".f90", ".f", ".for"],
+  fsharp: [".fs"],
+  go: [".go"],
+  groovy: [".groovy"],
+  haskell: [".hs"],
+  java: [".java"],
+  javascript: [".js", ".mjs"],
+  kotlin: [".kt", ".kts"],
+  lua: [".lua"],
+  nasm: [".asm", ".s"],
+  objectivec: [".m"],
+  ocaml: [".ml"],
+  octave: [".m"],
+  pascal: [".pas"],
+  perl: [".pl", ".pm"],
+  php: [".php"],
+  prolog: [".pl"],
+  python: [".py"],
+  r: [".r", ".R"],
+  ruby: [".rb"],
+  rust: [".rs"],
+  scala: [".scala"],
+  sql: [".sql"],
+  swift: [".swift"],
+  typescript: [".ts"],
+  vb: [".vb"],
+};
+
+const badgeByLanguage: Record<string, string> = {
+  commonlisp: "lisp",
+  csharp: "cs",
+  fsharp: "fs",
+  javascript: "js",
+  objectivec: "m",
+  python: "py",
+  typescript: "ts",
+};
+
+const accentByCategory: Record<LanguageCategory, string> = {
+  popular: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  scripting: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
+  jvm: "bg-red-500/10 text-red-600 dark:text-red-300",
+  systems: "bg-sky-500/10 text-sky-600 dark:text-sky-300",
+  functional: "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+  data: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-300",
+  database: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  lowlevel: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-300",
+};
+
+const languages: CompilerLanguage[] = LANGUAGES.map((item) => ({
+  ...item,
+  group: categoryLabels[item.category],
+  badge: badgeByLanguage[item.language] ?? item.language,
+  extensions: extensionByLanguage[item.language] ?? [".txt"],
+  accent: accentByCategory[item.category],
+  starter: starterForLanguage(item),
+}));
+
+function starterForLanguage(item: LanguageSeed) {
+  if (item.id === 70) return 'print "Hello, World!"';
+  if (item.language === "python") return hello.python;
+  if (item.language === "java") return hello.java;
+  if (item.language === "c") return hello.c;
+  if (item.language === "cpp") return hello.cpp;
+  if (item.language === "csharp") return 'using System;\n\nclass MainClass {\n    public static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}';
+  if (item.language === "rust") return hello.rust;
+  if (item.language === "go") return hello.go;
+  if (item.language === "kotlin") return 'fun main() {\n    println("Hello, World!")\n}';
+  if (item.language === "php") return hello.php;
+  if (item.language === "ruby") return hello.ruby;
+  if (item.language === "swift") return 'print("Hello, World!")';
+  if (item.language === "javascript") return hello.js;
+  if (item.language === "typescript") return hello.ts;
+  if (item.language === "bash") return 'echo "Hello, World!"';
+  if (item.language === "perl") return 'print "Hello, World!\\n";';
+  if (item.language === "lua") return 'print("Hello, World!")';
+  if (item.language === "r") return 'print("Hello, World!")';
+  if (item.language === "octave") return 'disp("Hello, World!")';
+  if (item.language === "sql") return hello.sql;
+  if (item.language === "scala") return 'object Main extends App {\n    println("Hello, World!")\n}';
+  if (item.language === "clojure") return '(println "Hello, World!")';
+  if (item.language === "groovy") return 'println "Hello, World!"';
+  if (item.language === "basic") return 'Print "Hello, World!"';
+  if (item.language === "vb") return 'Module Main\n    Sub Main()\n        Console.WriteLine("Hello, World!")\n    End Sub\nEnd Module';
+  if (item.language === "fsharp") return 'printfn "Hello, World!"';
+  if (item.language === "haskell") return 'main = putStrLn "Hello, World!"';
+  if (item.language === "elixir") return 'IO.puts("Hello, World!")';
+  if (item.language === "erlang") return 'main(_) ->\n    io:format("Hello, World!~n").';
+  if (item.language === "ocaml") return 'print_endline "Hello, World!";;';
+  if (item.language === "commonlisp") return '(write-line "Hello, World!")';
+  if (item.language === "prolog") return ':- initialization(main).\nmain :- write("Hello, World!"), nl, halt.';
+  if (item.language === "d") return 'import std.stdio;\n\nvoid main() {\n    writeln("Hello, World!");\n}';
+  if (item.language === "fortran") return 'program hello\n    print *, "Hello, World!"\nend program hello';
+  if (item.language === "pascal") return 'program Hello;\nbegin\n  writeln("Hello, World!");\nend.';
+  if (item.language === "objectivec") return '#import <Foundation/Foundation.h>\n\nint main() {\n    NSLog(@"Hello, World!");\n    return 0;\n}';
+  if (item.language === "cobol") return 'IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\nDISPLAY "Hello, World!".\nSTOP RUN.';
+  if (item.language === "nasm") return 'section .data\n    msg db "Hello, World!", 10\n    len equ $ - msg\n\nsection .text\n    global _start\n_start:\n    mov eax, 4\n    mov ebx, 1\n    mov ecx, msg\n    mov edx, len\n    int 0x80\n    mov eax, 1\n    xor ebx, ebx\n    int 0x80';
+  return `# Write your ${item.name} code here`;
+}
 
 export default function CompilerRunPage() {
   const [selectedId, setSelectedId] = useState(71);
@@ -143,7 +256,7 @@ export default function CompilerRunPage() {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("lang");
     if (!raw) return;
-    const next = languages.find((item) => String(item.id) === raw || item.alias === raw.toLowerCase() || item.name.toLowerCase() === raw.toLowerCase());
+    const next = languages.find((item) => String(item.id) === raw || item.language === raw.toLowerCase() || item.name.toLowerCase() === raw.toLowerCase());
     if (next) {
       setSelectedId(next.id);
       setCode(next.starter);
@@ -191,10 +304,16 @@ export default function CompilerRunPage() {
     setResult(null);
     setTab("stdout");
     try {
+      const lang = LANGUAGES.find((item) => item.id === selectedId) ?? LANGUAGES[0];
       const response = await fetch(`${API_BASE}/tools/run-code`, {
         method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ language: language.alias, version: language.version, code, stdin }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: lang.language,
+          version: lang.version,
+          code,
+          stdin: stdin || "",
+        }),
       });
       const data: unknown = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(readApiError(data, `Run failed with status ${response.status}.`));
@@ -264,12 +383,12 @@ export default function CompilerRunPage() {
           </div>
           <div className="lg:justify-self-end">
             <label className="mb-1 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">Language</label>
-            <select value={language.id} onChange={(event) => switchLanguage(Number(event.target.value))} className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:bg-zinc-950 lg:min-w-80">
+            <select value={language.id} onChange={(event) => switchLanguage(Number(event.target.value))} className="w-full rounded-lg border border-border bg-background text-foreground text-sm font-medium px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 lg:min-w-80">
               {groups.map((group) => (
-                <optgroup key={group} label={group}>
-                  {languages.filter((item) => item.group === group).map((item) => (
+                <optgroup key={group.category} label={group.label}>
+                  {languages.filter((item) => item.category === group.category).map((item) => (
                     <option key={`${item.id}-${item.name}-${item.version}`} value={item.id}>
-                      {item.name} - {item.version}
+                      {item.name}
                     </option>
                   ))}
                 </optgroup>
@@ -499,3 +618,4 @@ function formatMemory(value: number) {
 function readApiError(data: unknown, fallback: string) {
   return data && typeof data === "object" && "detail" in data && typeof (data as { detail?: unknown }).detail === "string" ? (data as { detail: string }).detail : fallback;
 }
+
