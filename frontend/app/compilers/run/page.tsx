@@ -1,26 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Loader2, Play, Upload, X } from "lucide-react";
+import { ChangeEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, Check, ChevronDown, ChevronLeft, ChevronUp, Copy, FileText, Loader2, Play, Terminal, Trash2, Upload, X } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 type Category = "popular" | "scripting" | "jvm" | "systems" | "functional" | "data" | "database" | "lowlevel";
-type GroupLabel = "Popular" | "Scripting" | "JVM" | "Systems" | "Functional" | "Data" | "Database" | "Low-level";
 type OutputTab = "stdout" | "stderr" | "info";
+type StatusKind = "idle" | "running" | "accepted" | "runtime" | "compile" | "tle";
 
-type LanguageSeed = {
+type Language = {
   id: number;
   language: string;
   version: string;
   name: string;
   category: Category;
-};
-
-type Language = LanguageSeed & {
-  abbreviation: string;
-  extensions: string[];
-  starter: string;
 };
 
 type RunResult = {
@@ -39,7 +33,7 @@ type RunResult = {
   message?: string;
 };
 
-const LANGUAGES: LanguageSeed[] = [
+const LANGUAGES: Language[] = [
   { id: 71, language: "python", version: "3.8.1", name: "Python 3", category: "popular" },
   { id: 70, language: "python", version: "2.7.17", name: "Python 2", category: "scripting" },
   { id: 62, language: "java", version: "13.0.1", name: "Java", category: "popular" },
@@ -86,16 +80,63 @@ const LANGUAGES: LanguageSeed[] = [
   { id: 45, language: "nasm", version: "2.14.02", name: "Assembly (NASM)", category: "lowlevel" },
 ];
 
-const GROUPS: { category: Category; label: GroupLabel }[] = [
-  { category: "popular", label: "Popular" },
-  { category: "scripting", label: "Scripting" },
-  { category: "jvm", label: "JVM" },
-  { category: "systems", label: "Systems" },
-  { category: "functional", label: "Functional" },
-  { category: "data", label: "Data" },
-  { category: "database", label: "Database" },
-  { category: "lowlevel", label: "Low-level" },
+const GROUPS: { label: string; category: Category }[] = [
+  { label: "Popular", category: "popular" },
+  { label: "Scripting", category: "scripting" },
+  { label: "JVM", category: "jvm" },
+  { label: "Systems", category: "systems" },
+  { label: "Functional", category: "functional" },
+  { label: "Data", category: "data" },
+  { label: "Database", category: "database" },
+  { label: "Low-level", category: "lowlevel" },
 ];
+
+const BADGES: Record<number, { abbr: string; bg: string; text: string }> = {
+  71: { abbr: "PY", bg: "#3572A5", text: "#fff" },
+  70: { abbr: "PY2", bg: "#3572A5", text: "#fff" },
+  62: { abbr: "JV", bg: "#b07219", text: "#fff" },
+  50: { abbr: "C", bg: "#555555", text: "#fff" },
+  49: { abbr: "C", bg: "#555555", text: "#fff" },
+  48: { abbr: "C", bg: "#555555", text: "#fff" },
+  75: { abbr: "C", bg: "#555555", text: "#fff" },
+  54: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  53: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  52: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  76: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  51: { abbr: "C#", bg: "#178600", text: "#fff" },
+  73: { abbr: "RS", bg: "#dea584", text: "#000" },
+  60: { abbr: "GO", bg: "#00ADD8", text: "#fff" },
+  78: { abbr: "KT", bg: "#A97BFF", text: "#fff" },
+  68: { abbr: "PHP", bg: "#4F5D95", text: "#fff" },
+  72: { abbr: "RB", bg: "#701516", text: "#fff" },
+  83: { abbr: "SW", bg: "#F05138", text: "#fff" },
+  63: { abbr: "JS", bg: "#f1e05a", text: "#000" },
+  74: { abbr: "TS", bg: "#3178c6", text: "#fff" },
+  46: { abbr: "SH", bg: "#89e051", text: "#000" },
+  85: { abbr: "PL", bg: "#0298c3", text: "#fff" },
+  64: { abbr: "LUA", bg: "#000080", text: "#fff" },
+  80: { abbr: "R", bg: "#198CE7", text: "#fff" },
+  66: { abbr: "M", bg: "#0790C0", text: "#fff" },
+  82: { abbr: "SQL", bg: "#e38c00", text: "#fff" },
+  81: { abbr: "SC", bg: "#c22d40", text: "#fff" },
+  86: { abbr: "CLJ", bg: "#db5855", text: "#fff" },
+  88: { abbr: "GRV", bg: "#4298b8", text: "#fff" },
+  47: { abbr: "BAS", bg: "#6e4a7e", text: "#fff" },
+  84: { abbr: "VB", bg: "#945db7", text: "#fff" },
+  87: { abbr: "FS", bg: "#b845fc", text: "#fff" },
+  61: { abbr: "HS", bg: "#5e5086", text: "#fff" },
+  57: { abbr: "EX", bg: "#6e4a7e", text: "#fff" },
+  58: { abbr: "ERL", bg: "#B83998", text: "#fff" },
+  65: { abbr: "ML", bg: "#3be133", text: "#000" },
+  55: { abbr: "LISP", bg: "#3fb68b", text: "#fff" },
+  69: { abbr: "PRO", bg: "#74283c", text: "#fff" },
+  56: { abbr: "D", bg: "#ba595e", text: "#fff" },
+  59: { abbr: "F", bg: "#4d41b1", text: "#fff" },
+  67: { abbr: "PAS", bg: "#E3F171", text: "#000" },
+  79: { abbr: "OC", bg: "#438eff", text: "#fff" },
+  77: { abbr: "COB", bg: "#005A9C", text: "#fff" },
+  45: { abbr: "ASM", bg: "#6e4a7e", text: "#fff" },
+};
 
 const EXTENSIONS: Record<string, string[]> = {
   bash: [".sh", ".bash"],
@@ -137,58 +178,94 @@ const EXTENSIONS: Record<string, string[]> = {
   vb: [".vb"],
 };
 
-const ABBR: Record<string, string> = {
-  commonlisp: "CL",
-  cpp: "C++",
-  csharp: "CS",
-  fsharp: "FS",
-  javascript: "JS",
-  objectivec: "OC",
-  python: "PY",
-  typescript: "TS",
-};
+function getLanguageBadge(langId: number) {
+  return BADGES[langId] ?? { abbr: "TXT", bg: "#555555", text: "#fff" };
+}
 
-const CATEGORY_CLASSES: Record<Category, string> = {
-  popular: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-  scripting: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
-  jvm: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
-  systems: "bg-red-500/15 text-red-600 dark:text-red-400",
-  functional: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
-  data: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
-  database: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-  lowlevel: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400",
-};
+function getStarterCode(langId: number) {
+  const lang = LANGUAGES.find((item) => item.id === langId);
+  if (!lang) return "// Start coding here...\n";
+  const byLanguage: Record<string, string> = {
+    bash: "#!/usr/bin/env bash\necho \"Hello, World!\"\n",
+    basic: "Print \"Hello, World!\"\n",
+    c: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
+    clojure: "(println \"Hello, World!\")\n",
+    cobol: "IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\nDISPLAY \"Hello, World!\".\nSTOP RUN.\n",
+    commonlisp: "(write-line \"Hello, World!\")\n",
+    cpp: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
+    csharp: "using System;\n\nclass MainClass {\n    public static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n",
+    d: "import std.stdio;\n\nvoid main() {\n    writeln(\"Hello, World!\");\n}\n",
+    elixir: "IO.puts(\"Hello, World!\")\n",
+    erlang: "main(_) ->\n    io:format(\"Hello, World!~n\").\n",
+    fortran: "program hello\n    print *, \"Hello, World!\"\nend program hello\n",
+    fsharp: "printfn \"Hello, World!\"\n",
+    go: "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n}\n",
+    groovy: "println \"Hello, World!\"\n",
+    haskell: "main = putStrLn \"Hello, World!\"\n",
+    java: "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n",
+    javascript: "// JavaScript Node.js\nconsole.log('Hello, World!');\n\n// Try: console.log(2 + 2);\n",
+    kotlin: "fun main() {\n    println(\"Hello, World!\")\n}\n",
+    lua: "print(\"Hello, World!\")\n",
+    nasm: "section .data\n    msg db \"Hello, World!\", 10\n    len equ $ - msg\n\nsection .text\n    global _start\n_start:\n    mov eax, 4\n    mov ebx, 1\n    mov ecx, msg\n    mov edx, len\n    int 0x80\n    mov eax, 1\n    xor ebx, ebx\n    int 0x80\n",
+    objectivec: "#import <Foundation/Foundation.h>\n\nint main() {\n    NSLog(@\"Hello, World!\");\n    return 0;\n}\n",
+    ocaml: "print_endline \"Hello, World!\";;\n",
+    octave: "disp(\"Hello, World!\")\n",
+    pascal: "program Hello;\nbegin\n    writeln('Hello, World!');\nend.\n",
+    perl: "print \"Hello, World!\\n\";\n",
+    php: "<?php\necho \"Hello, World!\\n\";\n",
+    prolog: ":- initialization(main).\nmain :- write('Hello, World!'), nl, halt.\n",
+    r: "print(\"Hello, World!\")\n",
+    ruby: "puts \"Hello, World!\"\n",
+    rust: "fn main() {\n    println!(\"Hello, World!\");\n}\n",
+    scala: "object Main extends App {\n    println(\"Hello, World!\")\n}\n",
+    sql: "CREATE TABLE users (id INTEGER, name TEXT);\nINSERT INTO users VALUES (1, 'Ada'), (2, 'Grace');\nSELECT * FROM users;\n",
+    swift: "print(\"Hello, World!\")\n",
+    typescript: "const message: string = 'Hello, World!';\nconsole.log(message);\n",
+    vb: "Module Main\n    Sub Main()\n        Console.WriteLine(\"Hello, World!\")\n    End Sub\nEnd Module\n",
+  };
+  if (lang.id === 70) return `# Python ${lang.version}\nprint \"Hello, World!\"\n`;
+  if (lang.language === "python") return `# Python ${lang.version}\nname = \"World\"\nprint(f\"Hello, {name}!\")\n`;
+  return byLanguage[lang.language] ?? "// Start coding here...\n";
+}
 
-const EDITOR_AREA =
-  "editor-scroll font-mono text-[13px] leading-[1.6] [font-family:'JetBrains_Mono','Fira_Code',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace]";
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
 
-const LANGUAGES_READY: Language[] = LANGUAGES.map((item) => ({
-  ...item,
-  abbreviation: ABBR[item.language] ?? item.language.slice(0, 3).toUpperCase(),
-  extensions: EXTENSIONS[item.language] ?? [".txt"],
-  starter: starterCode(item),
-}));
+function formatMs(ms: number) {
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${ms}ms`;
+}
+
+const codeClass = "compiler-font-code text-[13px] leading-[1.65] font-normal";
 
 export default function CompilerRunPage() {
-  const [selectedId, setSelectedId] = useState(71);
-  const language = useMemo(() => LANGUAGES_READY.find((item) => item.id === selectedId) ?? LANGUAGES_READY[0], [selectedId]);
-  const [code, setCode] = useState(() => language.starter);
+  const [selectedLangId, setSelectedLangId] = useState(71);
+  const selectedLang = useMemo(() => LANGUAGES.find((lang) => lang.id === selectedLangId) ?? LANGUAGES[0], [selectedLangId]);
+  const [code, setCode] = useState(() => getStarterCode(71));
   const [stdin, setStdin] = useState("");
   const [stdinOpen, setStdinOpen] = useState(false);
-  const [result, setResult] = useState<RunResult | null>(null);
-  const [tab, setTab] = useState<OutputTab>("stdout");
-  const [running, setRunning] = useState(false);
-  const [toast, setToast] = useState("");
+  const [output, setOutput] = useState<RunResult | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+  const [activeOutputTab, setActiveOutputTab] = useState<OutputTab>("stdout");
+  const [panelWidths, setPanelWidths] = useState({ left: 55, right: 45 });
+  const [isDragging, setIsDragging] = useState(false);
   const [copied, setCopied] = useState<"code" | "output" | "">("");
+  const [uploadedName, setUploadedName] = useState("");
+  const [toast, setToast] = useState("");
+  const lineNumbersRef = useRef<HTMLDivElement | null>(null);
   const uploadRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("lang");
-    const match = LANGUAGES_READY.find((item) => String(item.id) === raw || item.language === raw?.toLowerCase() || item.name.toLowerCase() === raw?.toLowerCase());
-    if (match) {
-      setSelectedId(match.id);
-      setCode(match.starter);
+    const next = LANGUAGES.find((lang) => String(lang.id) === raw || lang.language === raw?.toLowerCase());
+    if (next) {
+      setSelectedLangId(next.id);
+      setCode(getStarterCode(next.id));
     }
   }, []);
 
@@ -205,62 +282,87 @@ export default function CompilerRunPage() {
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 4500);
+    const timer = window.setTimeout(() => setToast(""), 3000);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    if (!uploadedName) return;
+    const timer = window.setTimeout(() => setUploadedName(""), 2000);
+    return () => window.clearTimeout(timer);
+  }, [uploadedName]);
+
   function changeLanguage(id: number) {
-    const next = LANGUAGES_READY.find((item) => item.id === id) ?? LANGUAGES_READY[0];
-    setSelectedId(next.id);
-    setCode(next.starter);
-    setResult(null);
-    setTab("stdout");
+    const next = LANGUAGES.find((lang) => lang.id === id) ?? LANGUAGES[0];
+    setSelectedLangId(next.id);
+    setCode(getStarterCode(next.id));
+    setOutput(null);
+    setActiveOutputTab("stdout");
     window.history.replaceState(null, "", `/compilers/run?lang=${next.id}`);
   }
 
   async function runCode() {
-    setRunning(true);
-    setResult(null);
-    setTab("stdout");
+    setIsRunning(true);
+    setOutput(null);
+    setActiveOutputTab("stdout");
     try {
-      const lang = LANGUAGES.find((item) => item.id === selectedId) ?? LANGUAGES[0];
       const response = await fetch(`${API_BASE}/tools/run-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          language: lang.language,
-          version: lang.version,
+          language: selectedLang.language,
+          version: selectedLang.version,
           code,
           stdin: stdin || "",
         }),
       });
       const data: unknown = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(readApiError(data, `Run failed with status ${response.status}.`));
-      const next = data as RunResult;
-      setResult(next);
-      if (hasErrors(next)) setTab("stderr");
+      const result = data as RunResult;
+      setOutput(result);
+      if (hasError(result)) setActiveOutputTab("stderr");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to run code.";
-      setResult({ stderr: message, exit_code: 1, status: "error", status_description: "Run failed" });
-      setTab("stderr");
+      setOutput({ stderr: message, exit_code: 1, status_description: "Runtime Error", status: "error" });
+      setActiveOutputTab("stderr");
       setToast(message);
     } finally {
-      setRunning(false);
+      setIsRunning(false);
     }
   }
 
-  function handleUpload(event: ChangeEvent<HTMLInputElement>) {
+  function startResize(event: ReactMouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setIsDragging(true);
+    const onMove = (move: MouseEvent) => {
+      const percent = (move.clientX / window.innerWidth) * 100;
+      const left = Math.min(70, Math.max(30, percent));
+      setPanelWidths({ left, right: 100 - left });
+    };
+    const onUp = () => {
+      setIsDragging(false);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
+
+  function uploadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.currentTarget.value = "";
     if (!file) return;
-    const allowed = [".txt", ...language.extensions];
+    const allowed = [".txt", ...(EXTENSIONS[selectedLang.language] ?? [])];
     if (!allowed.some((extension) => file.name.toLowerCase().endsWith(extension.toLowerCase()))) {
       setToast(`Only ${allowed.join(", ")} files accepted.`);
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setCode(String(reader.result ?? ""));
-    reader.onerror = () => setToast("Could not read the selected file.");
+    reader.onload = () => {
+      setCode(String(reader.result ?? ""));
+      setUploadedName(file.name);
+    };
+    reader.onerror = () => setToast("Could not read selected file.");
     reader.readAsText(file);
   }
 
@@ -268,202 +370,219 @@ export default function CompilerRunPage() {
     if (!value) return;
     await navigator.clipboard.writeText(value);
     setCopied(target);
-    window.setTimeout(() => setCopied(""), 1200);
+    window.setTimeout(() => setCopied(""), 1500);
   }
 
-  const stdout = result?.stdout || result?.output || "";
-  const stderr = [result?.stderr, result?.compile_output, result?.compile_stderr, result?.message].filter(Boolean).join("\n");
-  const status = getStatus(result, running);
   const lineCount = Math.max(1, code.split("\n").length);
+  const stdout = output?.stdout || output?.output || "";
+  const stderr = [output?.stderr, output?.compile_output, output?.compile_stderr, output?.message].filter(Boolean).join("\n");
+  const status = getStatus(output, isRunning);
+  const errorCount = stderr ? stderr.split(/\r?\n/).filter(Boolean).length : 0;
 
   return (
-    <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+    <main className="flex h-screen overflow-hidden bg-background text-foreground">
       {toast && <Toast message={toast} />}
-      <TopBar language={language} selectedId={selectedId} onLanguageChange={changeLanguage} running={running} onRun={() => void runCode()} />
-      <section className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="flex min-h-0 basis-[55%] flex-col">
-          <div className="flex h-9 flex-none items-center justify-between border-b border-border bg-background px-4 py-2.5">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-[10px] font-bold ${CATEGORY_CLASSES[language.category]}`}>{language.abbreviation}</span>
-              <span className="truncate text-xs font-semibold">{language.name}</span>
-              <span className="text-xs text-muted-foreground">{language.version}</span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar selectedLang={selectedLang} selectedLangId={selectedLangId} onLanguageChange={changeLanguage} isRunning={isRunning} onRun={() => void runCode()} />
+        <section className="flex min-h-0 flex-1 overflow-hidden">
+          <section style={{ width: `${panelWidths.left}%` }} className="flex min-w-0 flex-col overflow-hidden border-r border-border">
+            <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-border bg-[var(--card,rgb(var(--background)))] px-2.5">
+              <div className="flex min-w-0 items-center gap-2">
+                <LanguageBadge langId={selectedLang.id} />
+                <span className="truncate text-xs font-semibold">{selectedLang.name}</span>
+                <span className="text-xs text-muted-foreground">{selectedLang.version}</span>
+                {uploadedName && <span className="ml-2 truncate text-[11px] text-muted-foreground">{uploadedName}</span>}
+              </div>
+              <div className="flex items-center gap-0.5">
+                <input ref={uploadRef} type="file" className="hidden" accept={[".txt", ...(EXTENSIONS[selectedLang.language] ?? [])].join(",")} onChange={uploadFile} />
+                <IconButton title="Upload file" onClick={() => uploadRef.current?.click()}><Upload size={14} /></IconButton>
+                <IconButton title="Copy code" onClick={() => void copyText(code, "code")}>{copied === "code" ? <Check size={14} /> : <Copy size={14} />}</IconButton>
+                <IconButton title="Clear editor" onClick={() => setCode("")}><Trash2 size={14} /></IconButton>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <input ref={uploadRef} type="file" accept={[".txt", ...language.extensions].join(",")} className="hidden" onChange={handleUpload} />
-              <IconButton title="Upload file" onClick={() => uploadRef.current?.click()}><Upload className="h-4 w-4" /></IconButton>
-              <IconButton title={copied === "code" ? "Copied" : "Copy"} onClick={() => void copyText(code, "code")}><Copy className="h-4 w-4" /></IconButton>
-              <IconButton title="Clear" onClick={() => { setCode(""); setResult(null); }}><X className="h-4 w-4" /></IconButton>
-            </div>
-          </div>
-          <div className="flex min-h-0 flex-1">
-            <LineNumbers count={lineCount} />
-            <textarea
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              onKeyDown={(event) => handleEditorKey(event, code, setCode, runCode)}
-              spellCheck={false}
-              className={`${EDITOR_AREA} min-h-0 flex-1 resize-none border-0 bg-white py-3 pl-0 pr-3 text-[#1e1e1e] outline-none dark:bg-[#1e1e1e] dark:text-[#d4d4d4]`}
-            />
-          </div>
-          <div className="flex-none border-t border-border">
-            <button type="button" onClick={() => setStdinOpen((value) => !value)} className="flex h-7 w-full items-center gap-2 bg-border/20 px-4 text-xs font-medium text-muted-foreground transition hover:bg-border/40 hover:text-foreground">
-              {stdinOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-              stdin
-            </button>
-            {stdinOpen && (
+            <div className="flex min-h-0 flex-1 overflow-hidden">
+              <div ref={lineNumbersRef} className="compiler-font-code w-9 shrink-0 overflow-hidden border-r border-[rgba(128,128,128,0.1)] bg-[#f8f8f8] py-2.5 pr-2 text-right text-xs font-normal leading-[1.65] text-[rgba(128,128,128,0.6)] dark:bg-[#1e1e1e]">
+                {Array.from({ length: lineCount }, (_, index) => <div key={index}>{index + 1}</div>)}
+              </div>
               <textarea
-                value={stdin}
-                onChange={(event) => setStdin(event.target.value)}
-                placeholder="Program input (stdin)..."
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                onKeyDown={(event) => handleEditorKey(event, code, setCode, runCode)}
+                onScroll={(event) => {
+                  if (lineNumbersRef.current) lineNumbersRef.current.scrollTop = event.currentTarget.scrollTop;
+                }}
+                placeholder="// Start coding here..."
                 spellCheck={false}
-                className={`${EDITOR_AREA} h-[120px] w-full resize-none border-0 bg-[#f8f8f8] p-3 text-[#1e1e1e] outline-none dark:bg-[#141414] dark:text-[#d4d4d4]`}
+                autoComplete="off"
+                className={`${codeClass} compiler-scroll min-h-0 flex-1 resize-none overflow-auto border-0 bg-white px-4 pb-20 pt-2.5 text-[#1e1e1e] outline-none placeholder:text-[rgba(128,128,128,0.3)] dark:bg-[#1e1e1e] dark:text-[#d4d4d4]`}
               />
-            )}
-          </div>
-        </div>
-        <OutputPanel tab={tab} setTab={setTab} result={result} running={running} status={status} stdout={stdout} stderr={stderr} language={language} onCopy={() => void copyText(tab === "stderr" ? stderr : stdout, "output")} onClear={() => setResult(null)} copied={copied === "output"} />
-      </section>
-      <style jsx global>{scrollbarStyles}</style>
+            </div>
+            <div className="shrink-0">
+              <button type="button" onClick={() => setStdinOpen((value) => !value)} className="flex h-8 w-full cursor-pointer items-center justify-between border-t border-border bg-[rgb(var(--border)/0.18)] px-2.5 transition hover:bg-[rgb(var(--border)/0.32)]">
+                <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"><Terminal size={12} />stdin</span>
+                {stdinOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+              {stdinOpen && (
+                <textarea value={stdin} onChange={(event) => setStdin(event.target.value)} placeholder="Program input (stdin)..." spellCheck={false} className={`${codeClass} compiler-scroll h-[100px] w-full resize-none border-0 border-t border-border bg-[#f0f0f0] px-3 py-2 text-foreground outline-none dark:bg-[#161616]`} />
+              )}
+            </div>
+          </section>
+          <div onMouseDown={startResize} className={`h-full w-1 shrink-0 cursor-col-resize bg-border transition ${isDragging ? "bg-emerald-500" : "hover:bg-emerald-500"}`} />
+          <OutputPanel width={panelWidths.right} activeTab={activeOutputTab} setActiveTab={setActiveOutputTab} output={output} stdout={stdout} stderr={stderr} status={status} errorCount={errorCount} selectedLang={selectedLang} onCopy={() => void copyText(activeOutputTab === "stderr" ? stderr : stdout, "output")} onClear={() => setOutput(null)} copied={copied === "output"} />
+        </section>
+      </div>
+      <style jsx global>{compilerStyles}</style>
     </main>
   );
 }
 
-function TopBar({ language, selectedId, onLanguageChange, running, onRun }: { language: Language; selectedId: number; onLanguageChange: (id: number) => void; running: boolean; onRun: () => void }) {
+function TopBar({ selectedLang, selectedLangId, onLanguageChange, isRunning, onRun }: { selectedLang: Language; selectedLangId: number; onLanguageChange: (id: number) => void; isRunning: boolean; onRun: () => void }) {
   return (
-    <header className="flex h-10 flex-none items-center justify-between border-b border-border bg-background px-4">
+    <header className="flex h-[38px] shrink-0 items-center justify-between border-b border-border bg-[var(--card,rgb(var(--background)))] px-3">
       <div className="flex min-w-0 items-center gap-2">
-        <Link href="/compilers" className="text-xs font-medium text-muted-foreground transition hover:text-foreground">{"<- Compilers"}</Link>
-        <span className="text-xs text-muted-foreground">/</span>
-        <span className={`truncate rounded-full px-2 py-0.5 text-xs font-semibold ${CATEGORY_CLASSES[language.category]}`}>{language.name}</span>
+        <Link href="/compilers" className="flex items-center gap-1 text-[11px] text-muted-foreground transition hover:text-foreground"><ChevronLeft size={12} />Compilers</Link>
+        <span className="mx-0.5 text-[11px] text-muted-foreground/40">/</span>
+        <LanguageBadge langId={selectedLang.id} />
+        <h1 className="truncate text-sm font-medium">{selectedLang.name}</h1>
       </div>
       <div className="flex items-center gap-2">
-        <select
-          value={selectedId}
-          onChange={(event) => onLanguageChange(Number(event.target.value))}
-          className="h-8 w-[220px] rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-        >
+        <select value={selectedLangId} onChange={(event) => onLanguageChange(Number(event.target.value))} className="h-7 w-60 cursor-pointer rounded-md border border-border bg-background px-2 text-xs font-medium text-foreground outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15">
           {GROUPS.map((group) => (
             <optgroup key={group.category} label={group.label}>
-              {LANGUAGES_READY.filter((item) => item.category === group.category).map((item) => (
-                <option key={item.id} value={item.id}>{item.name} - {item.version}</option>
+              {LANGUAGES.filter((lang) => lang.category === group.category).map((lang) => (
+                <option key={lang.id} value={lang.id}>{lang.name}</option>
               ))}
             </optgroup>
           ))}
         </select>
-        <span className="hidden text-xs font-medium text-muted-foreground sm:inline">Ctrl+Enter</span>
-        <button type="button" onClick={onRun} disabled={running} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
-          {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {running ? "Running..." : "Run"}
+        <div className="mx-1 h-5 w-px bg-border" />
+        <button type="button" onClick={onRun} disabled={isRunning} className="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-0 bg-emerald-500 px-3.5 text-xs font-semibold text-white transition hover:bg-emerald-600 active:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70">
+          {isRunning ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+          {isRunning ? "Running" : "Run"}
         </button>
+        <span className="ml-1 text-[11px] text-muted-foreground/50">Ctrl+Enter</span>
       </div>
     </header>
   );
 }
 
-function LineNumbers({ count }: { count: number }) {
+function OutputPanel({ width, activeTab, setActiveTab, output, stdout, stderr, status, errorCount, selectedLang, onCopy, onClear, copied }: { width: number; activeTab: OutputTab; setActiveTab: (tab: OutputTab) => void; output: RunResult | null; stdout: string; stderr: string; status: StatusKind; errorCount: number; selectedLang: Language; onCopy: () => void; onClear: () => void; copied: boolean }) {
   return (
-    <div className={`${EDITOR_AREA} editor-scroll w-8 flex-none overflow-hidden border-r border-border bg-white px-2 py-3 text-right text-muted-foreground/40 dark:bg-[#1e1e1e]`}>
-      {Array.from({ length: count }, (_, index) => <div key={index}>{index + 1}</div>)}
-    </div>
-  );
-}
-
-function OutputPanel({ tab, setTab, result, running, status, stdout, stderr, language, onCopy, onClear, copied }: { tab: OutputTab; setTab: (tab: OutputTab) => void; result: RunResult | null; running: boolean; status: StatusInfo; stdout: string; stderr: string; language: Language; onCopy: () => void; onClear: () => void; copied: boolean }) {
-  return (
-    <aside className="flex min-h-0 basis-[45%] flex-col border-l border-border">
-      <div className="flex h-9 flex-none items-center justify-between border-b border-border bg-background px-4 py-2.5">
+    <section style={{ width: `${width}%` }} className="flex min-w-0 flex-col overflow-hidden">
+      <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-border bg-[var(--card,rgb(var(--background)))] px-2.5">
         <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Output</div>
-        <StatusBadge status={status} />
-        <div className="flex items-center gap-1">
-          <IconButton title={copied ? "Copied" : "Copy output"} onClick={onCopy}><Copy className="h-4 w-4" /></IconButton>
-          <IconButton title="Clear output" onClick={onClear}><X className="h-4 w-4" /></IconButton>
+        {output && <StatusBadge status={status} />}
+        <div className="flex items-center gap-0.5">
+          <IconButton title="Copy output" onClick={onCopy} disabled={!stdout && !stderr}>{copied ? <Check size={14} /> : <Copy size={14} />}</IconButton>
+          <IconButton title="Clear output" onClick={onClear}><X size={14} /></IconButton>
         </div>
       </div>
-      <div className="flex h-7 flex-none border-b border-border bg-background">
-        {(["stdout", "stderr", "info"] as OutputTab[]).map((item) => (
-          <button key={item} type="button" onClick={() => setTab(item)} className={`border-b-2 px-3 py-1.5 text-xs font-medium transition ${tab === item ? "border-emerald-500 bg-background text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-            {item}
+      <div className="flex h-8 shrink-0 border-b border-border bg-[var(--card,rgb(var(--background)))]">
+        {(["stdout", "stderr", "info"] as OutputTab[]).map((tab) => (
+          <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`flex h-8 cursor-pointer items-center border-b-2 px-3.5 text-xs font-medium transition ${activeTab === tab ? "border-[#10b981] text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+            {tab}
+            {tab === "stderr" && errorCount > 0 && <span className="ml-1 rounded-full bg-red-500 px-1.5 py-px text-[8px] text-white">{errorCount}</span>}
           </button>
         ))}
       </div>
-      {tab === "stdout" && <StdoutView result={result} running={running} value={stdout} />}
-      {tab === "stderr" && <StderrView result={result} value={stderr} />}
-      {tab === "info" && <InfoView result={result} language={language} status={status} />}
-    </aside>
+      <div className="min-h-0 flex-1 overflow-hidden">
+        {activeTab === "stdout" && <Stdout output={output} stdout={stdout} />}
+        {activeTab === "stderr" && <Stderr output={output} stderr={stderr} />}
+        {activeTab === "info" && <Info output={output} selectedLang={selectedLang} status={status} />}
+      </div>
+    </section>
   );
 }
 
-function StdoutView({ result, running, value }: { result: RunResult | null; running: boolean; value: string }) {
-  if (!result && !running) {
-    return (
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f8f8f8] text-center dark:bg-[#141414]">
-        <div>
-          <Play className="mx-auto h-8 w-8 text-muted-foreground/30" />
-          <p className="mt-3 text-sm text-muted-foreground">Run your code to see output</p>
-          <p className="mt-1 text-xs text-muted-foreground/60">Press Ctrl+Enter or click Run</p>
-        </div>
-      </div>
-    );
+function Stdout({ output, stdout }: { output: RunResult | null; stdout: string }) {
+  if (!output) {
+    return <EmptyState icon={<Play size={20} />} title="Run your code" subtitle="Press Ctrl+Enter or click Run to execute" />;
   }
-  return <pre className={`${EDITOR_AREA} editor-scroll min-h-0 flex-1 overflow-auto whitespace-pre-wrap bg-[#f8f8f8] px-4 py-3 text-emerald-800 dark:bg-[#141414] dark:text-emerald-300`}>{running ? "Running..." : value || "No stdout."}</pre>;
+  if (!stdout && output.exit_code !== 0) {
+    return <pre className={`${codeClass} compiler-scroll h-full overflow-auto bg-[#f5f5f5] px-4 py-2.5 text-muted-foreground dark:bg-[#161616]`}>Process exited with code {output.exit_code ?? 1}</pre>;
+  }
+  return <pre className={`${codeClass} compiler-scroll h-full overflow-auto whitespace-pre-wrap bg-[#f5f5f5] px-4 py-2.5 ${output.exit_code === 0 ? "text-[#1a7a4a] dark:text-[#4ec994]" : "text-foreground"} dark:bg-[#161616]`}>{stdout || "No stdout."}</pre>;
 }
 
-function StderrView({ result, value }: { result: RunResult | null; value: string }) {
-  if (!result) return <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f8f8f8] text-sm text-muted-foreground dark:bg-[#141414]">No errors</div>;
+function Stderr({ output, stderr }: { output: RunResult | null; stderr: string }) {
+  if (!output || !stderr) return <EmptyState icon={<AlertCircle size={20} />} title="No errors" />;
   return (
-    <pre className={`${EDITOR_AREA} editor-scroll min-h-0 flex-1 overflow-auto whitespace-pre-wrap bg-[#f8f8f8] px-4 py-3 text-red-600 dark:bg-[#141414] dark:text-red-400`}>
-      {value ? value.split(/\r?\n/).map((line) => line ? `x ${line}` : "").join("\n") : "No errors"}
-    </pre>
+    <div className={`${codeClass} compiler-scroll h-full overflow-auto bg-[#f5f5f5] px-4 py-2.5 text-[#c0392b] dark:bg-[#161616] dark:text-[#f48771]`}>
+      {stderr.split(/\r?\n/).map((line, index) => line ? (
+        <div key={`${index}-${line}`} className="flex gap-2 py-px">
+          <AlertCircle size={12} className="mt-[3px] shrink-0" />
+          <span>{line}</span>
+        </div>
+      ) : <br key={index} />)}
+    </div>
   );
 }
 
-function InfoView({ result, language, status }: { result: RunResult | null; language: Language; status: StatusInfo }) {
-  if (!result) return <div className="flex min-h-0 flex-1 items-center justify-center bg-[#f8f8f8] text-sm text-muted-foreground dark:bg-[#141414]">Run code to see execution details</div>;
-  const time = result.wall_time ?? result.cpu_time ?? 0;
-  const exitCode = result.exit_code ?? null;
+function Info({ output, selectedLang, status }: { output: RunResult | null; selectedLang: Language; status: StatusKind }) {
+  if (!output) return <EmptyState icon={<FileText size={20} />} title="Run code to see details" />;
+  const ms = output.wall_time ?? output.cpu_time ?? 0;
+  const memoryBytes = output.memory ?? 0;
+  const exit = output.exit_code ?? null;
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-[#f8f8f8] p-4 dark:bg-[#141414]">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Stat label="Execution Time" value={`${time}ms`} className={time < 500 ? "text-emerald-600 dark:text-emerald-400" : time < 2000 ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400"} />
-        <Stat label="Memory" value={`${formatMemoryKb(result.memory ?? 0)}KB`} />
-        <Stat label="Exit Code" value={exitCode === 0 ? "0 Success" : `${exitCode ?? "-"} Error`} className={exitCode === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"} />
-        <Stat label="Language" value={`${language.name} ${language.version}`} />
-        <Stat label="Status" value={result.status_description || status.label} />
+    <div className="compiler-scroll h-full overflow-auto bg-[#f5f5f5] p-4 dark:bg-[#161616]">
+      <div className="grid grid-cols-2 gap-3">
+        <Stat label="Execution Time" value={formatMs(ms)} className={ms < 300 ? "text-emerald-500" : ms <= 1000 ? "text-amber-500" : "text-red-500"} />
+        <Stat label="Memory" value={formatBytes(memoryBytes)} />
+        <Stat label="Exit Code" value={exit === 0 ? "0 - Success" : `${exit ?? "-"} - Error`} className={exit === 0 ? "text-emerald-500" : "text-red-500"} />
+        <Stat label="Language" value={`${selectedLang.name} ${selectedLang.version}`} />
+        <Stat label="Status" value={output.status_description || labelForStatus(status)} />
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, className = "text-foreground" }: { label: string; value: string; className?: string }) {
+function Stat({ label, value, className = "" }: { label: string; value: string; className?: string }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-sm font-medium ${className}`}>{value}</div>
+    <div className="rounded-lg border border-border bg-[rgb(var(--border)/0.12)] px-3 py-2.5">
+      <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-[13px] font-semibold ${className}`}>{value}</div>
     </div>
   );
 }
 
-function IconButton({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) {
+function EmptyState({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle?: string }) {
   return (
-    <button type="button" title={title} onClick={onClick} className="inline-flex h-7 w-7 items-center justify-center rounded-md p-1.5 text-muted-foreground transition hover:bg-border/40 hover:text-foreground">
+    <div className="flex h-full flex-col items-center justify-center bg-[#f5f5f5] text-center dark:bg-[#161616]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[rgb(var(--border)/0.35)] text-muted-foreground/50">{icon}</div>
+      <div className="mt-3 text-sm font-medium">{title}</div>
+      {subtitle && <div className="mt-1 text-xs text-muted-foreground">{subtitle}</div>}
+    </div>
+  );
+}
+
+function LanguageBadge({ langId }: { langId: number }) {
+  const badge = getLanguageBadge(langId);
+  return <span className="compiler-font-code flex h-[22px] min-w-[22px] items-center justify-center rounded px-1 text-[10px] font-bold" style={{ backgroundColor: badge.bg, color: badge.text }}>{badge.abbr}</span>;
+}
+
+function IconButton({ title, onClick, children, disabled = false }: { title: string; onClick: () => void; children: ReactNode; disabled?: boolean }) {
+  return (
+    <button type="button" title={title} onClick={onClick} disabled={disabled} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition duration-150 hover:bg-[rgb(var(--border)/0.4)] hover:text-foreground active:bg-[rgb(var(--border)/0.65)] disabled:cursor-not-allowed disabled:opacity-40">
       {children}
     </button>
   );
 }
 
-type StatusInfo = { label: string; className: string };
-
-function StatusBadge({ status }: { status: StatusInfo }) {
-  return <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${status.className}`}>{status.label}</span>;
-}
-
-function getStatus(result: RunResult | null, running: boolean): StatusInfo {
-  if (running) return { label: "Running", className: "border-blue-500/30 bg-blue-500/15 text-blue-500 animate-pulse" };
-  if (!result) return { label: "Idle", className: "border-border bg-border/20 text-muted-foreground" };
-  const description = (result.status_description || "").toLowerCase();
-  if (description.includes("time")) return { label: "TLE", className: "border-amber-500/30 bg-amber-500/15 text-amber-500" };
-  if (hasErrors(result)) return { label: "Error", className: "border-red-500/30 bg-red-500/15 text-red-500" };
-  return { label: "Accepted", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-500" };
+function StatusBadge({ status }: { status: StatusKind }) {
+  const style = {
+    accepted: "border-[rgba(16,185,129,0.3)] bg-[rgba(16,185,129,0.12)] text-[#10b981]",
+    runtime: "border-[rgba(239,68,68,0.3)] bg-[rgba(239,68,68,0.12)] text-[#ef4444]",
+    compile: "border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.12)] text-[#f59e0b]",
+    tle: "border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.12)] text-[#f59e0b]",
+    running: "border-[rgba(59,130,246,0.3)] bg-[rgba(59,130,246,0.12)] text-[#3b82f6]",
+    idle: "border-border bg-[rgb(var(--border)/0.15)] text-muted-foreground",
+  }[status];
+  return (
+    <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.04em] ${style}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${status === "running" ? "animate-pulse" : ""}`} style={{ backgroundColor: dotColor(status) }} />
+      {labelForStatus(status)}
+    </span>
+  );
 }
 
 function handleEditorKey(event: KeyboardEvent<HTMLTextAreaElement>, value: string, onChange: (value: string) => void, onRun: () => void | Promise<void>) {
@@ -482,56 +601,35 @@ function handleEditorKey(event: KeyboardEvent<HTMLTextAreaElement>, value: strin
   }
 }
 
-function starterCode(language: LanguageSeed) {
-  const map: Record<string, string> = {
-    bash: 'echo "Hello, World!"',
-    basic: 'Print "Hello, World!"',
-    c: '#include <stdio.h>\n\nint main() {\n    printf("Hello, World!\\n");\n    return 0;\n}',
-    clojure: '(println "Hello, World!")',
-    cobol: 'IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\nDISPLAY "Hello, World!".\nSTOP RUN.',
-    commonlisp: '(write-line "Hello, World!")',
-    cpp: '#include <iostream>\n\nint main() {\n    std::cout << "Hello, World!" << std::endl;\n    return 0;\n}',
-    csharp: 'using System;\n\nclass MainClass {\n    public static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}',
-    d: 'import std.stdio;\n\nvoid main() {\n    writeln("Hello, World!");\n}',
-    elixir: 'IO.puts("Hello, World!")',
-    erlang: 'main(_) ->\n    io:format("Hello, World!~n").',
-    fortran: 'program hello\n    print *, "Hello, World!"\nend program hello',
-    fsharp: 'printfn "Hello, World!"',
-    go: 'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
-    groovy: 'println "Hello, World!"',
-    haskell: 'main = putStrLn "Hello, World!"',
-    java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
-    javascript: "// JavaScript Node.js\nconsole.log('Hello, World!');\n\n// Try: console.log(2 + 2);",
-    kotlin: 'fun main() {\n    println("Hello, World!")\n}',
-    lua: 'print("Hello, World!")',
-    nasm: 'section .data\n    msg db "Hello, World!", 10\n    len equ $ - msg\n\nsection .text\n    global _start\n_start:\n    mov eax, 4\n    mov ebx, 1\n    mov ecx, msg\n    mov edx, len\n    int 0x80\n    mov eax, 1\n    xor ebx, ebx\n    int 0x80',
-    objectivec: '#import <Foundation/Foundation.h>\n\nint main() {\n    NSLog(@"Hello, World!");\n    return 0;\n}',
-    ocaml: 'print_endline "Hello, World!";;',
-    octave: 'disp("Hello, World!")',
-    pascal: 'program Hello;\nbegin\n    writeln("Hello, World!");\nend.',
-    perl: 'print "Hello, World!\\n";',
-    php: '<?php\necho "Hello, World!\\n";',
-    prolog: ':- initialization(main).\nmain :- write("Hello, World!"), nl, halt.',
-    r: 'print("Hello, World!")',
-    ruby: 'puts "Hello, World!"',
-    rust: 'fn main() {\n    println!("Hello, World!");\n}',
-    scala: 'object Main extends App {\n    println("Hello, World!")\n}',
-    sql: 'CREATE TABLE users (id INTEGER, name TEXT);\nINSERT INTO users VALUES (1, "Ada"), (2, "Grace");\nSELECT * FROM users;',
-    swift: 'print("Hello, World!")',
-    typescript: 'const message: string = "Hello, World!";\nconsole.log(message);',
-    vb: 'Module Main\n    Sub Main()\n        Console.WriteLine("Hello, World!")\n    End Sub\nEnd Module',
-  };
-  if (language.id === 70) return `# Python ${language.version}\nprint "Hello, World!"`;
-  if (language.language === "python") return `# Python ${language.version}\nname = "World"\nprint(f"Hello, {name}!")`;
-  return map[language.language] ?? `// ${language.name} ${language.version}\n`;
+function getStatus(output: RunResult | null, running: boolean): StatusKind {
+  if (running) return "running";
+  if (!output) return "idle";
+  const description = (output.status_description || "").toLowerCase();
+  if (description.includes("time")) return "tle";
+  if (description.includes("compilation") || output.compile_output || output.compile_stderr) return "compile";
+  if (hasError(output)) return "runtime";
+  return "accepted";
 }
 
-function hasErrors(result: RunResult) {
-  return Boolean(result.stderr || result.compile_output || result.compile_stderr || (result.exit_code ?? 0) !== 0 || result.status === "error");
+function hasError(output: RunResult) {
+  return Boolean(output.stderr || output.compile_output || output.compile_stderr || (output.exit_code ?? 0) !== 0 || output.status === "error");
 }
 
-function formatMemoryKb(value: number) {
-  return value > 1024 ? Math.round(value / 1024) : value;
+function labelForStatus(status: StatusKind) {
+  if (status === "accepted") return "Accepted";
+  if (status === "runtime") return "Runtime Error";
+  if (status === "compile") return "Compile Error";
+  if (status === "tle") return "Time Limit Exceeded";
+  if (status === "running") return "Running";
+  return "Idle";
+}
+
+function dotColor(status: StatusKind) {
+  if (status === "accepted") return "#10b981";
+  if (status === "runtime") return "#ef4444";
+  if (status === "compile" || status === "tle") return "#f59e0b";
+  if (status === "running") return "#3b82f6";
+  return "rgb(var(--muted-foreground))";
 }
 
 function readApiError(data: unknown, fallback: string) {
@@ -539,23 +637,33 @@ function readApiError(data: unknown, fallback: string) {
 }
 
 function Toast({ message }: { message: string }) {
-  return <div className="fixed right-4 top-12 z-[70] rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-lg">{message}</div>;
+  return <div className="compiler-toast fixed right-4 top-12 z-50 rounded-lg bg-red-500/95 px-4 py-3 text-xs font-medium text-white shadow-lg">{message}</div>;
 }
 
-const scrollbarStyles = `
-.editor-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--muted-foreground) / 0.35) transparent;
+const compilerStyles = `
+.compiler-font-code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
 }
-.editor-scroll::-webkit-scrollbar {
+.compiler-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128,128,128,0.35) transparent;
+}
+.compiler-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.editor-scroll::-webkit-scrollbar-track {
+.compiler-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.editor-scroll::-webkit-scrollbar-thumb {
-  background: rgb(var(--muted-foreground) / 0.28);
+.compiler-scroll::-webkit-scrollbar-thumb {
+  background: rgba(128,128,128,0.35);
   border-radius: 999px;
+}
+@keyframes compilerToast {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.compiler-toast {
+  animation: compilerToast 180ms ease-out both;
 }
 `;

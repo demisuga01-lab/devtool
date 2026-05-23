@@ -1,78 +1,187 @@
 "use client";
 
 import Link from "next/link";
-import { ChangeEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Copy, ExternalLink, Maximize2, Play, RefreshCw, Upload, X } from "lucide-react";
+import { ChangeEvent, KeyboardEvent, MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { AlertCircle, AlertTriangle, Check, ChevronDown, ChevronLeft, ChevronUp, Copy, ExternalLink, Maximize2, Minimize2, Play, Plus, RefreshCw, Terminal, Trash2, Upload, X } from "lucide-react";
 
-type Mode = "combine" | "html" | "css" | "javascript" | "typescript";
-type Kind = "html" | "css" | "javascript" | "typescript";
-type Viewport = "mobile" | "tablet" | "desktop";
-type ConsoleLine = { id: string; type: "log" | "warn" | "error"; text: string };
-type SourceFile = { id: string; name: string; content: string; uploaded?: boolean };
+type Mode = "combined" | "html" | "css" | "javascript" | "typescript";
+type PanelKind = "html" | "css" | "js";
+type FileKind = PanelKind | "typescript";
+type ResponsiveMode = "mobile" | "tablet" | "desktop";
+type ConsoleMethod = "log" | "error" | "warn" | "info";
+type CodeFile = { id: string; name: string; content: string };
+type ConsoleEntry = { id: string; method: ConsoleMethod; args: string[]; time: string };
 
-const MODES: { id: Mode; label: string }[] = [
-  { id: "combine", label: "Combined" },
-  { id: "html", label: "HTML" },
-  { id: "css", label: "CSS" },
-  { id: "javascript", label: "JavaScript" },
-  { id: "typescript", label: "TypeScript" },
+const LANGUAGE_BADGES: Record<number, { abbr: string; bg: string; text: string }> = {
+  71: { abbr: "PY", bg: "#3572A5", text: "#fff" },
+  70: { abbr: "PY2", bg: "#3572A5", text: "#fff" },
+  62: { abbr: "JV", bg: "#b07219", text: "#fff" },
+  50: { abbr: "C", bg: "#555555", text: "#fff" },
+  49: { abbr: "C", bg: "#555555", text: "#fff" },
+  48: { abbr: "C", bg: "#555555", text: "#fff" },
+  75: { abbr: "C", bg: "#555555", text: "#fff" },
+  54: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  53: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  52: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  76: { abbr: "C++", bg: "#f34b7d", text: "#fff" },
+  51: { abbr: "C#", bg: "#178600", text: "#fff" },
+  73: { abbr: "RS", bg: "#dea584", text: "#000" },
+  60: { abbr: "GO", bg: "#00ADD8", text: "#fff" },
+  78: { abbr: "KT", bg: "#A97BFF", text: "#fff" },
+  68: { abbr: "PHP", bg: "#4F5D95", text: "#fff" },
+  72: { abbr: "RB", bg: "#701516", text: "#fff" },
+  83: { abbr: "SW", bg: "#F05138", text: "#fff" },
+  63: { abbr: "JS", bg: "#f1e05a", text: "#000" },
+  74: { abbr: "TS", bg: "#3178c6", text: "#fff" },
+  46: { abbr: "SH", bg: "#89e051", text: "#000" },
+  85: { abbr: "PL", bg: "#0298c3", text: "#fff" },
+  64: { abbr: "LUA", bg: "#000080", text: "#fff" },
+  80: { abbr: "R", bg: "#198CE7", text: "#fff" },
+  66: { abbr: "M", bg: "#0790C0", text: "#fff" },
+  82: { abbr: "SQL", bg: "#e38c00", text: "#fff" },
+  81: { abbr: "SC", bg: "#c22d40", text: "#fff" },
+  86: { abbr: "CLJ", bg: "#db5855", text: "#fff" },
+  88: { abbr: "GRV", bg: "#4298b8", text: "#fff" },
+  47: { abbr: "BAS", bg: "#6e4a7e", text: "#fff" },
+  84: { abbr: "VB", bg: "#945db7", text: "#fff" },
+  87: { abbr: "FS", bg: "#b845fc", text: "#fff" },
+  61: { abbr: "HS", bg: "#5e5086", text: "#fff" },
+  57: { abbr: "EX", bg: "#6e4a7e", text: "#fff" },
+  58: { abbr: "ERL", bg: "#B83998", text: "#fff" },
+  65: { abbr: "ML", bg: "#3be133", text: "#000" },
+  55: { abbr: "LISP", bg: "#3fb68b", text: "#fff" },
+  69: { abbr: "PRO", bg: "#74283c", text: "#fff" },
+  56: { abbr: "D", bg: "#ba595e", text: "#fff" },
+  59: { abbr: "F", bg: "#4d41b1", text: "#fff" },
+  67: { abbr: "PAS", bg: "#E3F171", text: "#000" },
+  79: { abbr: "OC", bg: "#438eff", text: "#fff" },
+  77: { abbr: "COB", bg: "#005A9C", text: "#fff" },
+  45: { abbr: "ASM", bg: "#6e4a7e", text: "#fff" },
+};
+
+const RUN_STARTERS: Record<number, string> = {
+  71: "# Python 3.8.1\nname = 'World'\nprint(f'Hello, {name}!')\n",
+  70: "# Python 2.7.17\nprint 'Hello, World!'\n",
+  62: "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n",
+  50: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
+  49: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
+  48: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
+  75: "#include <stdio.h>\n\nint main() {\n    printf(\"Hello, World!\\n\");\n    return 0;\n}\n",
+  54: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
+  53: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
+  52: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
+  76: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}\n",
+  51: "using System;\n\nclass MainClass {\n    public static void Main() {\n        Console.WriteLine(\"Hello, World!\");\n    }\n}\n",
+  73: "fn main() {\n    println!(\"Hello, World!\");\n}\n",
+  60: "package main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello, World!\")\n}\n",
+  78: "fun main() {\n    println(\"Hello, World!\")\n}\n",
+  68: "<?php\necho \"Hello, World!\\n\";\n",
+  72: "puts \"Hello, World!\"\n",
+  83: "print(\"Hello, World!\")\n",
+  63: "console.log('Hello, World!');\n",
+  74: "const message: string = 'Hello, World!';\nconsole.log(message);\n",
+  46: "echo \"Hello, World!\"\n",
+  85: "print \"Hello, World!\\n\";\n",
+  64: "print(\"Hello, World!\")\n",
+  80: "print(\"Hello, World!\")\n",
+  66: "disp(\"Hello, World!\")\n",
+  82: "SELECT 'Hello, World!' AS message;\n",
+  81: "object Main extends App {\n    println(\"Hello, World!\")\n}\n",
+  86: "(println \"Hello, World!\")\n",
+  88: "println \"Hello, World!\"\n",
+  47: "Print \"Hello, World!\"\n",
+  84: "Module Main\n    Sub Main()\n        Console.WriteLine(\"Hello, World!\")\n    End Sub\nEnd Module\n",
+  87: "printfn \"Hello, World!\"\n",
+  61: "main = putStrLn \"Hello, World!\"\n",
+  57: "IO.puts(\"Hello, World!\")\n",
+  58: "main(_) ->\n    io:format(\"Hello, World!~n\").\n",
+  65: "print_endline \"Hello, World!\";;\n",
+  55: "(write-line \"Hello, World!\")\n",
+  69: ":- initialization(main).\nmain :- write('Hello, World!'), nl, halt.\n",
+  56: "import std.stdio;\n\nvoid main() {\n    writeln(\"Hello, World!\");\n}\n",
+  59: "program hello\n    print *, \"Hello, World!\"\nend program hello\n",
+  67: "program Hello;\nbegin\n    writeln('Hello, World!');\nend.\n",
+  79: "#import <Foundation/Foundation.h>\n\nint main() {\n    NSLog(@\"Hello, World!\");\n    return 0;\n}\n",
+  77: "IDENTIFICATION DIVISION.\nPROGRAM-ID. HELLO.\nPROCEDURE DIVISION.\nDISPLAY \"Hello, World!\".\nSTOP RUN.\n",
+  45: "section .text\n    global _start\n_start:\n    ; Start coding here\n",
+};
+
+const HTML_STARTER = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>My Page</title>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n  <p>Start building something amazing.</p>\n</body>\n</html>";
+const CSS_STARTER = "/* Styles */\nbody {\n  margin: 0;\n  font-family: system-ui, sans-serif;\n  background: #f8fafc;\n  color: #0f172a;\n}\n\nh1 {\n  color: #10b981;\n}";
+const JS_STARTER = "// JavaScript\nconsole.log('Hello, World!');\n\ndocument.addEventListener('DOMContentLoaded', () => {\n  console.log('DOM ready');\n});";
+const TS_STARTER = "// TypeScript\nconst message: string = 'Hello, World!';\nconsole.log(message);\n\ninterface User {\n  name: string;\n  age: number;\n}\n\nconst user: User = { name: 'Alice', age: 30 };\nconsole.log(`User: ${user.name}, Age: ${user.age}`);";
+
+const MODES: { id: Mode; label: string; url: string }[] = [
+  { id: "combined", label: "Combined", url: "combine" },
+  { id: "html", label: "HTML only", url: "html" },
+  { id: "css", label: "CSS only", url: "css" },
+  { id: "javascript", label: "JavaScript", url: "javascript" },
+  { id: "typescript", label: "TypeScript", url: "typescript" },
 ];
 
-const KIND_META: Record<Kind, { label: string; badge: string; accept: string; extension: string; className: string }> = {
-  html: { label: "HTML", badge: "HTML", accept: ".html", extension: ".html", className: "bg-orange-500/15 text-orange-600 dark:text-orange-400" },
-  css: { label: "CSS", badge: "CSS", accept: ".css", extension: ".css", className: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
-  javascript: { label: "JavaScript", badge: "JS", accept: ".js", extension: ".js", className: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400" },
-  typescript: { label: "TypeScript", badge: "TS", accept: ".ts", extension: ".ts", className: "bg-sky-500/15 text-sky-600 dark:text-sky-400" },
+const PANEL_META: Record<FileKind, { label: string; abbr: string; bg: string; text: string; accept: string; extension: string; seed: string }> = {
+  html: { label: "HTML", abbr: "HTML", bg: "#e34c26", text: "#fff", accept: ".html", extension: ".html", seed: "index" },
+  css: { label: "CSS", abbr: "CSS", bg: "#264de4", text: "#fff", accept: ".css", extension: ".css", seed: "styles" },
+  js: { label: "JavaScript", abbr: "JS", bg: "#f1e05a", text: "#000", accept: ".js", extension: ".js", seed: "script" },
+  typescript: { label: "TypeScript", abbr: "TS", bg: "#3178c6", text: "#fff", accept: ".ts", extension: ".ts", seed: "main" },
 };
 
-const DEFAULT_FILES: Record<Kind, SourceFile[]> = {
-  html: [{ id: "html-main", name: "index.html", content: '<main class="app">\n  <h1>Hello Web Compiler</h1>\n  <button id="action">Click me</button>\n</main>' }],
-  css: [{ id: "css-main", name: "styles.css", content: "body {\n  margin: 0;\n  font-family: system-ui, sans-serif;\n  background: #f8fafc;\n  color: #0f172a;\n}\n\n.app {\n  padding: 3rem;\n}\n\nbutton {\n  border: 0;\n  border-radius: 8px;\n  background: #059669;\n  color: white;\n  padding: 0.75rem 1rem;\n}" }],
-  javascript: [{ id: "js-main", name: "script.js", content: 'document.getElementById("action")?.addEventListener("click", () => {\n  console.log("Button clicked");\n});' }],
-  typescript: [{ id: "ts-main", name: "main.ts", content: 'const message: string = "Hello from TypeScript";\nconsole.log(message);\n\ndocument.body.insertAdjacentHTML("beforeend", `<p>${message}</p>`);' }],
-};
+function getLanguageBadge(langId: number) {
+  return LANGUAGE_BADGES[langId] ?? { abbr: "TXT", bg: "#555555", text: "#fff" };
+}
 
-const EDITOR_AREA =
-  "editor-scroll font-mono text-[13px] leading-[1.6] [font-family:'JetBrains_Mono','Fira_Code',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace]";
+function getStarterCode(langId: number) {
+  return RUN_STARTERS[langId] ?? "// Start coding here...\n";
+}
+
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+function formatMs(ms: number) {
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${ms}ms`;
+}
+
+const codeClass = "font-code compiler-scroll text-[13px] leading-[1.65] font-normal";
 
 export default function WebCompilerPage() {
-  const [mode, setMode] = useState<Mode>("combine");
-  const [files, setFiles] = useState<Record<Kind, SourceFile[]>>(DEFAULT_FILES);
-  const [active, setActive] = useState<Record<Kind, string>>({ html: "html-main", css: "css-main", javascript: "js-main", typescript: "ts-main" });
-  const [collapsed, setCollapsed] = useState<Record<"html" | "css" | "javascript", boolean>>({ html: false, css: false, javascript: false });
-  const [maximized, setMaximized] = useState<"html" | "css" | "javascript" | null>(null);
-  const [srcDoc, setSrcDoc] = useState(() => buildDocument(DEFAULT_FILES.html[0].content, DEFAULT_FILES.css[0].content, DEFAULT_FILES.javascript[0].content));
-  const [consoleLines, setConsoleLines] = useState<ConsoleLine[]>([]);
-  const [compiledJs, setCompiledJs] = useState("");
-  const [viewport, setViewport] = useState<Viewport>("desktop");
-  const [previewFullscreen, setPreviewFullscreen] = useState(false);
-  const [consoleOpen, setConsoleOpen] = useState(true);
-  const [split, setSplit] = useState(58);
+  const [mode, setMode] = useState<Mode>("combined");
+  const [htmlFiles, setHtmlFiles] = useState<CodeFile[]>(() => [makeFile("index.html", HTML_STARTER)]);
+  const [cssFiles, setCssFiles] = useState<CodeFile[]>(() => [makeFile("styles.css", CSS_STARTER)]);
+  const [jsFiles, setJsFiles] = useState<CodeFile[]>(() => [makeFile("script.js", JS_STARTER)]);
+  const [tsFiles, setTsFiles] = useState<CodeFile[]>(() => [makeFile("main.ts", TS_STARTER)]);
+  const [activeHtmlFile, setActiveHtmlFile] = useState(0);
+  const [activeCssFile, setActiveCssFile] = useState(0);
+  const [activeJsFile, setActiveJsFile] = useState(0);
+  const [activeTsFile, setActiveTsFile] = useState(0);
+  const [maximizedPanel, setMaximizedPanel] = useState<PanelKind | null>(null);
+  const [collapsedPanels, setCollapsedPanels] = useState<Set<PanelKind>>(() => new Set());
+  const [previewSrcDoc, setPreviewSrcDoc] = useState(() => buildCombinedDocument(HTML_STARTER, CSS_STARTER, JS_STARTER));
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [responsiveMode, setResponsiveMode] = useState<ResponsiveMode>("desktop");
+  const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [singleOutput, setSingleOutput] = useState("");
+  const [splitPosition, setSplitPosition] = useState(58);
+  const [isDraggingSplit, setIsDraggingSplit] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const raw = params.get("mode") || params.get("lang") || "combine";
-    if (isMode(raw)) setMode(raw);
-  }, []);
-
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      const data = event.data as { source?: string; type?: ConsoleLine["type"]; args?: unknown[] };
-      if (data?.source !== "devtools-web-compiler") return;
-      const type: ConsoleLine["type"] = data.type === "warn" || data.type === "error" ? data.type : "log";
-      setConsoleLines((lines) => [...lines, { id: `${Date.now()}-${Math.random()}`, type, text: (data.args ?? []).map(formatConsoleArg).join(" ") }].slice(-300));
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
+    setMode(normalizeMode(params.get("mode") || params.get("lang")));
   }, []);
 
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setPreviewFullscreen(false);
+      if (event.key === "Escape") setIsFullscreen(false);
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         event.preventDefault();
-        run();
+        runCurrentMode();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -80,371 +189,520 @@ export default function WebCompilerPage() {
   });
 
   useEffect(() => {
-    document.body.style.overflow = previewFullscreen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data as { type?: string; method?: ConsoleMethod; args?: unknown[] } | null;
+      if (data?.type !== "console") return;
+      setConsoleEntries((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-${Math.random()}`,
+          method: data.method ?? "log",
+          args: (data.args ?? []).map((item) => String(item)),
+          time: new Date().toLocaleTimeString([], { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        },
+      ].slice(-300));
     };
-  }, [previewFullscreen]);
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => setToast(""), 4500);
+    const timer = window.setTimeout(() => setToast(""), 3000);
     return () => window.clearTimeout(timer);
   }, [toast]);
 
+  useEffect(() => {
+    document.body.style.overflow = isFullscreen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isFullscreen]);
+
+  const filesByKind = useMemo(() => ({
+    html: { files: htmlFiles, setFiles: setHtmlFiles, active: activeHtmlFile, setActive: setActiveHtmlFile },
+    css: { files: cssFiles, setFiles: setCssFiles, active: activeCssFile, setActive: setActiveCssFile },
+    js: { files: jsFiles, setFiles: setJsFiles, active: activeJsFile, setActive: setActiveJsFile },
+    typescript: { files: tsFiles, setFiles: setTsFiles, active: activeTsFile, setActive: setActiveTsFile },
+  }), [activeCssFile, activeHtmlFile, activeJsFile, activeTsFile, cssFiles, htmlFiles, jsFiles, tsFiles]);
+
   function switchMode(next: Mode) {
     setMode(next);
-    window.history.replaceState(null, "", `/compilers/web?mode=${next}`);
+    const urlMode = MODES.find((item) => item.id === next)?.url ?? "combine";
+    window.history.replaceState(null, "", `/compilers/web?mode=${urlMode}`);
   }
 
-  function activeContent(kind: Kind) {
-    return files[kind].find((file) => file.id === active[kind])?.content ?? "";
-  }
-
-  function updateActive(kind: Kind, content: string) {
-    setFiles((current) => ({ ...current, [kind]: current[kind].map((file) => file.id === active[kind] ? { ...file, content } : file) }));
-  }
-
-  function clearActive(kind: Kind) {
-    updateActive(kind, "");
-  }
-
-  function addFile(kind: Kind) {
-    if (files[kind].length >= 20) {
-      setToast(`Maximum 20 ${KIND_META[kind].label} files reached.`);
+  function runCurrentMode() {
+    setConsoleEntries([]);
+    if (mode === "combined") {
+      setPreviewSrcDoc(buildCombinedDocument(joinFiles(htmlFiles), joinFiles(cssFiles), joinFiles(jsFiles)));
       return;
     }
-    const next = { id: `${kind}-${Date.now()}`, name: `untitled-${files[kind].length + 1}${KIND_META[kind].extension}`, content: "", uploaded: true };
-    setFiles((current) => ({ ...current, [kind]: [...current[kind], next] }));
-    setActive((current) => ({ ...current, [kind]: next.id }));
-  }
-
-  function removeFile(kind: Kind, id: string) {
-    setFiles((current) => {
-      const remaining = current[kind].filter((file) => file.id !== id);
-      const safeFiles = remaining.length ? remaining : [{ id: `${kind}-empty`, name: `untitled${KIND_META[kind].extension}`, content: "" }];
-      setActive((activeMap) => ({ ...activeMap, [kind]: safeFiles[0].id }));
-      return { ...current, [kind]: safeFiles };
-    });
-  }
-
-  function uploadFiles(kind: Kind, list: FileList | null) {
-    if (!list?.length) return;
-    const incoming = Array.from(list);
-    if (files[kind].length + incoming.length > 20) {
-      setToast(`Maximum 20 ${KIND_META[kind].label} files reached.`);
+    if (mode === "html") {
+      setPreviewSrcDoc(buildCombinedDocument(joinFiles(htmlFiles), "", ""));
       return;
     }
-    const invalid = incoming.find((file) => !file.name.toLowerCase().endsWith(KIND_META[kind].extension));
-    if (invalid) {
-      setToast(`Only ${KIND_META[kind].extension} files accepted.`);
+    if (mode === "css") {
+      const css = joinFiles(cssFiles);
+      setSingleOutput(css);
+      setPreviewSrcDoc(buildCssSample(css));
       return;
     }
-    const tooLarge = incoming.find((file) => file.size > 500 * 1024);
-    if (tooLarge) {
-      setToast("File size limit is 500KB each.");
+    if (mode === "javascript") {
+      setPreviewSrcDoc(buildCombinedDocument("<main><h1>JavaScript Console</h1><button id=\"sample\">Sample button</button></main>", "body{font-family:system-ui,sans-serif;padding:2rem;}button{padding:.7rem 1rem;border:0;border-radius:.5rem;background:#10b981;color:white;}", joinFiles(jsFiles)));
       return;
     }
-    Promise.all(incoming.map(readFile)).then((nextFiles) => {
-      setFiles((current) => ({ ...current, [kind]: [...current[kind], ...nextFiles] }));
-      setActive((current) => ({ ...current, [kind]: nextFiles[0]?.id ?? current[kind] }));
-    }).catch(() => setToast("Could not read selected file."));
-  }
-
-  function run() {
-    try {
-      setConsoleLines([]);
-      if (mode === "combine") {
-        setSrcDoc(buildDocument(activeContent("html"), activeContent("css"), activeContent("javascript")));
-        return;
-      }
-      if (mode === "html") {
-        setSrcDoc(buildDocument(joinFiles(files.html), "", ""));
-        return;
-      }
-      if (mode === "css") {
-        setSrcDoc(buildCssSample(joinFiles(files.css)));
-        return;
-      }
-      if (mode === "javascript") {
-        setSrcDoc(buildDocument('<main class="app"><h1>JavaScript Runner</h1><button id="action">Sample button</button></main>', "body { font-family: system-ui, sans-serif; padding: 2rem; }", joinFiles(files.javascript)));
-        return;
-      }
-      const js = transpileTypeScript(joinFiles(files.typescript));
-      setCompiledJs(js);
-      setSrcDoc(buildDocument('<main class="app"><h1>TypeScript Preview</h1></main>', "body { font-family: system-ui, sans-serif; padding: 2rem; }", js));
-    } catch {
-      setToast("Could not run this project.");
-    }
+    const js = transpileTypeScript(joinFiles(tsFiles));
+    setSingleOutput(js);
+    setPreviewSrcDoc(buildCombinedDocument("<main><h1>TypeScript Preview</h1></main>", "body{font-family:system-ui,sans-serif;padding:2rem;}", js));
   }
 
   function openPreview() {
-    const blob = new Blob([srcDoc], { type: "text/html" });
+    const blob = new Blob([previewSrcDoc], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank", "noopener,noreferrer");
-    window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+    window.setTimeout(() => URL.revokeObjectURL(url), 6000);
   }
 
-  function startResize(event: ReactMouseEvent<HTMLDivElement>) {
+  function refreshPreview() {
+    setPreviewSrcDoc((current) => `${current}\n<!-- refreshed ${Date.now()} -->`);
+  }
+
+  function updateFile(kind: FileKind, content: string) {
+    const bucket = filesByKind[kind];
+    bucket.setFiles((current) => current.map((file, index) => index === bucket.active ? { ...file, content } : file));
+  }
+
+  function addFile(kind: FileKind) {
+    const bucket = filesByKind[kind];
+    if (bucket.files.length >= 20) {
+      setToast("Maximum 20 files per panel");
+      return;
+    }
+    const meta = PANEL_META[kind];
+    const next = makeFile(`${meta.seed}${bucket.files.length + 1}${meta.extension}`, "");
+    bucket.setFiles((current) => [...current, next]);
+    bucket.setActive(bucket.files.length);
+  }
+
+  function removeFile(kind: FileKind, index: number) {
+    const bucket = filesByKind[kind];
+    if (bucket.files.length === 1) {
+      bucket.setFiles([makeFile(`${PANEL_META[kind].seed}${PANEL_META[kind].extension}`, "")]);
+      bucket.setActive(0);
+      return;
+    }
+    bucket.setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
+    bucket.setActive(Math.max(0, Math.min(bucket.active, bucket.files.length - 2)));
+  }
+
+  function clearFile(kind: FileKind) {
+    updateFile(kind, "");
+  }
+
+  function uploadFiles(kind: FileKind, list: FileList | null) {
+    if (!list?.length) return;
+    const bucket = filesByKind[kind];
+    const incoming = Array.from(list);
+    if (bucket.files.length + incoming.length > 20) {
+      setToast("Maximum 20 files per panel");
+      return;
+    }
+    const meta = PANEL_META[kind];
+    if (incoming.some((file) => !file.name.toLowerCase().endsWith(meta.extension))) {
+      setToast(`Only ${meta.extension} files accepted`);
+      return;
+    }
+    if (incoming.some((file) => file.size > 500 * 1024)) {
+      setToast("File must be under 500KB");
+      return;
+    }
+    Promise.all(incoming.map(readFileAsCode)).then((nextFiles) => {
+      bucket.setFiles((current) => [...current, ...nextFiles]);
+      bucket.setActive(bucket.files.length);
+    }).catch(() => setToast("Could not read selected file"));
+  }
+
+  function toggleCollapse(kind: PanelKind) {
+    setCollapsedPanels((current) => {
+      const next = new Set(current);
+      if (next.has(kind)) {
+        next.delete(kind);
+      } else {
+        if (next.size >= 2) return current;
+        next.add(kind);
+      }
+      return next;
+    });
+  }
+
+  function startVerticalResize(event: ReactMouseEvent<HTMLDivElement>) {
     event.preventDefault();
-    const startY = event.clientY;
-    const startSplit = split;
+    setIsDraggingSplit(true);
     const onMove = (move: MouseEvent) => {
-      const height = window.innerHeight - 40;
-      const delta = ((move.clientY - startY) / height) * 100;
-      setSplit(Math.min(78, Math.max(35, startSplit + delta)));
+      const topOffset = 78;
+      const available = window.innerHeight - topOffset;
+      const percent = ((move.clientY - topOffset) / available) * 100;
+      setSplitPosition(Math.min(75, Math.max(25, percent)));
     };
     const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      setIsDraggingSplit(false);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
     };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   }
 
-  const activeKind = mode === "combine" ? "html" : mode;
-  const errorCount = consoleLines.filter((line) => line.type === "error").length;
+  const activeSingleKind: FileKind = mode === "typescript" ? "typescript" : mode === "javascript" ? "js" : mode === "html" ? "html" : "css";
+  const activeSingleBucket = filesByKind[activeSingleKind];
+  const activeSingleContent = activeSingleBucket.files[activeSingleBucket.active]?.content ?? "";
+  const cssForOutput = joinFiles(cssFiles);
 
   return (
     <main className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {toast && <Toast message={toast} />}
-      <header className="flex h-10 flex-none items-center justify-between border-b border-border bg-background px-4">
-        <div className="flex items-center gap-2">
-          <Link href="/compilers" className="text-xs font-medium text-muted-foreground transition hover:text-foreground">{"<- Compilers"}</Link>
-          <span className="text-xs text-muted-foreground">/</span>
-          <span className="text-xl font-semibold tracking-tight">Web Compiler</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {MODES.map((item) => (
-            <button key={item.id} type="button" onClick={() => switchMode(item.id)} className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${mode === item.id ? "bg-emerald-600 text-white" : "text-muted-foreground hover:bg-border/30 hover:text-foreground"}`}>
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </header>
+      <TopBar />
+      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border bg-card px-4">
+        {MODES.map((item) => (
+          <button key={item.id} type="button" onClick={() => switchMode(item.id)} className={`h-7 rounded-md px-3 text-xs font-medium transition duration-150 ${mode === item.id ? "bg-[#10b981] text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-      {mode === "combine" ? (
-        <section className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <div className="flex min-h-0 basis-1/2 flex-col border-r border-border">
-            {(["html", "css", "javascript"] as const).map((kind) => (
-              <WebEditorPanel
-                key={kind}
-                kind={kind}
-                files={files[kind]}
-                activeId={active[kind]}
-                value={activeContent(kind)}
-                onActive={(id) => setActive((current) => ({ ...current, [kind]: id }))}
-                onChange={(value) => updateActive(kind, value)}
-                onUpload={(list) => uploadFiles(kind, list)}
-                onAdd={() => addFile(kind)}
-                onRemove={(id) => removeFile(kind, id)}
-                onClear={() => clearActive(kind)}
-                onRun={run}
-                collapsed={collapsed[kind]}
-                maximized={maximized === kind}
-                sizeClass={panelSize(kind, maximized, collapsed)}
-                onCollapse={() => setCollapsed((current) => ({ ...current, [kind]: !current[kind] }))}
-                onMaximize={() => setMaximized((current) => current === kind ? null : kind)}
-              />
-            ))}
-          </div>
-          <PreviewPanel srcDoc={srcDoc} viewport={viewport} setViewport={setViewport} onRun={run} onRefresh={run} onOpen={openPreview} fullscreen={previewFullscreen} setFullscreen={setPreviewFullscreen} consoleLines={consoleLines} consoleOpen={consoleOpen} setConsoleOpen={setConsoleOpen} errorCount={errorCount} />
-        </section>
-      ) : (
-        <section className="flex min-h-0 flex-1 flex-col">
-          <div style={{ height: `${split}%` }} className="min-h-[260px] flex-none">
-            <WebEditorPanel
-              kind={activeKind}
-              files={files[activeKind]}
-              activeId={active[activeKind]}
-              value={activeContent(activeKind)}
-              onActive={(id) => setActive((current) => ({ ...current, [activeKind]: id }))}
-              onChange={(value) => updateActive(activeKind, value)}
-              onUpload={(list) => uploadFiles(activeKind, list)}
-              onAdd={() => addFile(activeKind)}
-              onRemove={(id) => removeFile(activeKind, id)}
-              onClear={() => clearActive(activeKind)}
-              onRun={run}
-              collapsed={false}
-              maximized={false}
-              sizeClass="h-full"
-              onCollapse={() => undefined}
-              onMaximize={() => setSplit((value) => value > 80 ? 58 : 92)}
+      <section className="min-h-0 flex-1 overflow-hidden">
+        {mode === "combined" ? (
+          <div className="flex h-full flex-col overflow-hidden md:flex-row">
+            <div className="flex min-h-0 flex-1 basis-1/2 flex-col overflow-hidden border-r border-border">
+              {(["html", "css", "js"] as PanelKind[]).map((kind) => {
+                const bucket = filesByKind[kind];
+                return (
+                  <EditorPanel
+                    key={kind}
+                    kind={kind}
+                    files={bucket.files}
+                    activeIndex={bucket.active}
+                    onActive={bucket.setActive}
+                    onChange={(value) => updateFile(kind, value)}
+                    onUpload={(files) => uploadFiles(kind, files)}
+                    onAdd={() => addFile(kind)}
+                    onRemove={(index) => removeFile(kind, index)}
+                    onClear={() => clearFile(kind)}
+                    onRun={runCurrentMode}
+                    collapsed={collapsedPanels.has(kind)}
+                    maximized={maximizedPanel === kind}
+                    sizeClass={combinedPanelClass(kind, maximizedPanel, collapsedPanels)}
+                    onCollapse={() => toggleCollapse(kind)}
+                    onMaximize={() => setMaximizedPanel((current) => current === kind ? null : kind)}
+                    allowCollapse
+                  />
+                );
+              })}
+            </div>
+            <PreviewPane
+              srcDoc={previewSrcDoc}
+              responsiveMode={responsiveMode}
+              setResponsiveMode={setResponsiveMode}
+              onRun={runCurrentMode}
+              onRefresh={refreshPreview}
+              onOpen={openPreview}
+              isFullscreen={isFullscreen}
+              setIsFullscreen={setIsFullscreen}
+              consoleEntries={consoleEntries}
+              consoleOpen={consoleOpen}
+              setConsoleOpen={setConsoleOpen}
             />
           </div>
-          <div onMouseDown={startResize} className="h-1 flex-none cursor-row-resize bg-border transition hover:bg-emerald-500" />
-          <SingleOutput mode={mode} srcDoc={srcDoc} viewport={viewport} setViewport={setViewport} onRun={run} onRefresh={run} onOpen={openPreview} fullscreen={previewFullscreen} setFullscreen={setPreviewFullscreen} consoleLines={consoleLines} compiledJs={compiledJs} />
-        </section>
-      )}
-      <style jsx global>{scrollbarStyles}</style>
+        ) : (
+          <div className="flex h-full flex-col overflow-hidden">
+            <div style={{ height: `${splitPosition}%` }} className="min-h-[220px] shrink-0 overflow-hidden">
+              <EditorPanel
+                kind={activeSingleKind}
+                files={activeSingleBucket.files}
+                activeIndex={activeSingleBucket.active}
+                onActive={activeSingleBucket.setActive}
+                onChange={(value) => updateFile(activeSingleKind, value)}
+                onUpload={(files) => uploadFiles(activeSingleKind, files)}
+                onAdd={() => addFile(activeSingleKind)}
+                onRemove={(index) => removeFile(activeSingleKind, index)}
+                onClear={() => clearFile(activeSingleKind)}
+                onRun={runCurrentMode}
+                collapsed={false}
+                maximized={splitPosition > 74}
+                sizeClass="h-full"
+                onCollapse={() => undefined}
+                onMaximize={() => setSplitPosition((value) => value > 74 ? 58 : 75)}
+              />
+            </div>
+            <div onMouseDown={startVerticalResize} className={`h-1 shrink-0 cursor-row-resize bg-border transition hover:bg-[#10b981] ${isDraggingSplit ? "bg-[#10b981]" : ""}`} />
+            <SingleOutput
+              mode={mode}
+              srcDoc={previewSrcDoc}
+              responsiveMode={responsiveMode}
+              setResponsiveMode={setResponsiveMode}
+              onRun={runCurrentMode}
+              onRefresh={refreshPreview}
+              onOpen={openPreview}
+              isFullscreen={isFullscreen}
+              setIsFullscreen={setIsFullscreen}
+              consoleEntries={consoleEntries}
+              singleOutput={mode === "css" ? cssForOutput || singleOutput : singleOutput}
+              clearConsole={() => setConsoleEntries([])}
+            />
+          </div>
+        )}
+      </section>
+      <style jsx global>{compilerStyles}</style>
     </main>
   );
 }
 
-function WebEditorPanel({ kind, files, activeId, value, onActive, onChange, onUpload, onAdd, onRemove, onClear, onRun, collapsed, maximized, sizeClass, onCollapse, onMaximize }: { kind: Kind; files: SourceFile[]; activeId: string; value: string; onActive: (id: string) => void; onChange: (value: string) => void; onUpload: (files: FileList | null) => void; onAdd: () => void; onRemove: (id: string) => void; onClear: () => void; onRun: () => void; collapsed: boolean; maximized: boolean; sizeClass: string; onCollapse: () => void; onMaximize: () => void }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const showTabs = files.length > 1 || files.some((file) => file.uploaded);
+function TopBar() {
   return (
-    <div className={`flex min-h-0 flex-col border-b border-border last:border-b-0 ${sizeClass}`}>
-      <div className="flex h-8 flex-none items-center justify-between border-b border-border bg-background px-4">
-        <div className="flex items-center gap-2">
-          <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${KIND_META[kind].className}`}>{KIND_META[kind].badge}</span>
-          <span className="text-xs font-semibold">{KIND_META[kind].label}</span>
+    <header className="flex h-[38px] shrink-0 items-center justify-between border-b border-border bg-card px-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <Link href="/compilers" className="flex items-center gap-1 text-[11px] text-muted-foreground transition duration-150 hover:text-foreground">
+          <ChevronLeft size={12} />
+          Compilers
+        </Link>
+        <span className="mx-0.5 text-[11px] text-muted-foreground/40">/</span>
+        <h1 className="truncate text-sm font-semibold">Web Compiler</h1>
+      </div>
+    </header>
+  );
+}
+
+function EditorPanel({ kind, files, activeIndex, onActive, onChange, onUpload, onAdd, onRemove, onClear, onRun, collapsed, maximized, sizeClass, onCollapse, onMaximize, allowCollapse = false }: { kind: FileKind; files: CodeFile[]; activeIndex: number; onActive: (index: number) => void; onChange: (value: string) => void; onUpload: (files: FileList | null) => void; onAdd: () => void; onRemove: (index: number) => void; onClear: () => void; onRun: () => void; collapsed: boolean; maximized: boolean; sizeClass: string; onCollapse: () => void; onMaximize: () => void; allowCollapse?: boolean }) {
+  const uploadRef = useRef<HTMLInputElement | null>(null);
+  const meta = PANEL_META[kind];
+  const activeFile = files[activeIndex] ?? files[0];
+
+  return (
+    <div className={`flex min-h-[38px] flex-col overflow-hidden border-b border-border last:border-b-0 transition-[flex] duration-200 ${sizeClass}`}>
+      <div className={`flex h-[38px] shrink-0 items-center justify-between bg-card px-2.5 ${collapsed ? "" : "border-b border-border"}`}>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="font-code flex h-5 items-center justify-center rounded px-1.5 text-[10px] font-bold" style={{ backgroundColor: meta.bg, color: meta.text }}>{meta.abbr}</span>
+          <span className="truncate text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">{meta.label}</span>
+          {!collapsed && <span className="text-[11px] text-muted-foreground/60">{formatBytes(new Blob([activeFile?.content ?? ""]).size)}</span>}
         </div>
-        <div className="flex items-center gap-1">
-          <input ref={inputRef} type="file" multiple accept={KIND_META[kind].accept} className="hidden" onChange={(event: ChangeEvent<HTMLInputElement>) => { onUpload(event.target.files); event.currentTarget.value = ""; }} />
-          <IconButton title="Upload" onClick={() => inputRef.current?.click()}><Upload className="h-4 w-4" /></IconButton>
-          <IconButton title={maximized ? "Restore" : "Maximize"} onClick={onMaximize}><Maximize2 className="h-4 w-4" /></IconButton>
-          <IconButton title={collapsed ? "Expand" : "Collapse"} onClick={onCollapse}>{collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}</IconButton>
-          <IconButton title="Clear" onClick={onClear}><X className="h-4 w-4" /></IconButton>
+        <div className="flex items-center gap-0.5">
+          <input ref={uploadRef} type="file" multiple accept={meta.accept} className="hidden" onChange={(event: ChangeEvent<HTMLInputElement>) => { onUpload(event.target.files); event.currentTarget.value = ""; }} />
+          <IconButton title={`Upload ${meta.label} files`} onClick={() => uploadRef.current?.click()}><Upload size={14} /></IconButton>
+          <IconButton title={maximized ? "Restore" : "Maximize"} onClick={onMaximize}>{maximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</IconButton>
+          {allowCollapse && <IconButton title={collapsed ? "Expand" : "Collapse"} onClick={onCollapse}>{collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}</IconButton>}
+          <IconButton title={`Clear ${meta.label}`} onClick={onClear}><Trash2 size={14} /></IconButton>
         </div>
       </div>
-      {!collapsed && showTabs && <FileTabs files={files} activeId={activeId} onActive={onActive} onAdd={onAdd} onRemove={onRemove} />}
+      {!collapsed && files.length > 1 && <FileTabs files={files} activeIndex={activeIndex} onActive={onActive} onRemove={onRemove} onAdd={onAdd} />}
       {!collapsed && (
         <textarea
-          value={value}
+          value={activeFile?.content ?? ""}
           onChange={(event) => onChange(event.target.value)}
-          onKeyDown={(event) => handleEditorKey(event, value, onChange, onRun)}
+          onKeyDown={(event) => handleEditorKey(event, activeFile?.content ?? "", onChange, onRun)}
           spellCheck={false}
-          className={`${EDITOR_AREA} min-h-[150px] flex-1 resize-none border-0 bg-white p-3 text-[#1e1e1e] outline-none dark:bg-[#1e1e1e] dark:text-[#d4d4d4]`}
+          autoComplete="off"
+          className={`${codeClass} min-h-[150px] flex-1 resize-none border-0 bg-white px-3.5 py-2.5 text-[#1e1e1e] outline-none dark:bg-[#1e1e1e] dark:text-[#d4d4d4]`}
         />
       )}
     </div>
   );
 }
 
-function FileTabs({ files, activeId, onActive, onAdd, onRemove }: { files: SourceFile[]; activeId: string; onActive: (id: string) => void; onAdd: () => void; onRemove: (id: string) => void }) {
+function FileTabs({ files, activeIndex, onActive, onRemove, onAdd }: { files: CodeFile[]; activeIndex: number; onActive: (index: number) => void; onRemove: (index: number) => void; onAdd: () => void }) {
   return (
-    <div className="editor-scroll flex h-8 flex-none items-end gap-1 overflow-x-auto border-b border-border bg-border/10 px-2">
-      {files.map((file) => (
-        <button key={file.id} type="button" onClick={() => onActive(file.id)} className={`flex h-7 max-w-[160px] items-center gap-1 border-b-2 px-2 text-xs transition ${activeId === file.id ? "border-emerald-500 bg-background text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
-          <span className="truncate">{truncate(file.name, 18)}</span>
-          <span onClick={(event) => { event.stopPropagation(); onRemove(file.id); }} className="rounded p-0.5 hover:bg-border/40"><X className="h-3 w-3" /></span>
+    <div className="compiler-scroll flex h-8 shrink-0 items-stretch overflow-x-auto border-b border-border bg-background px-2">
+      {files.map((file, index) => (
+        <button key={file.id} type="button" onClick={() => onActive(index)} className={`group flex h-8 max-w-[180px] shrink-0 items-center gap-1.5 border-b-2 px-2.5 text-xs font-medium transition duration-150 ${index === activeIndex ? "border-[#10b981] text-foreground" : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground"}`}>
+          <span className="truncate">{truncate(file.name, 16)}</span>
+          <span onClick={(event) => { event.stopPropagation(); onRemove(index); }} className="rounded p-0.5 opacity-40 transition hover:bg-muted group-hover:opacity-100">
+            <X size={10} />
+          </span>
         </button>
       ))}
-      <button type="button" onClick={onAdd} title="New file" className="mb-0.5 h-6 rounded px-2 text-sm text-muted-foreground transition hover:bg-border/30 hover:text-foreground">+</button>
+      <button type="button" title="Add file" onClick={onAdd} className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground transition hover:text-foreground">
+        <Plus size={16} />
+      </button>
     </div>
   );
 }
 
-function PreviewPanel({ srcDoc, viewport, setViewport, onRun, onRefresh, onOpen, fullscreen, setFullscreen, consoleLines, consoleOpen, setConsoleOpen, errorCount }: { srcDoc: string; viewport: Viewport; setViewport: (value: Viewport) => void; onRun: () => void; onRefresh: () => void; onOpen: () => void; fullscreen: boolean; setFullscreen: (value: boolean) => void; consoleLines: ConsoleLine[]; consoleOpen: boolean; setConsoleOpen: (value: boolean) => void; errorCount: number }) {
+function PreviewPane({ srcDoc, responsiveMode, setResponsiveMode, onRun, onRefresh, onOpen, isFullscreen, setIsFullscreen, consoleEntries, consoleOpen, setConsoleOpen }: { srcDoc: string; responsiveMode: ResponsiveMode; setResponsiveMode: (mode: ResponsiveMode) => void; onRun: () => void; onRefresh: () => void; onOpen: () => void; isFullscreen: boolean; setIsFullscreen: (value: boolean) => void; consoleEntries: ConsoleEntry[]; consoleOpen: boolean; setConsoleOpen: (value: boolean) => void }) {
+  const errorCount = consoleEntries.filter((entry) => entry.method === "error").length;
   return (
-    <div className={fullscreen ? "fixed inset-0 z-50 flex h-screen w-screen flex-col bg-background" : "flex min-h-0 basis-1/2 flex-col"}>
-      {!fullscreen && <PreviewHeader viewport={viewport} setViewport={setViewport} onRun={onRun} onRefresh={onRefresh} onOpen={onOpen} onFullscreen={() => setFullscreen(true)} />}
-      <div className={`${fullscreen ? "min-h-0 flex-1" : "min-h-0 flex-1"} flex justify-center overflow-auto bg-border/20`}>
-        <iframe title="Web preview" sandbox="allow-scripts allow-forms allow-modals" srcDoc={srcDoc} style={{ width: fullscreen ? "100%" : viewportWidth(viewport) }} className="h-full border-0 bg-white" />
-      </div>
-      {consoleOpen && !fullscreen && <ConsoleOutput lines={consoleLines} />}
-      {!fullscreen && (
-        <button type="button" onClick={() => setConsoleOpen(!consoleOpen)} className="flex h-7 flex-none items-center justify-between border-t border-border bg-background px-4 text-xs font-medium text-muted-foreground transition hover:text-foreground">
-          <span>Console <span className="ml-2 rounded-full bg-red-500/15 px-1.5 py-0.5 text-red-500">{errorCount}</span></span>
-          {consoleOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+    <div className={isFullscreen ? "fixed inset-0 z-50 flex h-screen w-screen flex-col bg-white" : "flex min-h-0 flex-1 basis-1/2 flex-col overflow-hidden"}>
+      {!isFullscreen && (
+        <PreviewToolbar
+          label="Preview"
+          responsiveMode={responsiveMode}
+          setResponsiveMode={setResponsiveMode}
+          onRun={onRun}
+          onRefresh={onRefresh}
+          onOpen={onOpen}
+          onFullscreen={() => setIsFullscreen(true)}
+        />
+      )}
+      {isFullscreen && (
+        <button type="button" onClick={() => setIsFullscreen(false)} className="fixed right-3 top-3 z-[51] flex items-center gap-1.5 rounded-md bg-black/60 px-3 py-1.5 text-xs font-medium text-white">
+          <X size={14} />
+          Exit Fullscreen
         </button>
       )}
-      {fullscreen && <button type="button" onClick={() => setFullscreen(false)} className="fixed right-4 top-4 z-[60] inline-flex h-9 items-center gap-2 rounded-md bg-background px-3 text-sm font-semibold text-foreground shadow-lg ring-1 ring-border"><X className="h-4 w-4" />Exit</button>}
+      <PreviewFrame srcDoc={srcDoc} responsiveMode={isFullscreen ? "desktop" : responsiveMode} />
+      {!isFullscreen && (
+        <>
+          {consoleOpen && <ConsoleOutput entries={consoleEntries} fixedHeight />}
+          <button type="button" onClick={() => setConsoleOpen(!consoleOpen)} className="flex h-8 shrink-0 cursor-pointer items-center justify-between border-t border-border bg-card px-2.5 transition hover:bg-muted/30">
+            <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <Terminal size={12} />
+              Console
+              {errorCount > 0 && <span className="rounded-full bg-red-500 px-1.5 py-px text-[8px] text-white">{errorCount}</span>}
+            </span>
+            {consoleOpen ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+          </button>
+        </>
+      )}
     </div>
   );
 }
 
-function PreviewHeader({ viewport, setViewport, onRun, onRefresh, onOpen, onFullscreen }: { viewport: Viewport; setViewport: (value: Viewport) => void; onRun: () => void; onRefresh: () => void; onOpen: () => void; onFullscreen: () => void }) {
+function PreviewToolbar({ label, responsiveMode, setResponsiveMode, onRun, onRefresh, onOpen, onFullscreen }: { label: string; responsiveMode: ResponsiveMode; setResponsiveMode: (mode: ResponsiveMode) => void; onRun: () => void; onRefresh: () => void; onOpen: () => void; onFullscreen: () => void }) {
   return (
-    <div className="grid h-10 flex-none grid-cols-[1fr_auto_1fr] items-center border-b border-border bg-background px-4">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Preview</div>
-      <button type="button" onClick={onRun} className="inline-flex h-8 items-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700">
-        <Play className="h-4 w-4" />
-        Run
-        <span className="text-xs font-medium text-white/70">Ctrl+Enter</span>
-      </button>
-      <div className="flex items-center justify-end gap-2">
-        <ViewportToggle viewport={viewport} setViewport={setViewport} />
-        <div className="h-5 w-px bg-border" />
-        <IconButton title="Refresh" onClick={onRefresh}><RefreshCw className="h-4 w-4" /></IconButton>
-        <IconButton title="Open in new tab" onClick={onOpen}><ExternalLink className="h-4 w-4" /></IconButton>
-        <IconButton title="Fullscreen" onClick={onFullscreen}><Maximize2 className="h-4 w-4" /></IconButton>
+    <div className="grid h-10 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-border bg-card px-2.5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</div>
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={onRun} className="flex h-7 items-center gap-1.5 rounded-md bg-[#10b981] px-3.5 text-xs font-semibold text-white transition hover:bg-[#059669] active:bg-[#047857]">
+          <Play size={12} />
+          Run
+        </button>
+        <span className="text-[11px] text-muted-foreground/50">Ctrl+Enter</span>
+      </div>
+      <div className="flex items-center justify-end gap-1">
+        <ResponsiveToggle value={responsiveMode} onChange={setResponsiveMode} />
+        <div className="mx-1 h-4 w-px bg-border" />
+        <IconButton title="Refresh preview" onClick={onRefresh}><RefreshCw size={14} /></IconButton>
+        <IconButton title="Open in new tab" onClick={onOpen}><ExternalLink size={14} /></IconButton>
+        <IconButton title="Fullscreen preview" onClick={onFullscreen}><Maximize2 size={14} /></IconButton>
       </div>
     </div>
   );
 }
 
-function SingleOutput({ mode, srcDoc, viewport, setViewport, onRun, onRefresh, onOpen, fullscreen, setFullscreen, consoleLines, compiledJs }: { mode: Mode; srcDoc: string; viewport: Viewport; setViewport: (value: Viewport) => void; onRun: () => void; onRefresh: () => void; onOpen: () => void; fullscreen: boolean; setFullscreen: (value: boolean) => void; consoleLines: ConsoleLine[]; compiledJs: string }) {
+function PreviewFrame({ srcDoc, responsiveMode }: { srcDoc: string; responsiveMode: ResponsiveMode }) {
+  return (
+    <div className={`flex min-h-0 flex-1 justify-center overflow-auto ${responsiveMode === "desktop" ? "bg-white" : "bg-muted/30"}`}>
+      <iframe
+        title="preview"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+        srcDoc={srcDoc}
+        className="h-full border-0 bg-white"
+        style={{ width: iframeWidth(responsiveMode), boxShadow: responsiveMode === "desktop" ? "none" : "0 0 0 1px var(--border)" }}
+      />
+    </div>
+  );
+}
+
+function SingleOutput({ mode, srcDoc, responsiveMode, setResponsiveMode, onRun, onRefresh, onOpen, isFullscreen, setIsFullscreen, consoleEntries, singleOutput, clearConsole }: { mode: Mode; srcDoc: string; responsiveMode: ResponsiveMode; setResponsiveMode: (mode: ResponsiveMode) => void; onRun: () => void; onRefresh: () => void; onOpen: () => void; isFullscreen: boolean; setIsFullscreen: (value: boolean) => void; consoleEntries: ConsoleEntry[]; singleOutput: string; clearConsole: () => void }) {
   if (mode === "javascript") {
     return (
-      <div className="min-h-0 flex-1 border-t border-border">
-        <PanelHeader label="Console" onRun={onRun} />
-        <ConsoleOutput lines={consoleLines} fill />
-        <iframe title="JavaScript execution frame" sandbox="allow-scripts allow-forms allow-modals" srcDoc={srcDoc} className="hidden" />
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <OutputToolbar label="Console" onRun={onRun} right={<IconButton title="Clear console" onClick={clearConsole}><Trash2 size={14} /></IconButton>} />
+        <ConsoleOutput entries={consoleEntries} />
+        <iframe title="JavaScript execution" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" srcDoc={srcDoc} className="hidden" />
       </div>
     );
   }
+
   if (mode === "typescript") {
     return (
-      <div className="grid min-h-0 flex-1 border-t border-border md:grid-cols-2">
-        <div className="flex min-h-0 flex-col border-r border-border">
-          <PanelHeader label="Transpiled JavaScript" onRun={onRun} runLabel="Transpile" />
-          <pre className={`${EDITOR_AREA} editor-scroll min-h-0 flex-1 overflow-auto whitespace-pre-wrap bg-[#f8f8f8] p-3 text-[#1e1e1e] dark:bg-[#141414] dark:text-[#d4d4d4]`}>{compiledJs || "Transpiled JavaScript will appear here."}</pre>
-        </div>
-        <div className="flex min-h-0 flex-col">
-          <PanelHeader label="Preview" onRun={onRun} runLabel="Run transpiled JS" />
-          <iframe title="TypeScript preview" sandbox="allow-scripts allow-forms allow-modals" srcDoc={srcDoc} className="min-h-0 flex-1 border-0 bg-white" />
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <OutputToolbar label="Transpiled JavaScript" onRun={onRun} runLabel="Transpile" right={<span className="text-[11px] text-muted-foreground/50">{formatMs(0)}</span>} />
+        <pre className={`${codeClass} min-h-0 flex-1 overflow-auto whitespace-pre-wrap bg-[#f5f5f5] px-3.5 py-2.5 text-[#1e1e1e] dark:bg-[#161616] dark:text-[#d4d4d4]`}>{singleOutput || "Transpiled JavaScript will appear here."}</pre>
       </div>
     );
   }
+
   if (mode === "css") {
     return (
-      <div className="grid min-h-0 flex-1 border-t border-border md:grid-cols-2">
-        <div className="flex min-h-0 flex-col border-r border-border">
-          <PanelHeader label="CSS Output" onRun={onRun} />
-          <pre className={`${EDITOR_AREA} editor-scroll min-h-0 flex-1 overflow-auto whitespace-pre-wrap bg-[#f8f8f8] p-3 text-[#1e1e1e] dark:bg-[#141414] dark:text-[#d4d4d4]`}>{"/* Run to apply CSS to the preview. */"}</pre>
+      <div className="grid min-h-0 flex-1 overflow-hidden md:grid-cols-2">
+        <div className="flex min-h-0 flex-col overflow-hidden border-r border-border">
+          <OutputToolbar label="Preview" onRun={onRun} />
+          <PreviewFrame srcDoc={srcDoc} responsiveMode="desktop" />
         </div>
-        <div className="flex min-h-0 flex-col">
-          <PreviewHeader viewport={viewport} setViewport={setViewport} onRun={onRun} onRefresh={onRefresh} onOpen={onOpen} onFullscreen={() => setFullscreen(true)} />
-          <div className="flex min-h-0 flex-1 justify-center overflow-auto bg-border/20">
-            <iframe title="CSS preview" sandbox="allow-scripts allow-forms allow-modals" srcDoc={srcDoc} style={{ width: viewportWidth(viewport) }} className="h-full border-0 bg-white" />
-          </div>
-          {fullscreen && <PreviewPanel srcDoc={srcDoc} viewport={viewport} setViewport={setViewport} onRun={onRun} onRefresh={onRefresh} onOpen={onOpen} fullscreen={fullscreen} setFullscreen={setFullscreen} consoleLines={[]} consoleOpen={false} setConsoleOpen={() => undefined} errorCount={0} />}
+        <div className="flex min-h-0 flex-col overflow-hidden">
+          <OutputToolbar label="CSS Output" onRun={onRun} runLabel="Apply CSS" />
+          <pre className={`${codeClass} min-h-0 flex-1 overflow-auto whitespace-pre-wrap bg-[#f5f5f5] px-3.5 py-2.5 text-[#1e1e1e] dark:bg-[#161616] dark:text-[#d4d4d4]`}>{singleOutput || "Run to apply CSS to the sample preview."}</pre>
         </div>
       </div>
     );
   }
+
   return (
-    <div className="min-h-0 flex-1 border-t border-border">
-      <PreviewPanel srcDoc={srcDoc} viewport={viewport} setViewport={setViewport} onRun={onRun} onRefresh={onRefresh} onOpen={onOpen} fullscreen={fullscreen} setFullscreen={setFullscreen} consoleLines={[]} consoleOpen={false} setConsoleOpen={() => undefined} errorCount={0} />
-    </div>
+    <PreviewPane
+      srcDoc={srcDoc}
+      responsiveMode={responsiveMode}
+      setResponsiveMode={setResponsiveMode}
+      onRun={onRun}
+      onRefresh={onRefresh}
+      onOpen={onOpen}
+      isFullscreen={isFullscreen}
+      setIsFullscreen={setIsFullscreen}
+      consoleEntries={[]}
+      consoleOpen={false}
+      setConsoleOpen={() => undefined}
+    />
   );
 }
 
-function PanelHeader({ label, onRun, runLabel = "Run" }: { label: string; onRun: () => void; runLabel?: string }) {
+function OutputToolbar({ label, onRun, runLabel = "Run", right }: { label: string; onRun: () => void; runLabel?: string; right?: ReactNode }) {
   return (
-    <div className="flex h-10 items-center justify-between border-b border-border bg-background px-4">
+    <div className="grid h-[38px] shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b border-border bg-card px-2.5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</div>
-      <button type="button" onClick={onRun} className="inline-flex h-8 items-center gap-2 rounded-md bg-emerald-600 px-3 text-sm font-semibold text-white transition hover:bg-emerald-700"><Play className="h-4 w-4" />{runLabel}</button>
+      <button type="button" onClick={onRun} className="flex h-7 items-center gap-1.5 rounded-md bg-[#10b981] px-3.5 text-xs font-semibold text-white transition hover:bg-[#059669] active:bg-[#047857]">
+        <Play size={12} />
+        {runLabel}
+      </button>
+      <div className="flex justify-end">{right}</div>
     </div>
   );
 }
 
-function ViewportToggle({ viewport, setViewport }: { viewport: Viewport; setViewport: (value: Viewport) => void }) {
+function ConsoleOutput({ entries, fixedHeight = false }: { entries: ConsoleEntry[]; fixedHeight?: boolean }) {
+  if (!entries.length) {
+    return <div className={`${fixedHeight ? "h-[120px] shrink-0 border-t border-border" : "min-h-0 flex-1"} bg-[#f5f5f5] px-3 py-2.5 text-xs text-muted-foreground dark:bg-[#161616]`}>Console output will appear here</div>;
+  }
   return (
-    <div className="flex rounded-md border border-border p-0.5">
-      {(["mobile", "tablet", "desktop"] as Viewport[]).map((item) => (
-        <button key={item} type="button" onClick={() => setViewport(item)} className={`rounded px-2 py-1 text-xs font-medium capitalize transition ${viewport === item ? "bg-emerald-600 text-white" : "text-muted-foreground hover:bg-border/30 hover:text-foreground"}`}>{item}</button>
+    <div className={`${fixedHeight ? "h-[120px] shrink-0 border-t border-border" : "min-h-0 flex-1"} ${codeClass} overflow-auto bg-[#f5f5f5] px-3 py-1.5 dark:bg-[#161616]`}>
+      {entries.map((entry) => (
+        <div key={entry.id} className={`flex gap-2 py-0.5 ${entry.method === "error" ? "text-red-600 dark:text-red-400" : entry.method === "warn" ? "text-amber-600 dark:text-amber-400" : "text-[#1e1e1e] dark:text-[#d4d4d4]"}`}>
+          <span className="w-14 shrink-0 text-[11px] text-muted-foreground/50">{entry.time}</span>
+          {entry.method === "error" && <AlertCircle size={10} className="mt-1 shrink-0" />}
+          {entry.method === "warn" && <AlertTriangle size={10} className="mt-1 shrink-0" />}
+          <span>{entry.args.join(" ")}</span>
+        </div>
       ))}
     </div>
   );
 }
 
-function ConsoleOutput({ lines, fill = false }: { lines: ConsoleLine[]; fill?: boolean }) {
-  const className = fill ? "h-full" : "h-[120px] flex-none border-t border-border";
-  if (!lines.length) return <div className={`${className} bg-[#f8f8f8] p-3 text-sm text-muted-foreground dark:bg-[#141414]`}>Console output will appear here.</div>;
+function ResponsiveToggle({ value, onChange }: { value: ResponsiveMode; onChange: (mode: ResponsiveMode) => void }) {
   return (
-    <pre className={`${EDITOR_AREA} editor-scroll ${className} overflow-auto whitespace-pre-wrap bg-[#f8f8f8] p-3 dark:bg-[#141414]`}>
-      {lines.map((line) => <span key={line.id} className={`block ${line.type === "error" ? "text-red-600 dark:text-red-400" : line.type === "warn" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>[{line.type}] {line.text}</span>)}
-    </pre>
+    <div className="flex rounded-full border border-border p-0.5">
+      {(["mobile", "tablet", "desktop"] as ResponsiveMode[]).map((mode) => (
+        <button key={mode} type="button" onClick={() => onChange(mode)} className={`h-6 rounded-full px-2.5 text-[10px] font-medium capitalize transition duration-150 ${value === mode ? "bg-[#10b981] text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+          {mode}
+        </button>
+      ))}
+    </div>
   );
 }
 
-function IconButton({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) {
-  return <button type="button" title={title} onClick={onClick} className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-md text-muted-foreground transition hover:bg-border/40 hover:text-foreground">{children}</button>;
+function IconButton({ title, onClick, children }: { title: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" title={title} onClick={onClick} className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition duration-150 hover:bg-muted hover:text-foreground active:bg-muted/80">
+      {children}
+    </button>
+  );
 }
 
 function handleEditorKey(event: KeyboardEvent<HTMLTextAreaElement>, value: string, onChange: (value: string) => void, onRun: () => void) {
@@ -463,50 +721,96 @@ function handleEditorKey(event: KeyboardEvent<HTMLTextAreaElement>, value: strin
   }
 }
 
-function panelSize(kind: "html" | "css" | "javascript", maximized: "html" | "css" | "javascript" | null, collapsed: Record<"html" | "css" | "javascript", boolean>) {
-  if (collapsed[kind]) return "h-8 flex-none";
-  if (!maximized) return "min-h-[150px] flex-1";
-  return maximized === kind ? "min-h-[260px] flex-[7]" : "min-h-[150px] flex-[1.5]";
+function combinedPanelClass(kind: PanelKind, maximized: PanelKind | null, collapsed: Set<PanelKind>) {
+  if (collapsed.has(kind)) return "h-[38px] flex-none";
+  if (!maximized) return "flex-1";
+  return maximized === kind ? "flex-[3]" : "flex-1";
 }
 
-function viewportWidth(viewport: Viewport) {
-  if (viewport === "mobile") return "375px";
-  if (viewport === "tablet") return "768px";
-  return "100%";
+function normalizeMode(value: string | null): Mode {
+  if (value === "html" || value === "css" || value === "javascript" || value === "typescript") return value;
+  return "combined";
 }
 
-function joinFiles(files: SourceFile[]) {
-  return files.map((file) => file.content).join("\n\n");
+function makeFile(name: string, content: string): CodeFile {
+  return { id: `${name}-${Math.random().toString(36).slice(2)}`, name, content };
 }
 
-function readFile(file: File): Promise<SourceFile> {
+function readFileAsCode(file: File): Promise<CodeFile> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve({ id: `${file.name}-${Date.now()}-${Math.random()}`, name: file.name, content: String(reader.result ?? ""), uploaded: true });
+    reader.onload = () => resolve(makeFile(file.name, String(reader.result ?? "")));
     reader.onerror = () => reject(reader.error);
     reader.readAsText(file);
   });
 }
 
-function buildDocument(html: string, css: string, js: string) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style></head><body>${html}<script>
-["log","warn","error"].forEach((type) => {
-  const original = console[type];
-  console[type] = (...args) => {
-    parent.postMessage({ source: "devtools-web-compiler", type, args: args.map((arg) => {
-      try { return typeof arg === "object" ? JSON.stringify(arg) : String(arg); } catch { return String(arg); }
-    }) }, "*");
-    original.apply(console, args);
-  };
-});
-window.onerror = (message, source, line, column) => {
-  parent.postMessage({ source: "devtools-web-compiler", type: "error", args: [String(message) + " at " + line + ":" + column] }, "*");
-};
-<\/script><script>${js.replace(/<\/script/gi, "<\\/script")}<\/script></body></html>`;
+function joinFiles(files: CodeFile[]) {
+  return files.map((file) => file.content).join("\n");
+}
+
+function buildCombinedDocument(html: string, css: string, js: string) {
+  const styleTag = `<style>\n${css}\n</style>`;
+  const scriptTag = `<script>\n${consoleCaptureScript()}\n${escapeScript(js)}\n<\/script>`;
+  if (/<!doctype/i.test(html)) {
+    let document = html;
+    document = /<\/head>/i.test(document) ? document.replace(/<\/head>/i, `${styleTag}\n</head>`) : document.replace(/<html[^>]*>/i, "$&\n<head>\n" + styleTag + "\n</head>");
+    document = /<\/body>/i.test(document) ? document.replace(/<\/body>/i, `${scriptTag}\n</body>`) : `${document}\n${scriptTag}`;
+    return document;
+  }
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+${styleTag}
+</head>
+<body>
+${html}
+${scriptTag}
+</body>
+</html>`;
 }
 
 function buildCssSample(css: string) {
-  return buildDocument('<main class="sample"><h1>CSS Preview</h1><p>Apply your CSS to headings, paragraphs, cards, and buttons.</p><button>Primary button</button><div class="card"><h2>Sample card</h2><p>Nested content inside a card.</p></div></main>', css, "");
+  return buildCombinedDocument(`<main class="sample">
+  <section class="card">
+    <p class="eyebrow">Sample interface</p>
+    <h1>CSS Preview</h1>
+    <h2>Heading level two</h2>
+    <h3>Heading level three</h3>
+    <p>Use this sample HTML to inspect typography, spacing, cards, controls, and links.</p>
+    <input placeholder="Input field" />
+    <div class="actions">
+      <button>Primary Button</button>
+      <a href="#">Example link</a>
+    </div>
+  </section>
+</main>`, css, "");
+}
+
+function consoleCaptureScript() {
+  return `const __console = window.console;
+['log','error','warn','info'].forEach(method => {
+  window.console[method] = (...args) => {
+    __console[method](...args);
+    window.parent.postMessage({
+      type: 'console',
+      method,
+      args: args.map(a => {
+        try { return typeof a === 'object' ? JSON.stringify(a) : String(a); }
+        catch { return String(a); }
+      })
+    }, '*');
+  };
+});
+window.onerror = (message, source, line, column) => {
+  window.parent.postMessage({ type: 'console', method: 'error', args: [String(message) + ' at ' + line + ':' + column] }, '*');
+};`;
+}
+
+function escapeScript(source: string) {
+  return source.replace(/<\/script/gi, "<\\/script");
 }
 
 function transpileTypeScript(source: string) {
@@ -518,41 +822,44 @@ function transpileTypeScript(source: string) {
     .replace(/<([A-Za-z_$][A-Za-z0-9_$<>,\s]*)>\s*(?=[A-Za-z_$({])/g, "");
 }
 
-function formatConsoleArg(value: unknown) {
-  if (typeof value === "string") return value;
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
+function iframeWidth(mode: ResponsiveMode) {
+  if (mode === "mobile") return "375px";
+  if (mode === "tablet") return "768px";
+  return "100%";
 }
 
 function truncate(value: string, length: number) {
   return value.length > length ? `${value.slice(0, length - 3)}...` : value;
 }
 
-function isMode(value: string): value is Mode {
-  return value === "combine" || value === "html" || value === "css" || value === "javascript" || value === "typescript";
-}
-
 function Toast({ message }: { message: string }) {
-  return <div className="fixed right-4 top-12 z-[70] rounded-lg bg-red-600 px-4 py-3 text-sm font-medium text-white shadow-lg">{message}</div>;
+  return <div className="compiler-toast fixed right-4 top-4 z-[70] rounded-lg bg-red-500/95 px-4 py-3 text-xs font-medium text-white shadow-lg">{message}</div>;
 }
 
-const scrollbarStyles = `
-.editor-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(var(--muted-foreground) / 0.35) transparent;
+const compilerStyles = `
+.font-code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
 }
-.editor-scroll::-webkit-scrollbar {
+.compiler-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(128,128,128,0.35) transparent;
+}
+.compiler-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.editor-scroll::-webkit-scrollbar-track {
+.compiler-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.editor-scroll::-webkit-scrollbar-thumb {
-  background: rgb(var(--muted-foreground) / 0.28);
+.compiler-scroll::-webkit-scrollbar-thumb {
+  background: rgba(128,128,128,0.35);
   border-radius: 999px;
+}
+@keyframes compilerToast {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.compiler-toast {
+  animation: compilerToast 180ms ease-out both;
 }
 `;
