@@ -29,7 +29,7 @@ type DemoTab = {
 const tabs: DemoTab[] = [
   {
     name: "Hash",
-    href: "/tools/hash-generator",
+    href: "/tools/hash",
     icon: Hash,
     input: "hello@wellfriend.online",
     outputs: [
@@ -41,7 +41,7 @@ const tabs: DemoTab[] = [
   },
   {
     name: "JWT",
-    href: "/tools/jwt-decoder",
+    href: "/tools/jwt",
     icon: Braces,
     input: "eyJhbGciOiJIUzI1NiJ9...",
     outputs: [
@@ -54,7 +54,7 @@ const tabs: DemoTab[] = [
   },
   {
     name: "UUID",
-    href: "/tools/uuid-generator",
+    href: "/tools/generators",
     icon: Code2,
     input: "v4 - Bulk: 5",
     outputs: [
@@ -67,7 +67,7 @@ const tabs: DemoTab[] = [
   },
   {
     name: "Base64",
-    href: "/tools/base64",
+    href: "/tools/encode",
     icon: Lock,
     input: "hello@wellfriend.online",
     outputs: [

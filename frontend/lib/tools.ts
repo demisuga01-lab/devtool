@@ -10,9 +10,7 @@ import {
   Database,
   Diff,
   FileCode2,
-  FileJson,
   FileText,
-  Fingerprint,
   FolderOpen,
   Files,
   GitCompare,
@@ -24,11 +22,9 @@ import {
   Link2,
   Lock,
   Network,
-  Paintbrush,
   Palette,
   PenLine,
   Play,
-  QrCode,
   SearchCheck,
   Send,
   Server,
@@ -39,7 +35,6 @@ import {
   Timer,
   Trophy,
   Type,
-  Wand2,
   Wifi,
   Workflow,
   Zap,
@@ -100,12 +95,9 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "text",
     description: "Format, validate, and convert structured text.",
     tools: [
-      { name: "JSON Formatter", slug: "json-formatter", description: "Format, minify, and validate JSON.", href: "/tools/json-formatter", implemented: true },
-      { name: "JSON Validator", slug: "json-validator", description: "Validate JSON and pinpoint syntax errors.", href: "/tools/json-validator", implemented: true },
+      { name: "JSON Tools", slug: "json", description: "Format, validate, convert, diff and query JSON.", href: "/tools/json", implemented: true, workspaceToolCount: 11 },
       { name: "Regex Tools", slug: "regex", description: "Test, escape, replace, and learn regular expressions.", href: "/tools/regex", implemented: true, workspaceToolCount: 5 },
       { name: "CSS & Color Tools", slug: "css-color", description: "Pick colors, generate gradients, check contrast, and format CSS.", href: "/tools/css-color", implemented: true, workspaceToolCount: 7 },
-      { name: "Base64 Tool", slug: "base64", description: "Encode and decode Base64 text.", href: "/tools/base64", implemented: true },
-      { name: "URL Encoder", slug: "url-encoder", description: "Encode and decode URL components.", href: "/tools/url-encoder", implemented: true },
       { name: "HTML Formatter", slug: "html-formatter", description: "Format and tidy HTML markup.", href: "/tools/html-formatter", implemented: true },
       { name: "Text Diff", slug: "text-diff", description: "Compare two pieces of text line by line.", href: "/tools/text-diff", implemented: true },
       { name: "Markdown Preview", slug: "markdown-preview", description: "Render Markdown to sanitized HTML.", href: "/tools/markdown-preview", implemented: true },
@@ -114,10 +106,6 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "Duplicate Line Remover", slug: "duplicate-line-remover", description: "Remove duplicate lines with trim, sort, and case options.", href: "/tools/duplicate-line-remover", implemented: true },
       { name: "Case Converter", slug: "case-converter", description: "Convert text between camelCase, PascalCase, snake_case, kebab-case, and more.", href: "/tools/case-converter", implemented: true },
       { name: "Line Sorter", slug: "line-sorter", description: "Sort lines alphabetically, numerically, or by length. Remove duplicates.", href: "/tools/line-sorter", implemented: true },
-      { name: "JSON Diff", slug: "json-diff", description: "Compare two JSON objects and highlight differences.", href: "/tools/json-diff", implemented: true },
-      { name: "JSON to TypeScript", slug: "json-to-typescript", description: "Generate TypeScript interfaces from a JSON object.", href: "/tools/json-to-typescript", implemented: true },
-      { name: "JSONPath Tester", slug: "jsonpath-tester", description: "Test JSONPath expressions and inspect matched values.", href: "/tools/jsonpath-tester", implemented: true },
-      { name: "JSON Tree Viewer", slug: "json-tree-viewer", description: "Visualize JSON as an interactive collapsible tree.", href: "/tools/json-tree-viewer", implemented: true },
       { name: "YAML Diff", slug: "yaml-diff", description: "Compare YAML documents with line and key-level diffs.", href: "/tools/yaml-diff", implemented: true },
       { name: "Code Diff", slug: "code-diff", description: "Compare code snippets with language-aware diff metrics.", href: "/tools/code-diff", implemented: true },
       { name: "stdin/Test Cases Runner", slug: "testcase-runner", description: "Run code against multiple test cases.", href: "/tools/testcase-runner", implemented: true },
@@ -133,11 +121,7 @@ const seedToolGroups: ToolSeedGroup[] = [
     tools: [
       { name: "JWT Tools", slug: "jwt", description: "Decode, build and verify JSON Web Tokens.", href: "/tools/jwt", implemented: true, workspaceToolCount: 3 },
       { name: "Generators", slug: "generators", description: "Generate passwords, tokens, IDs, QR codes, and more.", href: "/tools/generators", implemented: true, workspaceToolCount: 9 },
-      { name: "Hash Generator", slug: "hash-generator", description: "Generate MD5, SHA-1, SHA-256, and SHA-512 hashes.", href: "/tools/hash-generator", implemented: true },
-      { name: "HMAC Generator", slug: "hmac-generator", description: "Generate HMAC signatures using SHA variants.", href: "/tools/hmac-generator", implemented: true },
-      { name: "Bcrypt Generator", slug: "bcrypt-generator", description: "Hash passwords using bcrypt and verify hashes.", href: "/tools/bcrypt-generator", implemented: true },
-      { name: "BLAKE2 Generator", slug: "blake2-generator", description: "Generate BLAKE2b and BLAKE2s hashes.", href: "/tools/blake2-generator", implemented: true },
-      { name: "Hash Verifier", slug: "hash-verifier", description: "Verify file and text hashes against expected values.", href: "/tools/hash-verifier", implemented: true },
+      { name: "Hash & Crypto", slug: "hash", description: "MD5, SHA, HMAC, bcrypt, BLAKE2 and TOTP generation.", href: "/tools/hash", implemented: true, workspaceToolCount: 6 },
       { name: "One-Time Secret", slug: "one-time-secret", description: "Share secrets that self-destruct after reading.", href: "/tools/one-time-secret", implemented: true },
       { name: "Encrypted File Paste", slug: "encrypted-file-paste", description: "Share encrypted files with self-destruct.", href: "/tools/encrypted-file-paste", implemented: true },
     ],
@@ -160,12 +144,9 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "encode",
     description: "Convert between encodings and data formats.",
     tools: [
-      { name: "Hex Encoder", slug: "hex-encoder", description: "Convert between text and hexadecimal.", href: "/tools/hex-encoder", implemented: true },
-      { name: "Binary Converter", slug: "binary-converter", description: "Convert between text and binary.", href: "/tools/binary-converter", implemented: true },
+      { name: "Encode & Decode", slug: "encode", description: "Base64, URL, HTML, hex, binary encoding and escaping.", href: "/tools/encode", implemented: true, workspaceToolCount: 12 },
       { name: "CSV to JSON", slug: "csv-to-json", description: "Convert CSV data into structured JSON.", href: "/tools/csv-to-json", implemented: true },
-      { name: "JSON to CSV", slug: "json-to-csv", description: "Convert JSON into CSV rows.", href: "/tools/json-to-csv", implemented: true },
       { name: "File Encoding", slug: "file-encoding", description: "Convert text files between encodings.", href: "/tools/file-encoding", implemented: true },
-      { name: "Unicode Escape", slug: "unicode-escape", description: "Escape and unescape Unicode characters in multiple formats.", href: "/tools/unicode-escape", implemented: true },
     ],
   },
   {
@@ -173,15 +154,7 @@ const seedToolGroups: ToolSeedGroup[] = [
     slug: "xml-data",
     description: "Format, validate, and convert XML, YAML, and structured data.",
     tools: [
-      { name: "XML Formatter", slug: "xml-formatter", description: "Format and validate XML documents.", href: "/tools/xml-formatter", implemented: true },
-      { name: "XML Validator", slug: "xml-validator", description: "Check if XML is well-formed.", href: "/tools/xml-validator", implemented: true },
-      { name: "XML to JSON", slug: "xml-to-json", description: "Convert XML documents to JSON.", href: "/tools/xml-to-json", implemented: true },
-      { name: "JSON to XML", slug: "json-to-xml", description: "Convert JSON objects to XML.", href: "/tools/json-to-xml", implemented: true },
-      { name: "YAML to JSON", slug: "yaml-to-json", description: "Convert YAML to JSON format.", href: "/tools/yaml-to-json", implemented: true },
-      { name: "JSON to YAML", slug: "json-to-yaml", description: "Convert JSON to YAML format.", href: "/tools/json-to-yaml", implemented: true },
-      { name: "XPath Tester", slug: "xpath-tester", description: "Test XPath expressions against XML.", href: "/tools/xpath-tester", implemented: true },
-      { name: "XSD Generator", slug: "xsd-generator", description: "Generate an XSD schema from a sample XML.", href: "/tools/xsd-generator", implemented: true },
-      { name: "XSLT Transformer", slug: "xslt-transformer", description: "Transform XML using an XSLT stylesheet.", href: "/tools/xslt-transformer", implemented: true },
+      { name: "XML Tools", slug: "xml", description: "Format, validate, convert and query XML documents.", href: "/tools/xml", implemented: true, workspaceToolCount: 7 },
       { name: "TOML Tools", slug: "toml", description: "Format, validate, and convert TOML configuration files.", href: "/tools/toml", implemented: true, workspaceToolCount: 3 },
       { name: "OpenAPI Tools", slug: "openapi", description: "View, validate, and explore OpenAPI specifications.", href: "/tools/openapi", implemented: true, workspaceToolCount: 4 },
     ],
@@ -190,13 +163,7 @@ const seedToolGroups: ToolSeedGroup[] = [
     name: "Escape",
     slug: "escape",
     description: "Escape and unescape strings for markup, code, and SQL.",
-    tools: [
-      { name: "HTML Escape", slug: "html-escape", description: "Escape or unescape HTML entities.", href: "/tools/html-escape", implemented: true },
-      { name: "XML Escape", slug: "xml-escape", description: "Escape or unescape XML special characters.", href: "/tools/xml-escape", implemented: true },
-      { name: "JS Escape", slug: "js-escape", description: "Escape or unescape JavaScript strings.", href: "/tools/js-escape", implemented: true },
-      { name: "JSON Escape", slug: "json-escape", description: "Escape or unescape JSON string values.", href: "/tools/json-escape", implemented: true },
-      { name: "SQL Escape", slug: "sql-escape", description: "Escape strings for safe SQL usage.", href: "/tools/sql-escape", implemented: true },
-    ],
+    tools: [],
   },
   {
     name: "Web & Network",
@@ -229,16 +196,12 @@ const seedToolGroups: ToolSeedGroup[] = [
     description: "Look up references and run common utility transformations.",
     tools: [
       { name: "String Utilities", slug: "string-utilities", description: "Common string transformations.", href: "/tools/string-utilities", implemented: true },
-      { name: "URL Parser", slug: "url-parser", description: "Parse and inspect URL components.", href: "/tools/url-parser", implemented: true },
-      { name: "URL Query Builder", slug: "url-query-builder", description: "Build and parse URL query strings.", href: "/tools/url-query-builder", implemented: true },
       { name: "Recent Pastes", slug: "recent-pastes", description: "View locally stored recent paste history.", href: "/tools/recent-pastes", implemented: true },
-      { name: "HTML Entities", slug: "html-entities", description: "Browse and search HTML character entities.", href: "/tools/html-entities", implemented: true },
       { name: "MIME Types", slug: "mime-types", description: "Browse and search common MIME types.", href: "/tools/mime-types", implemented: true },
       { name: "SQL Formatter", slug: "sql-formatter", description: "Format SQL queries for readability.", href: "/tools/sql-formatter", implemented: true },
       { name: "JS Beautifier", slug: "js-beautifier", description: "Format and beautify JavaScript code.", href: "/tools/js-beautifier", implemented: true },
       { name: "I18N Standards", slug: "i18n-standards", description: "Internationalization standards, locale codes, and snippets.", href: "/tools/i18n-standards", implemented: true },
       { name: "Number Base Converter", slug: "number-base", description: "Convert numbers between binary, octal, decimal, and hexadecimal.", href: "/tools/number-base", implemented: true },
-      { name: "Morse Code", slug: "morse-code", description: "Convert text to Morse code and back.", href: "/tools/morse-code", implemented: true },
       { name: "Roman Numerals", slug: "roman-numerals", description: "Convert between Roman numerals and decimal numbers.", href: "/tools/roman-numerals", implemented: true },
       { name: "ASCII Table", slug: "ascii-table", description: "Browse the full ASCII character table with decimal, hex, and binary values.", href: "/tools/ascii-table", implemented: true },
       { name: "Semver Checker", slug: "semver-checker", description: "Parse and compare semantic version strings.", href: "/tools/semver-checker", implemented: true },
@@ -246,7 +209,6 @@ const seedToolGroups: ToolSeedGroup[] = [
       { name: "Age Calculator", slug: "age-calculator", description: "Calculate exact age and time since or until any date.", href: "/tools/age-calculator", implemented: true },
       { name: "Git Ignore Generator", slug: "gitignore-generator", description: "Generate .gitignore files for any language or framework.", href: "/tools/gitignore-generator", implemented: true },
       { name: "Cron Builder", slug: "cron-builder", description: "Build cron expressions visually with a human-readable description.", href: "/tools/cron-builder", implemented: true },
-      { name: "TOTP Generator", slug: "totp-generator", description: "Generate TOTP/2FA codes from a secret key.", href: "/tools/totp-generator", implemented: true },
       { name: "Status Badges/Widgets", slug: "status-badges", description: "Generate embeddable status badges and widgets.", href: "/tools/status-badges", implemented: true },
     ],
   },
@@ -334,13 +296,10 @@ const seedToolGroups: ToolSeedGroup[] = [
 ];
 
 const inspectTools = new Set([
-  "json-formatter",
-  "json-validator",
-  "xml-formatter",
-  "xml-validator",
+  "json",
+  "xml",
   "yaml-diff",
   "html-formatter",
-  "hash-verifier",
   "jwt",
   "toml",
   "openapi",
@@ -354,39 +313,17 @@ const inspectTools = new Set([
 ]);
 
 const convertTools = new Set([
-  "base64",
-  "url-encoder",
-  "hex-encoder",
-  "binary-converter",
+  "encode",
   "csv-to-json",
-  "json-to-csv",
-  "json-to-yaml",
-  "yaml-to-json",
-  "xml-to-json",
-  "json-to-xml",
-  "unicode-escape",
-  "morse-code",
   "number-base",
   "roman-numerals",
-  "json-to-typescript",
   "case-converter",
   "text-case",
-  "html-entities",
-  "html-escape",
-  "js-escape",
-  "xml-escape",
-  "json-escape",
-  "sql-escape",
-  "xslt-transformer",
 ]);
 
 const securityTools = new Set([
-  "hash-generator",
-  "blake2-generator",
-  "hmac-generator",
-  "bcrypt-generator",
+  "hash",
   "jwt",
-  "totp-generator",
   "one-time-secret",
   "encrypted-file-paste",
   "zk-paste",
@@ -398,7 +335,6 @@ const generateTools = new Set([
   "quartz-cron",
   "gitignore-generator",
   "systemd-unit-generator",
-  "xsd-generator",
   "css-color",
   "status-badges",
   "env-manager",
@@ -414,8 +350,6 @@ const networkTools = new Set([
   "ip-lookup",
   "og-preview",
   "curl-builder",
-  "url-parser",
-  "url-query-builder",
   "rest-client",
   "graphql-client",
   "api-collections",
@@ -432,9 +366,6 @@ const textTools = new Set([
   "markdown-preview",
   "regex",
   "string-utilities",
-  "jsonpath-tester",
-  "json-tree-viewer",
-  "xpath-tester",
   "sql-formatter",
   "js-beautifier",
   "duplicate-line-remover",
@@ -466,14 +397,12 @@ const textTools = new Set([
 ]);
 
 const popularTools = new Set([
-  "json-formatter",
-  "json-validator",
+  "json",
   "generators",
-  "base64",
+  "encode",
   "jwt",
-  "hash-generator",
+  "hash",
   "regex",
-  "url-encoder",
   "timestamp",
   "scripting-runner",
   "web-runner",
@@ -481,12 +410,7 @@ const popularTools = new Set([
   "ssl",
   "markdown-preview",
   "text-diff",
-  "bcrypt-generator",
-  "hmac-generator",
   "cron-parser",
-  "json-to-yaml",
-  "yaml-to-json",
-  "xml-formatter",
 ]);
 
 const newTools = new Set([
@@ -496,19 +420,17 @@ const newTools = new Set([
   "generators",
   "ssl",
   "regex",
+  "json",
+  "xml",
+  "encode",
+  "hash",
   "duplicate-line-remover",
   "case-converter",
   "timezone-converter",
   "duration-calculator",
-  "unicode-escape",
-  "blake2-generator",
-  "hash-verifier",
-  "jsonpath-tester",
-  "json-tree-viewer",
   "yaml-diff",
   "code-diff",
   "recent-pastes",
-  "url-query-builder",
   "docker-compose-validator",
   "nginx-config-checker",
   "systemd-unit-generator",
@@ -533,24 +455,8 @@ const newTools = new Set([
 ]);
 
 const iconBySlug: Record<string, LucideIcon> = {
-  "json-formatter": Braces,
-  "json-validator": FileJson,
-  "json-diff": GitCompare,
-  "json-to-typescript": FileCode2,
-  "jsonpath-tester": SearchCheck,
-  "json-tree-viewer": Braces,
-  "json-to-csv": Database,
-  "json-to-yaml": Braces,
-  "json-to-xml": Braces,
-  "json-escape": Braces,
-  "xml-formatter": FileCode2,
-  "xml-validator": SearchCheck,
-  "xml-to-json": FileJson,
-  "xml-escape": FileCode2,
-  "xpath-tester": SearchCheck,
-  "xsd-generator": Wand2,
-  "xslt-transformer": ArrowLeftRight,
-  "yaml-to-json": FileJson,
+  json: Braces,
+  xml: FileCode2,
   "yaml-diff": Diff,
   toml: FileText,
   openapi: FileCode2,
@@ -565,8 +471,6 @@ const iconBySlug: Record<string, LucideIcon> = {
   "spf-checker": Shield,
   "og-preview": Link2,
   "curl-builder": Terminal,
-  "url-parser": Link2,
-  "url-query-builder": Link2,
   "rest-client": Send,
   "graphql-client": Workflow,
   "api-collections": FolderOpen,
@@ -574,14 +478,9 @@ const iconBySlug: Record<string, LucideIcon> = {
   "webhook-inbox": Server,
   "webhook-viewer": SearchCheck,
   heartbeat: Zap,
-  "hash-generator": Hash,
-  "blake2-generator": Hash,
-  "hmac-generator": Key,
-  "bcrypt-generator": Lock,
+  hash: Hash,
   jwt: Key,
-  "hash-verifier": ShieldCheck,
   generators: Sparkles,
-  "totp-generator": Lock,
   "one-time-secret": Lock,
   "encrypted-file-paste": ShieldCheck,
   "zk-paste": Lock,
@@ -626,40 +525,30 @@ const iconBySlug: Record<string, LucideIcon> = {
   notebook: LayoutList,
   challenges: Trophy,
   "other-runner": Terminal,
-  base64: ArrowLeftRight,
-  "url-encoder": Link2,
-  "hex-encoder": Hash,
-  "binary-converter": ArrowLeftRight,
+  encode: ArrowLeftRight,
   "csv-to-json": Database,
   "number-base": ArrowLeftRight,
-  "morse-code": ArrowLeftRight,
   "roman-numerals": ArrowLeftRight,
   "case-converter": Type,
   "text-case": Type,
-  "html-entities": FileText,
-  "html-escape": FileCode2,
-  "js-escape": Code2,
-  "sql-escape": Database,
   "file-encoding": FileText,
-  "unicode-escape": Type,
   "recent-pastes": Clock,
 };
 
 const explicitTags: Record<string, string[]> = {
-  "json-formatter": ["json", "format", "prettify", "minify", "indent", "beautify", "lint", "pretty print"],
-  "json-validator": ["json", "validate", "lint", "syntax", "schema", "parse", "error", "debug"],
+  json: ["json", "format", "prettify", "validate", "diff", "convert", "yaml", "csv", "typescript", "jsonpath", "tree"],
+  xml: ["xml", "format", "validate", "xpath", "xslt", "xsd", "convert", "escape", "json", "transform"],
+  encode: ["encode", "decode", "base64", "url", "html", "hex", "binary", "morse", "unicode", "escape", "unescape", "sql", "js"],
+  hash: ["hash", "md5", "sha", "sha256", "hmac", "bcrypt", "blake2", "totp", "crypto", "checksum", "verify", "otp"],
   generators: ["password", "secure", "random", "entropy", "uuid", "ulid", "nanoid", "qr", "slug", "lorem"],
   jwt: ["jwt", "token", "json web token", "claims", "bearer", "auth", "decode", "build", "verify", "payload", "header"],
   "dns-lookup": ["dns", "domain", "nameserver", "mx", "txt", "a record", "cname", "nslookup", "dig"],
-  base64: ["base64", "encode", "decode", "binary", "text", "convert", "encoding"],
   regex: ["regex", "regexp", "pattern", "match", "test", "regular expression", "search", "replace", "escape"],
-  "hash-generator": ["hash", "md5", "sha", "sha256", "sha512", "checksum", "digest", "crypto"],
   openapi: ["openapi", "swagger", "redoc", "api docs", "schema", "validate", "viewer"],
   toml: ["toml", "format", "validate", "convert", "configuration"],
   timestamp: ["timestamp", "unix", "epoch", "date", "time", "convert", "utc"],
   ssl: ["ssl", "tls", "certificate", "https", "expiry", "cert", "security", "chain"],
   "css-color": ["css", "color", "gradient", "contrast", "box shadow", "clamp", "formatter"],
-  "bcrypt-generator": ["bcrypt", "hash", "password", "salt", "cost", "encrypt", "secure"],
   "webhook-inbox": ["webhook", "http", "request", "capture", "inspect", "endpoint", "listener"],
   "cron-parser": ["cron", "schedule", "interval", "job", "task", "timing", "expression"],
   "rest-client": ["rest", "http", "api", "request", "get", "post", "client", "fetch", "curl", "endpoint", "test"],
@@ -686,9 +575,10 @@ function inputTypesForTool(tool: ToolSeed): ToolInputType[] {
   if (["multifile-runner", "notebook", "challenges"].includes(slug)) return ["code"];
   if (["generators", "status-badges"].includes(slug)) return ["none"];
   if (slug.includes("runner") || ["code-share", "testcase-runner", "js-beautifier", "html-formatter", "sql-formatter", "nginx-config-checker", "docker-compose-validator", "systemd-unit-generator"].includes(slug)) return ["code"];
-  if (slug.includes("json") || ["jwt", "openapi", "webhook-viewer"].includes(slug)) return ["json", "text"];
-  if (["http-headers", "redirect-checker", "ssl", "dns-lookup", "dns-propagation", "whois-lookup", "security-headers", "ip-lookup", "spf-checker", "og-preview", "url-parser", "url-query-builder", "webhook-inbox", "heartbeat"].includes(slug)) return ["url"];
-  if (["file-encoding", "hash-verifier", "encrypted-file-paste", "collab-notes"].includes(slug)) return ["file", "text"];
+  if (slug === "json" || slug.includes("json") || ["jwt", "openapi", "webhook-viewer"].includes(slug)) return ["json", "text"];
+  if (slug === "hash") return ["text", "file"];
+  if (["http-headers", "redirect-checker", "ssl", "dns-lookup", "dns-propagation", "whois-lookup", "security-headers", "ip-lookup", "spf-checker", "og-preview", "webhook-inbox", "heartbeat"].includes(slug)) return ["url"];
+  if (["file-encoding", "encrypted-file-paste", "collab-notes"].includes(slug)) return ["file", "text"];
   return ["text"];
 }
 
@@ -696,17 +586,21 @@ function outputTypesForTool(tool: ToolSeed, intentGroup: IntentGroupId): ToolOut
   const slug = tool.slug;
   if (slug.includes("runner") || ["testcase-runner", "notebook"].includes(slug)) return ["executed"];
   if (slug === "challenges") return ["validated", "executed"];
-  if (slug.includes("validator") || ["jwt", "hash-verifier", "nginx-config-checker", "docker-compose-validator", "security-headers", "spf-checker"].includes(slug)) return ["validated"];
+  if (slug === "json") return ["formatted", "validated", "converted", "analyzed"];
+  if (slug === "xml") return ["formatted", "validated", "converted"];
+  if (slug === "encode") return ["converted"];
+  if (slug === "hash") return ["generated", "analyzed"];
+  if (slug.includes("validator") || ["jwt", "nginx-config-checker", "docker-compose-validator", "security-headers", "spf-checker"].includes(slug)) return ["validated"];
   if (slug.includes("formatter") || ["js-beautifier", "line-sorter", "duplicate-line-remover"].includes(slug)) return ["formatted"];
-  if (intentGroup === "convert" || slug.includes("-to-") || slug.includes("converter") || ["base64", "url-encoder", "hex-encoder", "binary-converter", "unicode-escape", "morse-code", "number-base", "roman-numerals", "case-converter", "text-case"].includes(slug)) return ["converted"];
-  if (intentGroup === "generate" || intentGroup === "security" && ["hash-generator", "blake2-generator", "hmac-generator", "bcrypt-generator", "jwt", "totp-generator", "one-time-secret", "encrypted-file-paste", "zk-paste"].includes(slug)) return ["generated"];
+  if (intentGroup === "convert" || slug.includes("-to-") || slug.includes("converter") || ["number-base", "roman-numerals", "case-converter", "text-case"].includes(slug)) return ["converted"];
+  if (intentGroup === "generate" || intentGroup === "security" && ["jwt", "one-time-secret", "encrypted-file-paste", "zk-paste"].includes(slug)) return ["generated"];
   return ["analyzed"];
 }
 
 function complexityForTool(tool: ToolSeed): ToolComplexity {
   if (
     tool.slug.includes("runner") ||
-    ["openapi", "webhook-inbox", "webhook-viewer", "heartbeat", "rest-client", "graphql-client", "api-collections", "multifile-runner", "notebook", "challenges", "jwt", "xsd-generator", "xslt-transformer", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
+    ["json", "xml", "openapi", "webhook-inbox", "webhook-viewer", "heartbeat", "rest-client", "graphql-client", "api-collections", "multifile-runner", "notebook", "challenges", "jwt", "docker-compose-validator", "nginx-config-checker", "systemd-unit-generator", "testcase-runner", "code-share"].includes(tool.slug)
   ) {
     return "advanced";
   }
