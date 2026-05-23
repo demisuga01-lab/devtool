@@ -8,10 +8,14 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, Field
+from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.routes._utils import iso, parse_page, sanitize_text
+from app.api.routes.api_keys import authorize_api_key
 from app.core.database import get_db
+from app.models.extended import Collection, Workspace
 from app.models.paste import Paste, generate_paste_id
 
 
@@ -35,6 +39,10 @@ class PasteCreate(BaseModel):
     view_limit: int | None = Field(default=None, ge=1, le=1000)
     expires_in: ExpiresIn = "never"
     is_private: bool = False
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    collection_id: str | None = Field(default=None, max_length=12)
+    workspace_id: str | None = Field(default=None, max_length=12)
+    workspace_password: str | None = Field(default=None, max_length=200)
 
 
 def _client_ip(request: Request) -> str:
@@ -96,10 +104,61 @@ def _serialize_paste(paste: Paste, include_content: bool = True) -> dict:
         "view_count": paste.view_count,
         "view_limit": paste.view_limit,
         "is_private": paste.is_private,
+        "tags": paste.tags or [],
+        "collection_id": paste.collection_id,
+        "workspace_id": paste.workspace_id,
     }
     if include_content:
         data["content"] = paste.content
     return data
+
+
+def _serialize_paste_summary(paste: Paste) -> dict:
+    content = paste.content or ""
+    return {
+        "id": paste.id,
+        "title": paste.title,
+        "language": paste.language,
+        "tags": paste.tags or [],
+        "collection_id": paste.collection_id,
+        "workspace_id": paste.workspace_id,
+        "created_at": iso(paste.created_at),
+        "expires_at": iso(paste.expires_at),
+        "view_count": paste.view_count,
+        "is_private": paste.is_private,
+        "preview": content[:240] if not paste.password_hash and not paste.is_private else "",
+    }
+
+
+def _clean_tags(tags: list[str]) -> list[str]:
+    cleaned: list[str] = []
+    for tag in tags[:20]:
+        value = sanitize_text(tag, 40).lower()
+        if value and value not in cleaned:
+            cleaned.append(value)
+    return cleaned
+
+
+def _validate_collection(db: Session, collection_id: str | None) -> str | None:
+    if not collection_id:
+        return None
+    collection = db.query(Collection).filter(Collection.id == collection_id).first()
+    if collection is None:
+        raise HTTPException(status_code=400, detail="Collection not found.")
+    return collection_id
+
+
+def _validate_workspace(db: Session, workspace_id: str | None, password: str | None) -> str | None:
+    if not workspace_id:
+        return None
+    workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
+    if workspace is None:
+        raise HTTPException(status_code=400, detail="Workspace not found.")
+    if not password or not _password_matches(password, workspace.password_hash):
+        raise HTTPException(status_code=403, detail="Workspace password is incorrect.")
+    workspace.last_accessed = datetime.datetime.utcnow()
+    workspace.paste_count = (workspace.paste_count or 0) + 1
+    return workspace_id
 
 
 def _get_existing_paste(db: Session, paste_id: str) -> Paste:
@@ -152,22 +211,27 @@ async def create_paste(
     request: Request,
     db: Session = Depends(get_db),
 ) -> dict:
-    _check_create_rate_limit(request)
+    api_key = authorize_api_key(request, db)
+    if api_key is None:
+        _check_create_rate_limit(request)
     if len(payload.content.encode("utf-8")) > MAX_CONTENT_BYTES:
         raise HTTPException(status_code=400, detail="Paste content must be 500KB or less.")
 
     paste_id = generate_paste_id()
     paste = Paste(
         id=paste_id,
-        content=payload.content,
-        language=payload.language.strip() or "plaintext",
-        title=payload.title.strip(),
+        content=sanitize_text(payload.content, MAX_CONTENT_BYTES, allow_empty=False),
+        language=sanitize_text(payload.language, 50) or "plaintext",
+        title=sanitize_text(payload.title, 200),
         password_hash=_hash_password(payload.password),
         burn_after_read=payload.burn_after_read,
         view_limit=payload.view_limit,
         expires_at=_expires_at(payload.expires_in),
         is_private=payload.is_private,
         delete_token=secrets.token_urlsafe(32),
+        tags=_clean_tags(payload.tags),
+        collection_id=_validate_collection(db, payload.collection_id),
+        workspace_id=_validate_workspace(db, payload.workspace_id, payload.workspace_password),
     )
 
     for _ in range(5):
@@ -186,6 +250,28 @@ async def create_paste(
         "delete_token": paste.delete_token,
         "url": f"{PASTE_URL_BASE}/{paste.id}",
     }
+
+
+@router.get("/search")
+async def search_pastes(
+    q: str = "",
+    tags: str = "",
+    page: int = Query(1, ge=1),
+    per_page: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+) -> dict:
+    page, per_page = parse_page(page, per_page)
+    query = db.query(Paste)
+    cleaned_q = sanitize_text(q, 200)
+    if cleaned_q:
+        like = f"%{cleaned_q}%"
+        query = query.filter(or_(Paste.title.ilike(like), Paste.content.ilike(like)))
+    tag_values = [sanitize_text(tag, 40).lower() for tag in tags.split(",") if sanitize_text(tag, 40)]
+    for tag in tag_values:
+        query = query.filter(Paste.tags.any(tag))
+    total = query.count()
+    pastes = query.order_by(Paste.created_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    return {"items": [_serialize_paste_summary(paste) for paste in pastes], "page": page, "per_page": per_page, "total": total}
 
 
 @router.get(

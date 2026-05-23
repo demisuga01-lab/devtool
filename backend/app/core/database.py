@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
@@ -18,6 +19,7 @@ def get_db():
 
 def init_db():
     from app.models.paste import Base
+    from app.models import extended  # noqa: F401
     from app.models.status import (
         AlertConfig,
         Incident,
@@ -29,6 +31,7 @@ def init_db():
     )
 
     Base.metadata.create_all(bind=engine)
+    _ensure_schema_extensions()
 
     db = SessionLocal()
     try:
@@ -69,3 +72,15 @@ def init_db():
             db.commit()
     finally:
         db.close()
+
+
+def _ensure_schema_extensions():
+    """create_all does not add columns to existing tables, so keep additive paste columns in sync."""
+    statements = [
+        "ALTER TABLE pastes ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}'::text[] NOT NULL",
+        "ALTER TABLE pastes ADD COLUMN IF NOT EXISTS collection_id VARCHAR(12) NULL",
+        "ALTER TABLE pastes ADD COLUMN IF NOT EXISTS workspace_id VARCHAR(12) NULL",
+    ]
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))

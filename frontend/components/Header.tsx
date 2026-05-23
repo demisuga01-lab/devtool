@@ -21,6 +21,7 @@ import { authChangedEvent, clearAuth, isAuthenticated } from "@/lib/auth";
 const GITHUB_URL = "https://github.com";
 
 const mainLinks = [
+  { name: "Workspace", href: "/workspace" },
   { name: "Pricing", href: "/pricing" },
   { name: "About", href: "/about" },
   { name: "Docs", href: "/docs" },
@@ -30,6 +31,7 @@ const mainLinks = [
 const pasteLinks = [
   { name: "New Paste", href: "/paste" },
   { name: "View a Paste", href: "/paste/view" },
+  { name: "Collections", href: "/paste/collections" },
   { name: "Recent Pastes", href: "/paste#recent" },
 ];
 
@@ -96,6 +98,8 @@ const toolDescriptions: Record<string, string> = {
   "blake2-generator": "Generate BLAKE2b and BLAKE2s hashes",
   "hash-verifier": "Verify file and text hash values",
   "jwt-verifier": "Verify JWT signature and claims",
+  "one-time-secret": "Share secrets that self-destruct after reading",
+  "encrypted-file-paste": "Share encrypted files with self-destruct",
   timestamp: "Convert timestamps across common formats",
   "cron-parser": "Parse expressions with next run times",
   "quartz-cron": "Explain Quartz cron schedule syntax",
@@ -144,6 +148,9 @@ const toolDescriptions: Record<string, string> = {
   "og-preview": "Preview social media link cards",
   "curl-builder": "Build and export cURL commands",
   "request-history": "Browse recent HTTP tool requests",
+  "webhook-inbox": "Capture and inspect incoming webhooks",
+  "webhook-viewer": "Parse and inspect HTTP request payloads",
+  heartbeat: "Monitor cron jobs and scheduled tasks",
   "string-utilities": "Transform strings across useful formats",
   "qr-generator": "Create downloadable QR codes",
   "url-parser": "Inspect URL parts and parameters",
@@ -271,6 +278,8 @@ const intentGroups: IntentGroup[] = [
     "jwt-builder",
     "random-token-generator",
     "totp-generator",
+    "one-time-secret",
+    "encrypted-file-paste",
   ]),
   intentGroup("Generate & Build", "#8b5cf6", "generate", [
     "uuid-generator",
@@ -305,6 +314,9 @@ const intentGroups: IntentGroup[] = [
     "url-parser",
     "url-query-builder",
     "request-history",
+    "webhook-inbox",
+    "webhook-viewer",
+    "heartbeat",
   ]),
   intentGroup("Text & Code", "#06b6d4", "text", [
     "text-diff",
@@ -576,6 +588,9 @@ export function Header() {
                     <Link href="/status" className={menuLinkClass} onClick={() => setStatusOpen(false)}>
                       Public Status
                     </Link>
+                    <Link href="/status/sla" className={menuLinkClass} onClick={() => setStatusOpen(false)}>
+                      SLA Reports
+                    </Link>
                     <Link href="/dashboard" className={menuLinkClass} onClick={() => setStatusOpen(false)}>
                       Dashboard
                     </Link>
@@ -690,6 +705,10 @@ export function Header() {
             )}
           </div>
 
+          <Link href="/gist" className={`${navClass} ${isActive(pathname, "/gist") ? activeNavClass : inactiveNavClass}`}>
+            Gist
+          </Link>
+
           <div className="relative" onMouseEnter={openCompilersMenu} onMouseLeave={closeCompilersMenu}>
             <div className="flex items-center">
               <Link
@@ -784,6 +803,7 @@ export function Header() {
                   onToggle={() => setOpenMobileGroup(openMobileGroup === "status" ? null : "status")}
                 >
                   <MobilePlainLink href="/status" onClick={() => setMobile(false)}>Public Status</MobilePlainLink>
+                  <MobilePlainLink href="/status/sla" onClick={() => setMobile(false)}>SLA Reports</MobilePlainLink>
                   <MobilePlainLink href="/dashboard" onClick={() => setMobile(false)}>Dashboard</MobilePlainLink>
                   <button
                     type="button"
@@ -856,6 +876,10 @@ export function Header() {
                   <span>Add /raw to any paste URL for plain text</span>
                 </div>
               </MobileAccordion>
+
+              <MobilePlainLink href="/gist" bordered onClick={() => setMobile(false)}>
+                Gist
+              </MobilePlainLink>
 
               <MobileAccordion
                 title="Compilers"

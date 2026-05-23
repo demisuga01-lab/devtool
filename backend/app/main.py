@@ -6,7 +6,22 @@ import httpx
 from pydantic import BaseModel
 
 from app.core.config import get_settings
-from app.api.routes import auth, paste, status, tools
+from app.api.routes import (
+    api_keys,
+    auth,
+    collections,
+    file_paste,
+    gists,
+    heartbeats,
+    paste,
+    reports,
+    secrets,
+    sla,
+    status,
+    tools,
+    webhooks,
+    workspace,
+)
 
 settings = get_settings()
 
@@ -74,6 +89,17 @@ async def hibp_check(payload: HibpCheckRequest) -> dict:
 
 app.include_router(tools.router, prefix="/api")
 app.include_router(paste.router, prefix="/api")
+app.include_router(secrets.router, prefix="/api")
+app.include_router(file_paste.router, prefix="/api")
+app.include_router(collections.router, prefix="/api")
+app.include_router(gists.router, prefix="/api")
+app.include_router(reports.router, prefix="/api")
+app.include_router(api_keys.router, prefix="/api")
+app.include_router(workspace.router, prefix="/api")
+app.include_router(webhooks.router, prefix="/api")
+app.include_router(webhooks.hook_router)
+app.include_router(heartbeats.router, prefix="/api")
+app.include_router(sla.router, prefix="/api")
 app.include_router(status.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 

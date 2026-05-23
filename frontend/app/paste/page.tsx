@@ -95,6 +95,10 @@ function PasteHomeContent() {
   const [burnAfterRead, setBurnAfterRead] = useState(false);
   const [viewLimit, setViewLimit] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [tags, setTags] = useState("");
+  const [collectionId, setCollectionId] = useState("");
+  const [workspaceId, setWorkspaceId] = useState("");
+  const [workspacePassword, setWorkspacePassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState<PasteCreateResult | null>(null);
@@ -153,6 +157,10 @@ function PasteHomeContent() {
         view_limit: limit,
         expires_in: expiresIn,
         is_private: isPrivate,
+        tags: tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        collection_id: collectionId.trim() || null,
+        workspace_id: workspaceId.trim() || null,
+        workspace_password: workspacePassword || undefined,
       });
       setCreated(result);
       saveRecent({
@@ -176,6 +184,10 @@ function PasteHomeContent() {
     setViewLimit("");
     setBurnAfterRead(false);
     setIsPrivate(false);
+    setTags("");
+    setCollectionId("");
+    setWorkspaceId("");
+    setWorkspacePassword("");
     setExpiresIn("never");
     setCreated(null);
     setError("");
@@ -282,6 +294,41 @@ function PasteHomeContent() {
                   placeholder="Optional"
                 />
                 <p className="mt-1 text-xs text-zinc-500">Auto-deletes after X views.</p>
+              </div>
+              <div>
+                <Label>Tags</Label>
+                <Input
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="api, logs, python"
+                />
+                <p className="mt-1 text-xs text-zinc-500">Comma separated, useful for search and collections.</p>
+              </div>
+              <div>
+                <Label>Collection ID</Label>
+                <Input
+                  value={collectionId}
+                  onChange={(e) => setCollectionId(e.target.value)}
+                  maxLength={12}
+                  placeholder="Optional"
+                />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <Label>Workspace</Label>
+                <div className="space-y-2">
+                  <Input
+                    value={workspaceId}
+                    onChange={(e) => setWorkspaceId(e.target.value)}
+                    maxLength={12}
+                    placeholder="Workspace ID"
+                  />
+                  <Input
+                    type="password"
+                    value={workspacePassword}
+                    onChange={(e) => setWorkspacePassword(e.target.value)}
+                    placeholder="Workspace password"
+                  />
+                </div>
               </div>
               <div>
                 <Label>Visibility</Label>

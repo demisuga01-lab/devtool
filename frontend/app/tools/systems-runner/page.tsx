@@ -200,12 +200,12 @@ function SystemsRunnerPageContent() {
           className="mt-6 border-b border-zinc-200 pb-3 dark:border-zinc-800"
         />
 
-        <div className="mt-5 flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[55%]">
+        <div className="mt-5 flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-120px)] lg:min-h-[500px] lg:flex-row">
+          <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:h-full lg:min-h-[500px] lg:basis-[55%]">
             <div className="border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs text-zinc-300">
               {active.label} · {active.compiler} {active.version}
             </div>
-            <div className="flex min-h-[300px] flex-1 overflow-hidden bg-zinc-950 lg:min-h-0">
+            <div className="flex min-h-[300px] flex-1 overflow-hidden bg-zinc-950 lg:min-h-[400px]">
               <div ref={lineRef} className="h-full w-8 min-w-8 overflow-hidden px-2 py-4 text-right font-mono text-xs leading-relaxed text-zinc-600 select-none lg:w-12 lg:min-w-12 lg:text-sm">
                 {Array.from({ length: lines }).map((_, index) => <div key={index}>{index + 1}</div>)}
               </div>
@@ -216,7 +216,7 @@ function SystemsRunnerPageContent() {
                 onKeyDown={insertTab}
                 onScroll={syncLines}
                 spellCheck={false}
-                className="min-h-[300px] min-w-0 flex-1 resize-y overflow-auto bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0 lg:flex-1"
+                className="min-h-[300px] min-w-0 flex-1 resize-y overflow-auto bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-[400px] lg:flex-1"
               />
             </div>
             <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">
@@ -242,7 +242,7 @@ function SystemsRunnerPageContent() {
             </div>
           </section>
 
-          <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[45%]">
+          <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-full lg:min-h-[400px] lg:basis-[45%]">
             <div className="-m-4 mb-4 flex items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${dotClass}`} />
@@ -257,7 +257,7 @@ function SystemsRunnerPageContent() {
             {error && <Banner tone="red">{error}</Banner>}
             {result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0 && <Banner tone="red">Process exited with code {result.exit_code}</Banner>}
             {result?.signal && <Banner tone="orange">Killed by signal {result.signal}</Banner>}
-            <pre className="min-h-[200px] flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
+            <pre className="min-h-[200px] flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
               {hasRun ? (tab === "stdout" ? stdout || (success ? "Program exited with no output." : "") : stderr || "No errors.") : "Run code to see output"}
             </pre>
             {result && <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-500"><Stat label="CPU" value={`${result.cpu_time ?? "-"}ms`} /><Stat label="Wall" value={`${result.wall_time ?? "-"}ms`} /><Stat label="Memory" value={`${result.memory == null ? "-" : Math.round(result.memory / 1000)}KB`} /></div>}

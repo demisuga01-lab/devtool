@@ -70,6 +70,8 @@ export const toolGroups: ToolGroup[] = [
       { name: "BLAKE2 Generator", slug: "blake2-generator", description: "Generate BLAKE2b and BLAKE2s hashes.", href: "/tools/blake2-generator", implemented: true },
       { name: "Hash Verifier", slug: "hash-verifier", description: "Verify file and text hashes against expected values.", href: "/tools/hash-verifier", implemented: true },
       { name: "JWT Verifier", slug: "jwt-verifier", description: "Verify HMAC JWT signatures and claims.", href: "/tools/jwt-verifier", implemented: true },
+      { name: "One-Time Secret", slug: "one-time-secret", description: "Share secrets that self-destruct after reading.", href: "/tools/one-time-secret", implemented: true },
+      { name: "Encrypted File Paste", slug: "encrypted-file-paste", description: "Share encrypted files with self-destruct.", href: "/tools/encrypted-file-paste", implemented: true },
     ],
   },
   {
@@ -153,6 +155,9 @@ export const toolGroups: ToolGroup[] = [
       { name: "Open Graph Preview", slug: "og-preview", description: "Preview how a URL looks when shared on social media.", href: "/tools/og-preview", implemented: true },
       { name: "cURL Builder", slug: "curl-builder", description: "Build cURL commands visually or convert cURL to fetch.", href: "/tools/curl-builder", implemented: true },
       { name: "Request History", slug: "request-history", description: "Browse your recent HTTP tool requests.", href: "/tools/request-history", implemented: true },
+      { name: "Webhook Inbox", slug: "webhook-inbox", description: "Capture and inspect incoming webhooks.", href: "/tools/webhook-inbox", implemented: true },
+      { name: "Webhook Payload Viewer", slug: "webhook-viewer", description: "Parse and inspect HTTP request payloads.", href: "/tools/webhook-viewer", implemented: true },
+      { name: "Heartbeat Monitoring", slug: "heartbeat", description: "Monitor cron jobs and scheduled tasks.", href: "/tools/heartbeat", implemented: true },
     ],
   },
   {

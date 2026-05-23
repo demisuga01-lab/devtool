@@ -299,7 +299,7 @@ function OutputPanel({
   const memoryKb = result?.memory == null ? "-" : Math.round(result.memory / 1000).toString();
 
   return (
-    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-full lg:min-h-[400px] lg:basis-[45%]">
       <div className="-m-4 mb-4 flex flex-wrap gap-2 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         {(["output", "errors"] as const).map((tab) => (
           <button
@@ -331,7 +331,7 @@ function OutputPanel({
           Killed by signal {result.signal}
         </div>
       )}
-      <pre className="min-h-[200px] flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
+      <pre className="min-h-[200px] flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
         {!hasRun
           ? "Select a language and run code to see output."
           : outputTab === "output"
@@ -440,8 +440,8 @@ function OtherRunnerPageContent() {
           className="border-b border-zinc-200 pb-3 dark:border-zinc-800"
         />
 
-        <div className="flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[55%]">
+        <div className="flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-120px)] lg:min-h-[500px] lg:flex-row">
+          <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 lg:h-full lg:min-h-[500px] lg:basis-[55%]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100">{active.icon}<span>{active.label}</span></h2>
               <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs text-zinc-300">
@@ -453,7 +453,7 @@ function OtherRunnerPageContent() {
               onChange={(event) => setCode(event.target.value)}
               onKeyDown={handleCodeKeyDown}
               spellCheck={false}
-              className="min-h-[300px] w-full flex-1 resize-y overflow-auto border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-0"
+              className="min-h-[300px] w-full flex-1 resize-y overflow-auto border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 lg:min-h-[400px]"
             />
 
             <details className="border-t border-zinc-800 bg-zinc-900/80 p-4">

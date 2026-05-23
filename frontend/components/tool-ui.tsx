@@ -221,7 +221,7 @@ export function CodeArea({
   rows?: number;
 }) {
   return (
-    <div className="relative flex h-full min-h-[280px] flex-1 flex-col md:min-h-[320px] lg:min-h-0">
+    <div className="relative flex h-full min-h-[280px] flex-1 flex-col md:min-h-[320px] lg:min-h-[400px]">
       <textarea
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
@@ -231,7 +231,7 @@ export function CodeArea({
         rows={rows}
         spellCheck={false}
         className={joinClasses(
-          "h-full min-h-[280px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed tracking-normal text-zinc-100 outline-none selection:bg-emerald-600/30 placeholder:text-zinc-700 md:min-h-[320px] lg:min-h-0",
+          "h-full min-h-[280px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed tracking-normal text-zinc-100 outline-none selection:bg-emerald-600/30 placeholder:text-zinc-700 md:min-h-[320px] lg:min-h-[400px]",
           className,
         )}
       />
@@ -276,7 +276,7 @@ export function OutputPanel({
   const copyValue = activeTab === "output" ? stdout : stderr;
 
   return (
-    <section className="flex h-full min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-900 md:min-h-[280px] lg:min-h-0">
+    <section className="flex h-full min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-900 md:min-h-[280px] lg:min-h-[400px]">
       <div className="flex items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-900 px-4 py-3">
         <span className="text-sm font-semibold text-zinc-100">Output</span>
         <div className="flex items-center gap-1.5">
@@ -317,7 +317,7 @@ export function OutputPanel({
           <span>Killed by signal {signal}</span>
         </div>
       )}
-      <div className="min-h-[200px] flex-1 overflow-auto p-4 lg:min-h-0">
+      <div className="min-h-[200px] flex-1 overflow-y-auto p-4 lg:min-h-0">
         {!hasRun ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600">
             <span className="rounded-full bg-zinc-800 p-3">
@@ -516,11 +516,11 @@ export function Badge({ children, variant = "default", className = "" }: { child
 
 export function SplitLayout({ left, right, className = "" }: { left: ReactNode; right: ReactNode; className?: string }) {
   return (
-    <div className={joinClasses("mt-5 flex flex-col gap-2 md:gap-4 lg:h-[calc(100vh-14rem)] lg:min-h-[560px] lg:flex-row", className)}>
-      <div className="flex h-[40vh] min-h-[300px] w-full flex-1 flex-col overflow-hidden overscroll-contain rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[55%]">
+    <div className={joinClasses("mt-5 flex flex-col gap-2 md:gap-4 lg:h-[60vh] lg:min-h-[500px] lg:flex-row", className)}>
+      <div className="flex h-[40vh] min-h-[300px] w-full flex-1 flex-col overflow-hidden overscroll-contain rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-full lg:min-h-[500px] lg:basis-[55%]">
         {left}
       </div>
-      <div className="flex h-[40vh] min-h-[250px] w-full flex-1 flex-col overflow-hidden overscroll-contain rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-auto lg:min-h-0 lg:basis-[45%]">
+      <div className="flex h-[40vh] min-h-[250px] w-full flex-1 flex-col overflow-hidden overscroll-contain rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 lg:h-full lg:min-h-[500px] lg:basis-[45%]">
         {right}
       </div>
     </div>

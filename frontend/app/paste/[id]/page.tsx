@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { use, useEffect, useMemo, useState } from "react";
 import hljs from "highlight.js";
-import { AlertTriangle, Clock, ExternalLink, Loader2, Trash2 } from "lucide-react";
-import { Button, CopyButton, ErrorCard, Input, Label } from "@/components/ui";
+import { AlertTriangle, Clock, ExternalLink, Flag, Loader2, Trash2, X } from "lucide-react";
+import { API_BASE } from "@/lib/api";
+import { Button, CopyButton, ErrorCard, Input, Label, Select, Textarea } from "@/components/ui";
 import { deletePaste, getPaste, PasteApiError, PasteResult } from "@/lib/paste-api";
 
 type Props = {
@@ -63,6 +64,10 @@ export default function PasteView({ params }: Props) {
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleted, setDeleted] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("spam");
+  const [reportDetails, setReportDetails] = useState("");
+  const [reportStatus, setReportStatus] = useState("");
 
   const loadPaste = async (opts: { preview?: boolean; password?: string } = {}) => {
     setError("");
@@ -116,6 +121,27 @@ export default function PasteView({ params }: Props) {
       setPaste(null);
     } catch (e) {
       setDeleteError(e instanceof Error ? e.message : "Could not delete paste.");
+    }
+  };
+
+  const submitReport = async () => {
+    setReportStatus("");
+    try {
+      const res = await fetch(`${API_BASE}/reports`, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ content_type: "paste", content_id: id, reason: reportReason, details: reportDetails }),
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const detail = data && typeof data === "object" && "detail" in data ? String((data as { detail: unknown }).detail) : "Could not submit report.";
+        throw new Error(detail);
+      }
+      setReportStatus("Report submitted");
+      setReportDetails("");
+      window.setTimeout(() => setReportOpen(false), 900);
+    } catch (err) {
+      setReportStatus(err instanceof Error ? err.message : "Could not submit report.");
     }
   };
 
@@ -207,6 +233,11 @@ export default function PasteView({ params }: Props) {
               Private
             </span>
           )}
+          {paste.tags.map((tag) => (
+            <span key={tag} className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+              #{tag}
+            </span>
+          ))}
         </div>
         <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100">
           {paste.title || "Untitled paste"}
@@ -231,11 +262,41 @@ export default function PasteView({ params }: Props) {
           <Trash2 className="h-3.5 w-3.5" />
           Delete paste
         </Button>
+        <Button variant="ghost" onClick={() => setReportOpen(true)}>
+          <Flag className="h-3.5 w-3.5" />
+          Report
+        </Button>
       </div>
 
       {deleteError && <div className="mb-4"><ErrorCard>{deleteError}</ErrorCard></div>}
 
       <HighlightedCode code={paste.content} language={paste.language} />
+      {reportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl dark:bg-zinc-900">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Report paste</h2>
+              <button type="button" onClick={() => setReportOpen(false)} className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <Label>Reason</Label>
+            <Select value={reportReason} onChange={(event) => setReportReason(event.target.value)} className="mb-3 w-full">
+              <option value="spam">Spam</option>
+              <option value="illegal">Illegal</option>
+              <option value="malware">Malware</option>
+              <option value="other">Other</option>
+            </Select>
+            <Label>Details</Label>
+            <Textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} rows={4} className="mb-4" />
+            {reportStatus && <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{reportStatus}</p>}
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => setReportOpen(false)}>Cancel</Button>
+              <Button variant="primary" onClick={submitReport}>Submit report</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

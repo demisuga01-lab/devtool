@@ -101,7 +101,7 @@ END MODULE`,
 ];
 
 const editorClass =
-  "min-h-[300px] w-full flex-1 resize-y overflow-auto border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:bg-zinc-950 lg:min-h-0";
+  "min-h-[300px] w-full flex-1 resize-y overflow-auto border-0 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-100 outline-none transition-colors duration-200 focus:bg-zinc-950 lg:min-h-[400px]";
 
 function parseError(data: unknown, fallback: string) {
   if (data && typeof data === "object" && "detail" in data && typeof (data as { detail: unknown }).detail === "string") {
@@ -218,15 +218,15 @@ function JvmRunnerPageContent() {
           </p>
         </header>
 
-        <div className="mt-6 flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-8rem)] lg:min-h-[560px] lg:flex-row">
-          <section className="flex min-h-[300px] flex-1 flex-col lg:min-h-0 lg:basis-[55%]">
+        <div className="mt-6 flex flex-col gap-2 md:gap-5 lg:h-[calc(100vh-120px)] lg:min-h-[500px] lg:flex-row">
+          <section className="flex min-h-[300px] flex-1 flex-col lg:min-h-[500px] lg:basis-[55%]">
             <TabBar
               tabs={languages.map((language, index) => ({ value: String(index), label: language.label, icon: language.icon, badge: index === activeIndex ? language.version : undefined }))}
               active={String(activeIndex)}
               onChange={(value) => setActiveIndex(Number(value))}
               className="border-b border-zinc-200 pb-3 dark:border-zinc-800"
             />
-            <div className="mt-2 flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 md:mt-5 lg:h-auto lg:min-h-0">
+            <div className="mt-2 flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-xl shadow-zinc-950/10 md:mt-5 lg:h-full lg:min-h-[500px]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-xs text-zinc-300">
                 <span>
                   {active.label} · {active.language === "java" ? "jdk" : active.language} {active.version}
@@ -265,7 +265,7 @@ function JvmRunnerPageContent() {
             </div>
           </section>
 
-          <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-auto lg:min-h-0 lg:basis-[45%]">
+          <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-4 shadow-xl shadow-zinc-950/10 lg:h-full lg:min-h-[400px] lg:basis-[45%]">
             <div className="-m-4 mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${running ? "bg-zinc-400 animate-pulse" : successful ? "bg-emerald-500" : failed ? "bg-red-500" : "bg-zinc-400"}`} />
@@ -300,7 +300,7 @@ function JvmRunnerPageContent() {
               </div>
             )}
 
-            {!hasRun && <div className="flex min-h-[200px] flex-1 items-center justify-center rounded-xl border border-dashed border-zinc-800 text-sm text-zinc-600 lg:min-h-0">Run code to see output</div>}
+            {!hasRun && <div className="flex min-h-[200px] flex-1 items-center justify-center overflow-y-auto rounded-xl border border-dashed border-zinc-800 text-sm text-zinc-600 lg:min-h-0">Run code to see output</div>}
 
             {hasRun && (
               <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -337,7 +337,7 @@ function JvmRunnerPageContent() {
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
                       Runtime Output
                     </h3>
-                    <pre className="min-h-[200px] flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
+                    <pre className="min-h-[200px] flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-zinc-800 bg-zinc-950 p-4 font-mono text-sm leading-relaxed text-zinc-200 lg:min-h-0">
                       {stdout || (result?.exit_code === 0 ? <span className="text-zinc-400">Program exited with no output.</span> : "")}
                     </pre>
                   </div>
@@ -346,7 +346,7 @@ function JvmRunnerPageContent() {
                     <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
                       Runtime Errors
                     </h3>
-                    <pre className="min-h-[200px] flex-1 overflow-auto whitespace-pre-wrap rounded-xl border border-red-800 bg-red-950/20 p-4 font-mono text-sm leading-relaxed text-red-300 lg:min-h-0">
+                    <pre className="min-h-[200px] flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-red-800 bg-red-950/20 p-4 font-mono text-sm leading-relaxed text-red-300 lg:min-h-0">
                       {errors || <span className="text-zinc-400">No errors.</span>}
                     </pre>
                   </div>

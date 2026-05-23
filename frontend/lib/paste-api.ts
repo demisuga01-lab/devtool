@@ -11,6 +11,10 @@ export type PasteCreatePayload = {
   view_limit?: number | null;
   expires_in?: ExpiresIn;
   is_private?: boolean;
+  tags?: string[];
+  collection_id?: string | null;
+  workspace_id?: string | null;
+  workspace_password?: string;
 };
 
 export type PasteCreateResult = {
@@ -30,6 +34,9 @@ export type PasteResult = {
   view_count: number;
   view_limit: number | null;
   is_private: boolean;
+  tags: string[];
+  collection_id: string | null;
+  workspace_id: string | null;
 };
 
 export class PasteApiError extends Error {

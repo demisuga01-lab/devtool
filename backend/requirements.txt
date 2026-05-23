@@ -11,3 +11,4 @@ bcrypt
 cryptography
 apscheduler
 python-jose[cryptography]
+redis

@@ -1,8 +1,9 @@
 import datetime
 import secrets
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.dialects.postgresql import ARRAY
 
 
 Base = declarative_base()
@@ -27,3 +28,6 @@ class Paste(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     is_private = Column(Boolean, default=False)
     delete_token = Column(String(64), nullable=True)
+    tags = Column(ARRAY(Text), default=list, nullable=False)
+    collection_id = Column(String(12), ForeignKey("collections.id", ondelete="SET NULL"), nullable=True)
+    workspace_id = Column(String(12), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True)

@@ -829,7 +829,7 @@ function CodeEditor({
   }[tone];
 
   return (
-    <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-950 lg:min-h-0">
+    <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-950 lg:min-h-[400px]">
       <div className="flex items-center border-b border-zinc-700 bg-zinc-800/50 px-4 py-1.5 text-xs font-semibold">
         <span className={labelClass}>{label}</span>
         {readOnly && <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">merged upload</span>}
@@ -869,7 +869,7 @@ function CodeEditor({
         }}
         readOnly={readOnly}
         spellCheck={false}
-        className={`min-h-[200px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 outline-none lg:min-h-0 ${readOnly ? "cursor-default text-zinc-300" : ""}`}
+        className={`min-h-[200px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 outline-none lg:min-h-[400px] ${readOnly ? "cursor-default text-zinc-300" : ""}`}
       />
     </section>
   );
@@ -952,7 +952,7 @@ function WebPreviewPanel({
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[500px] lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm gap-2">
         <div className="flex min-w-0 items-center gap-1">
           {onBack && (
@@ -1025,7 +1025,7 @@ function WebPreviewPanel({
           )}
         </div>
       </div>
-      <div className="relative min-h-[300px] flex-1 overflow-hidden bg-white lg:min-h-0">
+      <div className="relative min-h-[300px] flex-1 overflow-hidden bg-white lg:min-h-[450px]">
         <iframe
           key={previewKey}
           title="Preview"
@@ -1037,7 +1037,7 @@ function WebPreviewPanel({
             transform: `scale(${zoom})`,
             transformOrigin: "top left",
           }}
-          className="block border-0 bg-white"
+          className="block h-full w-full border-0 bg-white"
         />
       </div>
     </section>
@@ -1056,14 +1056,14 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[400px] lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
         <button type="button" onClick={clearConsole} className="min-h-11 min-w-11 rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100 md:min-h-0 md:min-w-0">
           Clear
         </button>
       </div>
-      <div className="min-h-[200px] flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100 lg:min-h-0">
+      <div className="min-h-[200px] flex-1 overflow-y-auto p-4 font-mono text-sm text-zinc-100 lg:min-h-0">
         {consoleLines.length === 0 ? (
           <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>
         ) : (
@@ -1093,12 +1093,12 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[45%]">
+    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[400px] lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
       </div>
-      <div className="min-h-[200px] flex-1 overflow-auto p-4 font-mono text-sm text-zinc-100 lg:min-h-0">
+      <div className="min-h-[200px] flex-1 overflow-y-auto p-4 font-mono text-sm text-zinc-100 lg:min-h-0">
         {!hasRun && <p className="flex h-full items-center justify-center text-zinc-600">Run code to see output</p>}
         {error && <div className="mb-3 rounded-xl border border-red-800 bg-red-950/30 px-3 py-2 text-red-400">{error}</div>}
         {failed && <div className="mb-3 rounded-xl border border-red-800 bg-red-950/30 px-3 py-2 text-red-400">Exited with code {result.exit_code}</div>}
@@ -1627,7 +1627,7 @@ function WebRunnerPageContent() {
   );
 
   const editorPane = (
-    <section className="flex h-auto min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-0 lg:basis-[55%]">
+    <section className="flex h-auto min-h-[300px] flex-1 flex-col overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[500px] lg:basis-[55%]">
       {mode === "combined" && (
         <>
           {combinedUploadZone}
@@ -1830,9 +1830,9 @@ function WebRunnerPageContent() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-8rem)] lg:overflow-hidden">
+      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-120px)] lg:overflow-hidden">
         {layout === "horizontal" && (
-          <div className="flex flex-col gap-2 md:gap-4 lg:h-[calc(100vh-12rem)] lg:min-h-[500px] lg:flex-row">
+          <div className="flex flex-col gap-2 md:gap-4 lg:h-full lg:min-h-[500px] lg:flex-row">
             {editorPane}
             {outputPane}
           </div>
@@ -1840,14 +1840,14 @@ function WebRunnerPageContent() {
 
         {layout === "vertical" && (
           <div className="flex h-auto flex-col gap-2 md:gap-5 lg:h-full">
-            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-0">{editorPane}</div>
-            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-0">{outputPane}</div>
+            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-[400px]">{editorPane}</div>
+            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-[400px]">{outputPane}</div>
           </div>
         )}
 
         {layout === "bottom" && (
           <div className="flex h-auto flex-col gap-2 overflow-auto md:gap-5 lg:h-full">
-            <div className="min-h-[320px]">{editorPane}</div>
+            <div className="min-h-[320px] lg:min-h-[400px]">{editorPane}</div>
             {hasRun && <div className="min-h-[300px] lg:min-h-[500px]">{outputPane}</div>}
           </div>
         )}

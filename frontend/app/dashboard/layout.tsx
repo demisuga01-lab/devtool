@@ -7,19 +7,22 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   Bell,
   ExternalLink,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Plus,
   Settings,
+  ShieldAlert,
   Wrench,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { clearAuth, getUser, isAuthenticated, StatusUser } from "@/lib/auth";
 import { ToastProvider } from "./toast";
 
-type Section = "dashboard" | "monitors" | "incidents" | "maintenance" | "alerts" | "settings";
+type Section = "dashboard" | "monitors" | "incidents" | "maintenance" | "alerts" | "settings" | "reports" | "apiKeys" | "sla";
 
 const sectionTitles: Record<Section, string> = {
   dashboard: "Dashboard",
@@ -28,6 +31,9 @@ const sectionTitles: Record<Section, string> = {
   maintenance: "Maintenance",
   alerts: "Alerts",
   settings: "Settings",
+  reports: "Reports",
+  apiKeys: "API Keys",
+  sla: "SLA Reports",
 };
 
 const navItems = [
@@ -37,6 +43,9 @@ const navItems = [
   { key: "maintenance" as const, label: "Maintenance", icon: Wrench },
   { key: "alerts" as const, label: "Alerts", icon: Bell },
   { key: "settings" as const, label: "Settings", icon: Settings },
+  { key: "reports" as const, label: "Reports", icon: ShieldAlert, href: "/dashboard/reports" },
+  { key: "apiKeys" as const, label: "API Keys", icon: KeyRound, href: "/dashboard/api-keys" },
+  { key: "sla" as const, label: "SLA", icon: BarChart3, href: "/dashboard/sla" },
 ];
 
 function getInitials(user: StatusUser | null) {
@@ -72,9 +81,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<StatusUser | null>(null);
 
   const section = useMemo<Section>(() => {
+    if (pathname.startsWith("/dashboard/reports")) return "reports";
+    if (pathname.startsWith("/dashboard/api-keys")) return "apiKeys";
+    if (pathname.startsWith("/dashboard/sla")) return "sla";
     const value = searchParams.get("section");
     return navItems.some((item) => item.key === value) ? (value as Section) : "dashboard";
-  }, [searchParams]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     if (pathname === "/dashboard/login") {
@@ -122,7 +134,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = section === item.key;
-            const href = item.key === "dashboard" ? "/dashboard" : `/dashboard?section=${item.key}`;
+            const href = "href" in item && item.href ? item.href : item.key === "dashboard" ? "/dashboard" : `/dashboard?section=${item.key}`;
             return (
               <Link
                 key={item.key}

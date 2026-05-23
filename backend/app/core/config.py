@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://devtools:password@localhost/devtools"
     SECRET_KEY: str = "changeme"
     ADMIN_TOKEN: str = "changeme"
+    ADMIN_PASSWORD: str = "changeme"
+    REDIS_URL: str = "redis://localhost:6379/0"
     ALLOWED_ORIGINS: str = "http://localhost:3001"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_DAYS: int = 7
