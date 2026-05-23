@@ -123,8 +123,17 @@ const languages: Language[] = [
 
 function compilerHref(language: Language) {
   const value = language.name.toLowerCase();
-  if (value === "html" || value === "css" || value === "javascript" || value === "typescript") {
-    return `/compilers/web?lang=${value}`;
+  if (value === "html") {
+    return "/compilers/web?mode=html";
+  }
+  if (value === "css") {
+    return "/compilers/web?mode=css";
+  }
+  if (value === "javascript") {
+    return "/compilers/web?mode=javascript";
+  }
+  if (value === "typescript") {
+    return "/compilers/web?mode=typescript";
   }
   return `/compilers/run?lang=${language.id}`;
 }
@@ -132,9 +141,10 @@ function compilerHref(language: Language) {
 export default function CompilersPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const normalizedSearch = search.trim().toLowerCase();
 
   const filtered = languages.filter((lang) => {
-    const matchesSearch = lang.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = lang.name.toLowerCase().includes(normalizedSearch);
     const matchesCategory = category === "all" || lang.categories.includes(category);
     return matchesSearch && matchesCategory;
   });
@@ -146,7 +156,7 @@ export default function CompilersPage() {
           Code online with <span className="text-emerald-600 dark:text-emerald-400">DevTools Compilers</span>
         </h1>
         <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-          60+ languages. Run code instantly in your browser.
+          44 languages. Run code instantly in your browser.
         </p>
         <div className="mx-auto mt-6 max-w-lg">
           <div className="relative">

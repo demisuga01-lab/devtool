@@ -173,6 +173,13 @@ const OUTPUT_TABS: OutputTab[] = ["stdout", "stderr", "info"];
 const iconButtonClass =
   "flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border-0 bg-transparent cursor-pointer";
 
+function editorPlaceholder(language: { language: string; name: string }) {
+  if (language.language === "python") return "# Write Python code here...";
+  if (language.language === "java") return "// Write Java code here...";
+  if (language.language === "c" || language.language === "cpp") return "// Write C code here...";
+  return "// Start coding here...";
+}
+
 export default function RunPage() {
   const [selectedLangId, setSelectedLangId] = useState(71);
   const [code, setCode] = useState(() => STARTER_CODE[71] || "// Start coding here...");
@@ -188,6 +195,12 @@ export default function RunPage() {
   const [runInfo, setRunInfo] = useState<RunInfo | null>(null);
   const [copyDone, setCopyDone] = useState(false);
   const [outputCopyDone, setOutputCopyDone] = useState(false);
+  const [isDark, setIsDark] = useState(() =>
+    typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false,
+  );
+  const [isMac, setIsMac] = useState(() =>
+    typeof navigator !== "undefined" ? navigator.platform.includes("Mac") : false,
+  );
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const lineNumRef = useRef<HTMLDivElement>(null);
@@ -198,6 +211,32 @@ export default function RunPage() {
 
   const selectedLang = LANGUAGES.find((l) => l.id === selectedLangId) || LANGUAGES[0];
   const badge = BADGE_MAP[selectedLangId];
+  const editorBackground = isDark ? "#1e1e1e" : "#ffffff";
+  const editorText = isDark ? "#d4d4d4" : "#1e1e1e";
+  const outputBackground = isDark ? "#161616" : "#f5f5f5";
+  const outputText = isDark ? "#d4d4d4" : "#1e1e1e";
+  const shortcutLabel = isMac ? "⌘↵" : "Ctrl+↵";
+  const placeholderText = editorPlaceholder(selectedLang);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const langId = Number(params.get("lang"));
+    if (LANGUAGES.some((lang) => lang.id === langId)) {
+      setSelectedLangId(langId);
+    }
+  }, []);
+
+  useEffect(() => {
+    const updateTheme = () => setIsDark(document.documentElement.classList.contains("dark"));
+    updateTheme();
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setIsMac(navigator.platform.includes("Mac"));
+  }, []);
 
   useEffect(() => {
     const starter = STARTER_CODE[selectedLangId] || "// Start coding here...";
@@ -417,7 +456,7 @@ export default function RunPage() {
       <div className="flex h-full flex-col items-center justify-center text-center">
         <Play size={24} className="text-muted-foreground/30" />
         <span className="mt-3 text-[14px] text-muted-foreground">Run your code to see output</span>
-        <span className="mt-1 text-[12px] text-muted-foreground/60">Press Ctrl+Enter or click Run</span>
+        <span className="mt-1 text-[12px] text-muted-foreground/60">Press {shortcutLabel} or click Run</span>
       </div>
     );
   };
@@ -431,6 +470,35 @@ export default function RunPage() {
   };
 
   const renderStatusBadge = () => {
+    if (isRunning) {
+      return (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "2px 10px",
+            borderRadius: 999,
+            fontSize: 11,
+            fontWeight: 600,
+            backgroundColor: "rgba(16,185,129,0.12)",
+            border: "1px solid rgba(16,185,129,0.3)",
+            color: "#10b981",
+          }}
+        >
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 999,
+              backgroundColor: "#10b981",
+            }}
+          />
+          Running
+        </div>
+      );
+    }
+
     if (!runInfo) return <div />;
 
     const statusKind = getStatusKind();
@@ -532,7 +600,7 @@ export default function RunPage() {
             margin: 0,
             whiteSpace: "pre-wrap",
             wordBreak: "break-word",
-            color: runInfo.exitCode === 0 ? "#4ec994" : "#d4d4d4",
+            color: outputText,
             fontFamily: "monospace",
             fontSize: 13,
             lineHeight: 1.65,
@@ -650,6 +718,10 @@ export default function RunPage() {
             onClick={handleRun}
             disabled={isRunning}
             className="flex h-[28px] cursor-pointer items-center gap-1.5 rounded-md border-0 bg-emerald-600 px-3 text-[12px] font-semibold text-white transition-colors hover:bg-emerald-700"
+            style={{
+              opacity: isRunning ? 0.7 : 1,
+              cursor: isRunning ? "not-allowed" : "pointer",
+            }}
           >
             {isRunning ? (
               <>
@@ -667,7 +739,7 @@ export default function RunPage() {
             )}
           </button>
 
-          <span className="text-[11px] text-muted-foreground/40">Ctrl+Enter</span>
+          <span className="text-[11px] text-muted-foreground/40">{shortcutLabel}</span>
         </div>
       </div>
 
@@ -740,7 +812,7 @@ export default function RunPage() {
                 lineHeight: "1.65",
                 color: "rgba(128,128,128,0.5)",
                 fontFamily: "monospace",
-                backgroundColor: "rgb(var(--background))",
+                backgroundColor: editorBackground,
                 borderRight: "1px solid rgba(128,128,128,0.1)",
                 userSelect: "none",
               }}
@@ -752,35 +824,52 @@ export default function RunPage() {
               ))}
             </div>
 
-            <textarea
-              ref={editorRef}
-              value={code}
-              onChange={handleCodeChange}
-              onScroll={handleEditorScroll}
-              onKeyDown={handleEditorKeyDown}
-              spellCheck={false}
-              style={{
-                flex: 1,
-                padding: "10px 16px 80px 12px",
-                border: "none",
-                outline: "none",
-                resize: "none",
-                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace",
-                fontSize: 13,
-                lineHeight: 1.65,
-                backgroundColor: "var(--tw-prose-pre-bg, #1e1e1e)",
-                color: "#d4d4d4",
-                width: "100%",
-                height: "100%",
-                tabSize: 2,
-                whiteSpace: "pre",
-                overflowWrap: "normal",
-                overflowX: "auto",
-                overflowY: "auto",
-              }}
-              className="bg-[#1e1e1e] dark:bg-[#1e1e1e]"
-              placeholder="// Start coding here..."
-            />
+            <div style={{ flex: 1, minWidth: 0, position: "relative", display: "flex" }}>
+              {code === "" && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    pointerEvents: "none",
+                    padding: "10px 16px 80px 12px",
+                    fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace",
+                    fontSize: 13,
+                    lineHeight: 1.65,
+                    color: "rgba(128,128,128,0.3)",
+                    whiteSpace: "pre",
+                  }}
+                >
+                  {placeholderText}
+                </div>
+              )}
+              <textarea
+                ref={editorRef}
+                value={code}
+                onChange={handleCodeChange}
+                onScroll={handleEditorScroll}
+                onKeyDown={handleEditorKeyDown}
+                spellCheck={false}
+                style={{
+                  flex: 1,
+                  padding: "10px 16px 80px 12px",
+                  border: "none",
+                  outline: "none",
+                  resize: "none",
+                  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace",
+                  fontSize: 13,
+                  lineHeight: 1.65,
+                  backgroundColor: editorBackground,
+                  color: editorText,
+                  width: "100%",
+                  height: "100%",
+                  tabSize: 2,
+                  whiteSpace: "pre",
+                  overflowWrap: "normal",
+                  overflowX: "auto",
+                  overflowY: "auto",
+                }}
+              />
+            </div>
           </div>
 
           <div style={{ flexShrink: 0 }}>
@@ -819,8 +908,8 @@ export default function RunPage() {
                   resize: "none",
                   fontFamily: "monospace",
                   fontSize: 13,
-                  backgroundColor: "#161616",
-                  color: "#d4d4d4",
+                  backgroundColor: outputBackground,
+                  color: outputText,
                   flexShrink: 0,
                 }}
               />
@@ -907,7 +996,8 @@ export default function RunPage() {
             style={{
               flex: 1,
               overflow: "auto",
-              backgroundColor: "#161616",
+              backgroundColor: outputBackground,
+              color: outputText,
               padding: "14px 16px",
               fontFamily: "monospace",
               fontSize: 13,
