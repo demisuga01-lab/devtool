@@ -26,6 +26,29 @@ function joinClasses(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+const breadcrumbIntentByCategory: Record<string, string> = {
+  "Text & Format": "text",
+  "Inspect & Validate": "inspect",
+  "Convert & Transform": "convert",
+  "Security & Crypto": "security",
+  "Generate & Build": "generate",
+  "Network & Web": "network",
+  "Text & Code": "text",
+  "Crypto & Hash": "security",
+  "XML & Data": "inspect",
+  "Date & Time": "text",
+  "More Formatters": "text",
+  "Web & Network": "network",
+};
+
+function getBreadcrumbHref(crumb: Breadcrumb, index: number, total: number) {
+  if (index === total - 1) return undefined;
+  if (crumb.label === "Tools") return "/tools";
+
+  const intentGroup = breadcrumbIntentByCategory[crumb.label];
+  return intentGroup ? `/tools?intent=${intentGroup}` : "/tools";
+}
+
 function lines(value: string) {
   return value.length ? value.replace(/\r\n/g, "\n").split("\n") : [];
 }
@@ -95,19 +118,26 @@ export function ToolHeader({
 }) {
   return (
     <header className="mb-5">
-      <nav className="mb-4 flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
-        {breadcrumbs.map((crumb, index) => (
-          <span key={`${crumb.label}-${index}`} className="inline-flex items-center gap-1">
-            {index > 0 && <ChevronRight className="h-3 w-3 text-zinc-300 dark:text-zinc-700" />}
-            {crumb.href ? (
-              <Link href={crumb.href} className="transition-colors hover:text-zinc-700 dark:hover:text-zinc-200">
-                {crumb.label}
-              </Link>
-            ) : (
-              <span className="text-zinc-500 dark:text-zinc-400">{crumb.label}</span>
-            )}
-          </span>
-        ))}
+      <nav className="mb-4 flex items-center text-xs">
+        {breadcrumbs.map((crumb, index) => {
+          const href = getBreadcrumbHref(crumb, index, breadcrumbs.length);
+
+          return (
+            <span key={`${crumb.label}-${index}`} className="inline-flex items-center">
+              {index > 0 && <ChevronRight className="mx-1 h-3 w-3 text-muted-foreground/50" />}
+              {href ? (
+                <Link
+                  href={href}
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="font-medium text-foreground">{crumb.label}</span>
+              )}
+            </span>
+          );
+        })}
       </nav>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
