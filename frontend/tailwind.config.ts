@@ -10,6 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        background: "rgb(var(--background) / <alpha-value>)",
+        border: "rgb(var(--border) / <alpha-value>)",
         foreground: "rgb(var(--foreground) / <alpha-value>)",
         "muted-foreground": "rgb(var(--muted-foreground) / <alpha-value>)",
       },

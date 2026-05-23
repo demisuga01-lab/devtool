@@ -670,6 +670,11 @@ function GridView({
             <h2 className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-950 dark:text-zinc-50">{tool.name}</h2>
           </div>
           <p className="mt-2 truncate text-xs text-zinc-500 dark:text-zinc-400">{tool.description}</p>
+          {tool.workspaceToolCount && (
+            <span className="mt-3 inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+              {tool.workspaceToolCount} tools inside
+            </span>
+          )}
           <ToolTypePills tool={tool} />
         </Link>
       ))}
@@ -703,7 +708,9 @@ function ListView({
             <ToolIcon tool={tool} size="sm" />
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-zinc-950 dark:text-zinc-50">{tool.name}</div>
-              <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">{tool.description}</div>
+              <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                {tool.description}{tool.workspaceToolCount ? ` - ${tool.workspaceToolCount} tools inside` : ""}
+              </div>
             </div>
           </Link>
       ))}
@@ -737,6 +744,7 @@ function CompactView({
         >
           <ToolIcon tool={tool} />
           <span className="w-full truncate text-xs font-medium text-zinc-700 dark:text-zinc-200">{tool.name}</span>
+          {tool.workspaceToolCount && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{tool.workspaceToolCount} tools</span>}
         </Link>
       ))}
     </div>

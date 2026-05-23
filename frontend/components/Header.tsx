@@ -111,6 +111,10 @@ export function Header() {
       })),
     [],
   );
+  const workspaceCards = useMemo(
+    () => allTools.filter((tool) => tool.workspaceToolCount).sort((a, b) => a.name.localeCompare(b.name)),
+    [],
+  );
 
   useEffect(() => {
     document.body.style.overflow = mobile ? "hidden" : "";
@@ -254,6 +258,28 @@ export function Header() {
                       </Link>
                     ))}
                   </div>
+                  <p className="mb-2 mt-4 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-500 dark:text-zinc-500">Workspace tools</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {workspaceCards.map((tool) => {
+                      const ToolIcon = tool.icon;
+                      return (
+                        <Link
+                          key={tool.slug}
+                          href={tool.href}
+                          onClick={() => tools.setOpen(false)}
+                          className="rounded-lg border border-zinc-200 p-2.5 transition hover:border-emerald-500/50 hover:bg-zinc-100/70 dark:border-zinc-800 dark:hover:bg-zinc-800/70"
+                        >
+                          <div className="flex items-start gap-2">
+                            <ToolIcon className={`h-5 w-5 ${intentColors[tool.intentGroup]}`} />
+                            <span className="min-w-0">
+                              <span className="block truncate text-xs font-medium text-zinc-900 dark:text-zinc-100">{tool.name}</span>
+                              <span className="mt-0.5 block text-[10px] text-zinc-500 dark:text-zinc-500">{tool.workspaceToolCount} tools inside</span>
+                            </span>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
                   <div className="mt-4 border-t border-zinc-200 pt-3 text-center dark:border-zinc-800">
                     <Link href="/tools" onClick={() => tools.setOpen(false)} className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
                       Browse all {allTools.length} tools →
@@ -369,6 +395,22 @@ export function Header() {
                       </span>
                     </MobilePlainLink>
                   ))}
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2">
+                  {workspaceCards.map((tool) => {
+                    const ToolIcon = tool.icon;
+                    return (
+                      <MobilePlainLink key={tool.slug} href={tool.href} onClick={() => setMobile(false)}>
+                        <span className="flex items-center gap-2">
+                          <ToolIcon className={`h-5 w-5 ${intentColors[tool.intentGroup]}`} />
+                          <span>
+                            <span className="block">{tool.name}</span>
+                            <span className="block text-xs text-neutral-400 dark:text-neutral-500">{tool.workspaceToolCount} tools inside</span>
+                          </span>
+                        </span>
+                      </MobilePlainLink>
+                    );
+                  })}
                 </div>
                 <MobilePlainLink href="/tools" onClick={() => setMobile(false)}>Browse all tools</MobilePlainLink>
               </MobileAccordion>

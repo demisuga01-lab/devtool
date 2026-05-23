@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { diffLines, type Change } from "diff";
 import yaml from "js-yaml";
 import {
@@ -163,70 +163,107 @@ const COMMON_NGINX_DIRECTIVES = new Set([
   "client_max_body_size",
 ]);
 
-export function NewToolPage({ slug }: { slug: NewToolSlug }) {
+const EmbeddedToolContext = createContext(false);
+
+export function NewToolPage({ slug, embedded = false }: { slug: NewToolSlug; embedded?: boolean }) {
+  let content: React.ReactNode;
   switch (slug) {
     case "ulid-generator":
-      return <UlidGenerator />;
+      content = <UlidGenerator />;
+      break;
     case "nanoid-generator":
-      return <NanoidGenerator />;
+      content = <NanoidGenerator />;
+      break;
     case "random-token-generator":
-      return <RandomTokenGenerator />;
+      content = <RandomTokenGenerator />;
+      break;
     case "passphrase-generator":
-      return <PassphraseGenerator />;
+      content = <PassphraseGenerator />;
+      break;
     case "duplicate-line-remover":
-      return <DuplicateLineRemover />;
+      content = <DuplicateLineRemover />;
+      break;
     case "case-converter":
-      return <CaseConverter />;
+      content = <CaseConverter />;
+      break;
     case "regex-replace":
-      return <RegexReplace />;
+      content = <RegexReplace />;
+      break;
     case "regex-escape":
-      return <RegexEscape />;
+      content = <RegexEscape />;
+      break;
     case "timezone-converter":
-      return <TimezoneConverter />;
+      content = <TimezoneConverter />;
+      break;
     case "duration-calculator":
-      return <DurationCalculator />;
+      content = <DurationCalculator />;
+      break;
     case "hex-rgb-hsl-converter":
-      return <ColorConverter />;
+      content = <ColorConverter />;
+      break;
     case "contrast-checker":
-      return <ContrastChecker />;
+      content = <ContrastChecker />;
+      break;
     case "css-clamp-calculator":
-      return <CssClampCalculator />;
+      content = <CssClampCalculator />;
+      break;
     case "unicode-escape":
-      return <UnicodeEscapeTool />;
+      content = <UnicodeEscapeTool />;
+      break;
     case "blake2-generator":
-      return <Blake2Generator />;
+      content = <Blake2Generator />;
+      break;
     case "hash-verifier":
-      return <HashVerifier />;
+      content = <HashVerifier />;
+      break;
     case "jwt-verifier":
-      return <JwtVerifier />;
+      content = <JwtVerifier />;
+      break;
     case "jsonpath-tester":
-      return <JsonPathTester />;
+      content = <JsonPathTester />;
+      break;
     case "json-tree-viewer":
-      return <JsonTreeViewer />;
+      content = <JsonTreeViewer />;
+      break;
     case "yaml-diff":
-      return <YamlDiff />;
+      content = <YamlDiff />;
+      break;
     case "code-diff":
-      return <CodeDiff />;
+      content = <CodeDiff />;
+      break;
     case "recent-pastes":
-      return <RecentPastes />;
+      content = <RecentPastes />;
+      break;
     case "url-query-builder":
-      return <UrlQueryBuilder />;
+      content = <UrlQueryBuilder />;
+      break;
     case "docker-compose-validator":
-      return <DockerComposeValidator />;
+      content = <DockerComposeValidator />;
+      break;
     case "nginx-config-checker":
-      return <NginxConfigChecker />;
+      content = <NginxConfigChecker />;
+      break;
     case "systemd-unit-generator":
-      return <SystemdUnitGenerator />;
+      content = <SystemdUnitGenerator />;
+      break;
     case "toml-formatter":
-      return <TomlFormatter />;
+      content = <TomlFormatter />;
+      break;
     case "toml-validator":
-      return <TomlValidator />;
+      content = <TomlValidator />;
+      break;
     case "toml-to-json":
-      return <TomlToJson />;
+      content = <TomlToJson />;
+      break;
   }
+
+  return <EmbeddedToolContext.Provider value={embedded}>{content}</EmbeddedToolContext.Provider>;
 }
 
 function ToolFrame({ slug, children }: { slug: NewToolSlug; children: React.ReactNode }) {
+  const embedded = useContext(EmbeddedToolContext);
+  if (embedded) return <div className="space-y-5">{children}</div>;
+
   return (
     <ToolShell slug={slug} footer>
       <div className="space-y-5">{children}</div>

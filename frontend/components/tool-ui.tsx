@@ -46,7 +46,7 @@ function getBreadcrumbHref(crumb: Breadcrumb, index: number, total: number) {
   if (crumb.label === "Tools") return "/tools";
 
   const intentGroup = breadcrumbIntentByCategory[crumb.label];
-  return intentGroup ? `/tools?intent=${intentGroup}` : "/tools";
+  return intentGroup ? `/tools?intent=${intentGroup}` : crumb.href ?? "/tools";
 }
 
 function lines(value: string) {
@@ -110,11 +110,13 @@ export function ToolHeader({
   title,
   description,
   actions,
+  icon,
 }: {
   breadcrumbs: Breadcrumb[];
   title: string;
   description: string;
   actions?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <header className="mb-5">
@@ -140,7 +142,13 @@ export function ToolHeader({
         })}
       </nav>
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="flex min-w-0 items-start gap-3">
+          {icon && (
+            <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              {icon}
+            </span>
+          )}
+          <div className="min-w-0">
           <h1 className="text-[1.65rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50">
             {title}
           </h1>
@@ -149,6 +157,7 @@ export function ToolHeader({
               {description}
             </p>
           )}
+          </div>
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
       </div>
