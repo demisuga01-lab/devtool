@@ -7,14 +7,19 @@
   --background: 250 250 250;
   --border: 228 228 231;
   --foreground: 24 24 27;
+  --muted: 244 244 245;
   --muted-foreground: 113 113 122;
+  --card: 255 255 255;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, Monaco, monospace;
 }
 
 .dark {
   --background: 9 9 11;
   --border: 39 39 42;
   --foreground: 244 244 245;
+  --muted: 39 39 42;
   --muted-foreground: 161 161 170;
+  --card: 24 24 27;
 }
 
 html {
@@ -27,7 +32,11 @@ body {
 }
 
 pre, code {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
+}
+
+.font-code {
+  font-family: var(--font-mono);
 }
 
 .scrollbar-thin {

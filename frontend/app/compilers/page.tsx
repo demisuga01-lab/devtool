@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 
 type Language = {
   id: number | string;
@@ -150,23 +150,40 @@ export default function CompilersPage() {
   });
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
-      <section className="border-b border-zinc-200 bg-white px-4 py-12 text-center dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-4xl">
-          Code online with <span className="text-emerald-600 dark:text-emerald-400">DevTools Compilers</span>
+    <main className="min-h-screen bg-background">
+      <section className="border-b border-border bg-gradient-to-b from-background to-muted/30 px-4 py-12 text-center">
+        <nav className="mx-auto mb-8 flex max-w-6xl items-center gap-1.5 text-left text-xs text-muted-foreground">
+          <Link href="/" className="transition-colors hover:text-foreground">
+            Home
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+          <span>Compilers</span>
+        </nav>
+
+        <h1
+          className="mx-auto max-w-3xl leading-tight"
+          style={{
+            fontSize: "2.25rem",
+            fontWeight: 700,
+            background: "linear-gradient(135deg, rgb(var(--foreground)) 0%, #10b981 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          Code Online with DevTools Compilers
         </h1>
-        <p className="mt-3 text-zinc-600 dark:text-zinc-400">
+        <p className="mx-auto mt-2 max-w-2xl text-muted-foreground" style={{ fontSize: "1rem" }}>
           44 languages. Run code instantly in your browser.
         </p>
-        <div className="mx-auto mt-6 max-w-lg">
+        <div className="mx-auto mt-6 max-w-[480px]">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search by language..."
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+              className="h-11 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-emerald-500 focus:shadow-[0_0_0_4px_rgba(16,185,129,0.16)]"
             />
           </div>
         </div>
@@ -187,7 +204,7 @@ export default function CompilersPage() {
             href="/compilers/web?mode=combine"
             className="inline-flex w-full items-center justify-center rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 md:w-auto"
           >
-            Open Web Compiler →
+            Open Web Compiler -&gt;
           </Link>
         </div>
       </section>
@@ -217,15 +234,15 @@ export default function CompilersPage() {
             <Link
               key={lang.id}
               href={compilerHref(lang)}
-              className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 text-center transition hover:border-emerald-400 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-emerald-600"
+              className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-5 text-center transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] dark:border-zinc-800 dark:bg-zinc-900"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-8 [&>svg]:w-8">
+              <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-9 [&>svg]:w-9">
                 {lang.icon}
               </div>
-              <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+              <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 {lang.name}
               </span>
-              <span className="text-xs text-zinc-500 dark:text-zinc-500">
+              <span className="text-[11px] text-muted-foreground">
                 {lang.version}
               </span>
             </Link>

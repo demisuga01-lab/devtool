@@ -29,9 +29,9 @@ const pasteLinks = [
 ];
 
 const compilerLinks = [
-  { name: "All Languages", href: "/compilers", description: "Browse all 60+ supported languages", icon: Grid2x2 },
-  { name: "Web Compiler", href: "/compilers/web?mode=combine", description: "HTML, CSS, JavaScript with live preview", icon: Globe },
-  { name: "Run Code", href: "/compilers/run?lang=71", description: "Write and execute code instantly", icon: Play },
+  { name: "All Languages", href: "/compilers", description: "Browse 44 supported languages", icon: Grid2x2, iconColor: "text-cyan-500" },
+  { name: "Web Compiler", href: "/compilers/web?mode=combine", description: "HTML, CSS, JavaScript with live preview", icon: Globe, iconColor: "text-blue-500" },
+  { name: "Run Code", href: "/compilers/run?lang=71", description: "Write and execute code instantly", icon: Play, iconColor: "text-emerald-500" },
 ];
 
 const navClass =
@@ -89,6 +89,7 @@ function useHoverMenu() {
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const hideCompilerHeader = pathname.startsWith("/compilers/run") || pathname.startsWith("/compilers/web");
   const tools = useHoverMenu();
   const paste = useHoverMenu();
   const compilers = useHoverMenu();
@@ -171,6 +172,10 @@ export function Header() {
     setLauncherQuery(value);
     const query = value.trim();
     router.push(query ? `/tools?q=${encodeURIComponent(query)}` : "/tools");
+  }
+
+  if (hideCompilerHeader) {
+    return null;
   }
 
   return (
@@ -331,12 +336,17 @@ export function Header() {
             {compilers.open && (
               <SmallDropdown menu={compilers} width="w-[280px]">
                 {compilerLinks.map((item) => (
-                  <Link key={item.href} href={item.href} className={menuLinkClass} onClick={() => compilers.setOpen(false)}>
-                    <span className="flex items-start gap-2">
-                      <item.icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block rounded-lg px-2 py-2 transition-colors hover:bg-muted/50"
+                    onClick={() => compilers.setOpen(false)}
+                  >
+                    <span className="flex items-start gap-2.5">
+                      <item.icon className={`mt-0.5 h-3.5 w-3.5 flex-shrink-0 ${item.iconColor}`} />
                       <span className="min-w-0">
-                        <span className="block font-medium">{item.name}</span>
-                        <span className="block text-xs text-zinc-400 dark:text-zinc-600">{item.description}</span>
+                        <span className="block text-[13px] font-medium text-foreground">{item.name}</span>
+                        <span className="block text-[11px] text-muted-foreground">{item.description}</span>
                       </span>
                     </span>
                   </Link>
