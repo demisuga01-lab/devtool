@@ -323,11 +323,11 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className={`hidden md:block ${themeToggleClass}`}><ThemeToggle /></div>
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex">
             <Github className="h-4 w-4" />
             GitHub
           </a>
-          <div className={`hidden md:block ${themeToggleClass}`}><ThemeToggle /></div>
           <button
             type="button"
             onClick={() => setMobile((value) => !value)}

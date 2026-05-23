@@ -16,6 +16,7 @@ type RecentPaste = {
 };
 
 const RECENT_KEY = "devtools-recent-pastes";
+const WORKSPACE_STORAGE_KEY = "devtools-workspace-credentials";
 const LANGUAGES = [
   ["plaintext", "Plain Text"],
   ["javascript", "JavaScript"],
@@ -128,6 +129,19 @@ function PasteHomeContent() {
     if (mode === "expiry") {
       setExpiresIn("24h");
       window.setTimeout(() => document.getElementById("paste-expiry")?.focus(), 0);
+    }
+    const workspace = searchParams.get("workspace");
+    if (workspace) {
+      setWorkspaceId(workspace);
+      try {
+        const saved = localStorage.getItem(WORKSPACE_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { id?: string; password?: string };
+          if (parsed.id === workspace && parsed.password) setWorkspacePassword(parsed.password);
+        }
+      } catch {
+        // ignore invalid saved workspace data
+      }
     }
   }, [searchParams]);
 

@@ -809,6 +809,8 @@ function CodeEditor({
   uploadZone,
   onMaximize,
   onNewTab,
+  compact = false,
+  fillHeight = false,
 }: {
   label: string;
   value: string;
@@ -820,6 +822,8 @@ function CodeEditor({
   uploadZone?: ReactNode;
   onMaximize?: () => void;
   onNewTab?: () => void;
+  compact?: boolean;
+  fillHeight?: boolean;
 }) {
   const labelClass = {
     html: "text-orange-400",
@@ -828,8 +832,19 @@ function CodeEditor({
     ts: "text-sky-400",
   }[tone];
 
+  const sectionHeight = compact
+    ? "min-h-[200px] lg:min-h-[200px]"
+    : fillHeight
+      ? "min-h-[360px] lg:min-h-[calc(100vh-260px)]"
+      : "min-h-[260px] lg:min-h-[400px]";
+  const textareaHeight = compact
+    ? "min-h-[150px] lg:min-h-[150px]"
+    : fillHeight
+      ? "min-h-[320px] lg:min-h-[calc(100vh-320px)]"
+      : "min-h-[220px] lg:min-h-[360px]";
+
   return (
-    <section className="flex min-h-[200px] flex-1 flex-col overflow-hidden bg-zinc-950 lg:min-h-[400px]">
+    <section className={`flex flex-1 flex-col overflow-hidden bg-zinc-950 ${sectionHeight}`}>
       <div className="flex items-center border-b border-zinc-700 bg-zinc-800/50 px-4 py-1.5 text-xs font-semibold">
         <span className={labelClass}>{label}</span>
         {readOnly && <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">merged upload</span>}
@@ -869,7 +884,7 @@ function CodeEditor({
         }}
         readOnly={readOnly}
         spellCheck={false}
-        className={`min-h-[200px] w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 outline-none lg:min-h-[400px] ${readOnly ? "cursor-default text-zinc-300" : ""}`}
+        className={`${textareaHeight} w-full flex-1 resize-none overflow-auto border-0 bg-zinc-950 p-4 font-mono text-[13px] leading-relaxed text-zinc-100 outline-none ${readOnly ? "cursor-default text-zinc-300" : ""}`}
       />
     </section>
   );
@@ -937,6 +952,7 @@ function WebPreviewPanel({
   onRefresh,
   onMaximize,
   onNewTab,
+  fillHeight = false,
 }: {
   doc: string;
   previewKey: number;
@@ -950,9 +966,14 @@ function WebPreviewPanel({
   onRefresh: () => void;
   onMaximize?: () => void;
   onNewTab?: () => void;
+  fillHeight?: boolean;
 }) {
+  const panelHeight = fillHeight
+    ? "h-[60vh] min-h-[420px] lg:h-full lg:min-h-[calc(100vh-160px)] lg:basis-1/2"
+    : "h-[50vh] min-h-[400px] lg:h-full lg:min-h-[400px] lg:basis-1/2";
+
   return (
-    <section className="flex h-[55vh] min-h-[420px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[560px] lg:basis-[45%]">
+    <section className={`flex flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm ${panelHeight}`}>
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm gap-2">
         <div className="flex min-w-0 items-center gap-1">
           {onBack && (
@@ -1025,7 +1046,7 @@ function WebPreviewPanel({
           )}
         </div>
       </div>
-      <div className="relative min-h-[360px] flex-1 overflow-hidden bg-white lg:min-h-[500px]">
+      <div className="relative min-h-[340px] flex-1 overflow-hidden bg-white lg:min-h-0">
         <iframe
           key={previewKey}
           title="Preview"
@@ -1056,7 +1077,7 @@ function ConsolePanel({
   clearConsole: () => void;
 }) {
   return (
-    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[400px] lg:basis-[45%]">
+    <section className="flex h-[50vh] min-h-[400px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[400px] lg:basis-1/2">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5">
         <span className="text-sm font-semibold text-zinc-100">Console</span>
         <button type="button" onClick={clearConsole} className="min-h-11 min-w-11 rounded-full px-2 py-1 text-xs text-zinc-400 transition-colors duration-200 hover:bg-zinc-800 hover:text-zinc-100 md:min-h-0 md:min-w-0">
@@ -1093,7 +1114,7 @@ function TypeScriptOutputPanel({ result, error, hasRun }: { result: RunResult | 
   const failed = result?.exit_code !== null && result?.exit_code !== undefined && result.exit_code !== 0;
 
   return (
-    <section className="flex h-[40vh] min-h-[250px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[400px] lg:basis-[45%]">
+    <section className="flex h-[50vh] min-h-[400px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[400px] lg:basis-1/2">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-4 py-2.5 text-sm">
         <span className="font-semibold text-zinc-100">Output</span>
         {result && <span className="text-xs text-zinc-500">exit {result.exit_code ?? "-"}</span>}
@@ -1597,6 +1618,8 @@ function WebRunnerPageContent() {
       readOnly={htmlFiles.length > 0}
       onMaximize={() => setModalTarget("html")}
       onNewTab={() => openInNewTab(effectiveHtml)}
+      compact={mode === "combined"}
+      fillHeight={mode !== "combined"}
     />
   );
   const cssEditor = (
@@ -1610,6 +1633,8 @@ function WebRunnerPageContent() {
       readOnly={cssFiles.length > 0}
       onMaximize={() => setModalTarget("css")}
       onNewTab={() => openInNewTab(cssDocument(effectiveCss))}
+      compact={mode === "combined"}
+      fillHeight={mode !== "combined"}
     />
   );
   const jsEditor = (
@@ -1623,11 +1648,13 @@ function WebRunnerPageContent() {
       readOnly={jsFiles.length > 0}
       onMaximize={() => setModalTarget("js")}
       onNewTab={() => openInNewTab(jsDocument(effectiveJs))}
+      compact={mode === "combined"}
+      fillHeight={mode !== "combined"}
     />
   );
 
   const editorPane = (
-    <section className={`flex h-auto min-h-[360px] flex-1 flex-col overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:basis-[55%] ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : "lg:min-h-[500px]"}`}>
+    <section className={`flex h-auto min-h-[360px] flex-1 flex-col overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)] lg:basis-1/2" : "lg:min-h-[calc(100vh-260px)] lg:basis-1/2"}`}>
       {mode === "combined" && (
         <>
           {combinedUploadZone}
@@ -1648,6 +1675,7 @@ function WebRunnerPageContent() {
           uploadZone={htmlUploadZone}
           onMaximize={() => setModalTarget("html")}
           onNewTab={() => openInNewTab(htmlFiles.length > 0 ? htmlModeDocument : html)}
+          fillHeight
         />
       )}
       {mode === "css" && (
@@ -1662,6 +1690,7 @@ function WebRunnerPageContent() {
           uploadZone={cssUploadZone}
           onMaximize={() => setModalTarget("css")}
           onNewTab={() => openInNewTab(cssDocument(effectiveCss))}
+          fillHeight
         />
       )}
       {mode === "javascript" && (
@@ -1676,6 +1705,7 @@ function WebRunnerPageContent() {
           uploadZone={jsUploadZone}
           onMaximize={() => setModalTarget("js")}
           onNewTab={() => openInNewTab(jsDocument(effectiveJs))}
+          fillHeight
         />
       )}
       {mode === "typescript" && (
@@ -1688,6 +1718,7 @@ function WebRunnerPageContent() {
             onKeyDown={(event) => handleEditorKeyDown(ts, setTs, event)}
             onMaximize={() => setModalTarget("ts")}
             onNewTab={() => openInNewTab(`<pre>${ts}</pre>`)}
+            fillHeight
           />
           <details className="border-t border-zinc-800 bg-zinc-900 p-4">
             <summary className="cursor-pointer text-sm font-medium text-zinc-300 transition-colors duration-200 hover:text-zinc-100">Standard Input (stdin)</summary>
@@ -1735,6 +1766,7 @@ function WebRunnerPageContent() {
         onRefresh={refreshPreview}
         onMaximize={() => setModalTarget("preview")}
         onNewTab={openPreviewInNewTab}
+        fillHeight={mode === "combined" || mode === "html" || mode === "css"}
       />
     );
 
@@ -1830,17 +1862,17 @@ function WebRunnerPageContent() {
         </div>
       )}
 
-      <div className={`mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-120px)] lg:overflow-hidden ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : ""}`}>
+      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-120px)] lg:min-h-[600px] lg:overflow-hidden">
         {layout === "horizontal" && (
-          <div className={`flex flex-col gap-2 md:gap-4 lg:h-full lg:flex-row ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : "lg:min-h-[560px]"}`}>
+          <div className="flex min-h-[600px] flex-col gap-2 md:gap-4 lg:h-full lg:min-h-[600px] lg:flex-row">
             {editorPane}
             {outputPane}
           </div>
         )}
 
         {layout === "vertical" && (
-          <div className={`flex h-auto flex-col gap-2 md:gap-5 lg:h-full ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : ""}`}>
-            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-[400px]">{editorPane}</div>
+          <div className="flex h-auto min-h-[600px] flex-col gap-2 md:gap-5 lg:h-full lg:min-h-[600px]">
+            <div className="min-h-[360px] overflow-hidden lg:h-1/2 lg:min-h-[400px]">{editorPane}</div>
             <div className="min-h-[420px] overflow-hidden lg:h-1/2 lg:min-h-[500px]">{outputPane}</div>
           </div>
         )}
