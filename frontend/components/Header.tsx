@@ -174,8 +174,8 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 h-16 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="flex h-full w-full items-center justify-between px-2 sm:px-4 lg:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <Image src="/logo.png" alt="DevTools logo" width={48} height={48} className="h-10 w-10 flex-shrink-0 dark:hidden sm:h-11 sm:w-11" priority />
           <Image src="/logo-dark.png" alt="DevTools logo" width={48} height={48} className="hidden h-10 w-10 flex-shrink-0 dark:block dark:brightness-110 sm:h-11 sm:w-11" priority />
           <span className="flex flex-col justify-center leading-tight">
@@ -186,7 +186,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden h-full items-center gap-6 md:flex">
+        <nav className="hidden h-full flex-1 items-center justify-center gap-5 px-4 md:flex lg:gap-6">
           {statusAuthed ? (
             <DropdownRoot menu={status}>
               <button
@@ -221,7 +221,7 @@ export function Header() {
               className={`${navClass} ${tools.open || pathname.startsWith("/tools") ? activeNavClass : inactiveNavClass}`}
               aria-expanded={tools.open}
             >
-              Dev Tools
+              Tools
               <span className="ml-2 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{allTools.length}</span>
               <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${tools.open ? "rotate-180" : ""}`} />
             </button>
@@ -322,12 +322,12 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <div className={`hidden md:block ${themeToggleClass}`}><ThemeToggle /></div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hidden items-center gap-1.5 rounded-xl border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 md:inline-flex">
             <Github className="h-4 w-4" />
             GitHub
           </a>
+          <div className={`hidden md:block ${themeToggleClass}`}><ThemeToggle /></div>
           <button
             type="button"
             onClick={() => setMobile((value) => !value)}
@@ -356,7 +356,7 @@ export function Header() {
                 <MobilePlainLink href="/status" bordered onClick={() => setMobile(false)}>Status</MobilePlainLink>
               )}
 
-              <MobileAccordion title="Dev Tools" open={openMobileGroup === "tools"} onToggle={() => setOpenMobileGroup(openMobileGroup === "tools" ? null : "tools")} badge={`${allTools.length} tools`}>
+              <MobileAccordion title="Tools" open={openMobileGroup === "tools"} onToggle={() => setOpenMobileGroup(openMobileGroup === "tools" ? null : "tools")} badge={`${allTools.length} tools`}>
                 <div className="grid grid-cols-2 gap-2">
                   {intentCards.map((intent) => (
                     <MobilePlainLink key={intent.id} href={`/tools?intent=${intent.id}`} onClick={() => setMobile(false)}>

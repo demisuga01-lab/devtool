@@ -5,14 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, MutableRefObject, ReactNode, SetStateAction } from "react";
 import {
-  ChevronRight,
   Filter,
   LayoutDashboard,
   LayoutGrid,
   List,
   Search,
-  Sparkles,
-  Star,
   X,
 } from "lucide-react";
 import { allTools, intentDefinitions, Tool } from "@/lib/tools";
@@ -20,14 +17,12 @@ import type { IntentGroupId, ToolComplexity, ToolInputType, ToolOutputType } fro
 
 type ViewMode = "grid" | "list" | "compact";
 type SortMode = "popular" | "az" | "new";
-type SpecialFilter = "popular" | "new";
 
 type Filters = {
   intent: IntentGroupId | "all";
   inputTypes: ToolInputType[];
   outputTypes: ToolOutputType[];
   complexity: ToolComplexity[];
-  special: SpecialFilter[];
 };
 
 type RecentTool = {
@@ -61,41 +56,30 @@ const complexityOptions: { value: ToolComplexity; label: string }[] = [
   { value: "advanced", label: "Advanced" },
 ];
 
-const specialOptions: { value: SpecialFilter; label: string; icon: typeof Star }[] = [
-  { value: "popular", label: "Popular tools", icon: Star },
-  { value: "new", label: "Recently added", icon: Sparkles },
-];
-
-const intentStyle: Record<IntentGroupId, { icon: string; bg: string; badge: string }> = {
+const intentStyle: Record<IntentGroupId, { icon: string; bg: string }> = {
   inspect: {
     bg: "bg-blue-500/10 dark:bg-blue-500/15",
     icon: "text-blue-500",
-    badge: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
   },
   convert: {
     bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
     icon: "text-emerald-500",
-    badge: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
   },
   security: {
     bg: "bg-amber-500/10 dark:bg-amber-500/15",
     icon: "text-amber-500",
-    badge: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
   },
   generate: {
     bg: "bg-violet-500/10 dark:bg-violet-500/15",
     icon: "text-violet-500",
-    badge: "bg-violet-500/10 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
   },
   network: {
     bg: "bg-rose-500/10 dark:bg-rose-500/15",
     icon: "text-rose-500",
-    badge: "bg-rose-500/10 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
   },
   text: {
     bg: "bg-cyan-500/10 dark:bg-cyan-500/15",
     icon: "text-cyan-500",
-    badge: "bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-400",
   },
 };
 
@@ -104,7 +88,6 @@ const emptyFilters: Filters = {
   inputTypes: [],
   outputTypes: [],
   complexity: [],
-  special: [],
 };
 
 function parseList<T extends string>(value: string | null, allowed: readonly T[]): T[] {
@@ -140,7 +123,6 @@ function initialState(searchParams: ReturnType<typeof useSearchParams>) {
       inputTypes: parseList<ToolInputType>(searchParams.get("input"), inputOptions.map((item) => item.value)),
       outputTypes: parseList<ToolOutputType>(searchParams.get("output"), outputOptions.map((item) => item.value)),
       complexity: parseList<ToolComplexity>(searchParams.get("complexity"), complexityOptions.map((item) => item.value)),
-      special: parseList<SpecialFilter>(searchParams.get("special"), specialOptions.map((item) => item.value)),
     } satisfies Filters,
     sort: (["popular", "az", "new"].includes(searchParams.get("sort") || "") ? searchParams.get("sort") : "popular") as SortMode,
     view: (["grid", "list", "compact"].includes(searchParams.get("view") || "") ? searchParams.get("view") : "grid") as ViewMode,
@@ -152,8 +134,7 @@ function hasActiveFilters(filters: Filters) {
     filters.intent !== "all" ||
     filters.inputTypes.length > 0 ||
     filters.outputTypes.length > 0 ||
-    filters.complexity.length > 0 ||
-    filters.special.length > 0
+    filters.complexity.length > 0
   );
 }
 
@@ -162,8 +143,6 @@ function passesToolFilters(tool: Tool, filters: Filters) {
   if (!filters.inputTypes.every((type) => tool.inputType.includes(type))) return false;
   if (!filters.outputTypes.every((type) => tool.outputType.includes(type))) return false;
   if (filters.complexity.length > 0 && !filters.complexity.includes(tool.complexity)) return false;
-  if (filters.special.includes("popular") && !tool.isPopular) return false;
-  if (filters.special.includes("new") && !tool.isNew) return false;
   return true;
 }
 
@@ -222,7 +201,6 @@ function ToolsDiscoveryPage() {
     if (filters.inputTypes.length) params.set("input", filters.inputTypes.join(","));
     if (filters.outputTypes.length) params.set("output", filters.outputTypes.join(","));
     if (filters.complexity.length) params.set("complexity", filters.complexity.join(","));
-    if (filters.special.length) params.set("special", filters.special.join(","));
     if (sort !== "popular") params.set("sort", sort);
     if (view !== "grid") params.set("view", view);
     const query = params.toString();
@@ -315,8 +293,7 @@ function ToolsDiscoveryPage() {
     (filters.intent !== "all" ? 1 : 0) +
     filters.inputTypes.length +
     filters.outputTypes.length +
-    filters.complexity.length +
-    filters.special.length;
+    filters.complexity.length;
 
   function clearFilters() {
     setFilters(emptyFilters);
@@ -328,13 +305,12 @@ function ToolsDiscoveryPage() {
     return allTools.filter((tool) => passesToolFilters(tool, merged)).length;
   }
 
-  function removePill(kind: "intent" | "input" | "output" | "complexity" | "special", value?: string) {
+  function removePill(kind: "intent" | "input" | "output" | "complexity", value?: string) {
     setFilters((current) => {
       if (kind === "intent") return { ...current, intent: "all" };
       if (kind === "input") return { ...current, inputTypes: current.inputTypes.filter((item) => item !== value) };
       if (kind === "output") return { ...current, outputTypes: current.outputTypes.filter((item) => item !== value) };
-      if (kind === "complexity") return { ...current, complexity: current.complexity.filter((item) => item !== value) };
-      return { ...current, special: current.special.filter((item) => item !== value) };
+      return { ...current, complexity: current.complexity.filter((item) => item !== value) };
     });
   }
 
@@ -492,7 +468,7 @@ function ActiveFilterPills({
   clearFilters,
 }: {
   filters: Filters;
-  removePill: (kind: "intent" | "input" | "output" | "complexity" | "special", value?: string) => void;
+  removePill: (kind: "intent" | "input" | "output" | "complexity", value?: string) => void;
   clearFilters: () => void;
 }) {
   if (!hasActiveFilters(filters)) return null;
@@ -503,7 +479,6 @@ function ActiveFilterPills({
       {filters.inputTypes.map((item) => <FilterPill key={`input-${item}`} label={`Input: ${pillLabel(item)}`} onRemove={() => removePill("input", item)} />)}
       {filters.outputTypes.map((item) => <FilterPill key={`output-${item}`} label={`Output: ${pillLabel(item)}`} onRemove={() => removePill("output", item)} />)}
       {filters.complexity.map((item) => <FilterPill key={`complexity-${item}`} label={`Complexity: ${pillLabel(item)}`} onRemove={() => removePill("complexity", item)} />)}
-      {filters.special.map((item) => <FilterPill key={`special-${item}`} label={item === "popular" ? "Popular" : "Recently added"} onRemove={() => removePill("special", item)} />)}
       <button type="button" onClick={clearFilters} className="text-sm font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400">
         Clear all
       </button>
@@ -615,22 +590,6 @@ function FilterContent({
         ))}
       </FilterSection>
 
-      <FilterSection title="SPECIAL">
-        {specialOptions.map((item) => {
-          const Icon = item.icon;
-          return (
-            <CheckboxOption
-              key={item.value}
-              label={item.label}
-              count={countWith({ special: [...new Set([...filters.special, item.value])] })}
-              checked={filters.special.includes(item.value)}
-              onChange={() => setFilters((current) => ({ ...current, special: toggleValue(current.special, item.value) }))}
-              icon={<Icon className="h-3 w-3" />}
-            />
-          );
-        })}
-      </FilterSection>
-
       {activeFilterCount > 0 && (
         <button
           type="button"
@@ -663,11 +622,10 @@ function RadioOption({ label, count, checked, onChange }: { label: string; count
   );
 }
 
-function CheckboxOption({ label, count, checked, onChange, icon }: { label: string; count: number; checked: boolean; onChange: () => void; icon?: ReactNode }) {
+function CheckboxOption({ label, count, checked, onChange }: { label: string; count: number; checked: boolean; onChange: () => void }) {
   return (
     <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
       <input type="checkbox" checked={checked} onChange={onChange} className="h-4 w-4 rounded accent-emerald-500" />
-      {icon}
       <span className={`min-w-0 flex-1 truncate ${checked ? "font-semibold text-zinc-950 dark:text-zinc-50" : ""}`}>{label}</span>
       <span className="text-xs text-zinc-400">({count})</span>
     </label>
@@ -710,10 +668,6 @@ function GridView({
           <div className="flex items-start gap-3">
             <ToolIcon tool={tool} />
             <h2 className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-950 dark:text-zinc-50">{tool.name}</h2>
-            <div className="flex shrink-0 items-center gap-1">
-              {tool.isNew && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">New</span>}
-              {tool.isPopular && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />}
-            </div>
           </div>
           <p className="mt-2 truncate text-xs text-zinc-500 dark:text-zinc-400">{tool.description}</p>
           <ToolTypePills tool={tool} />
@@ -736,9 +690,7 @@ function ListView({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      {tools.map((tool, index) => {
-        const intent = intentDefinitions.find((item) => item.id === tool.intentGroup);
-        return (
+      {tools.map((tool, index) => (
           <Link
             key={tool.slug}
             ref={(node) => {
@@ -753,14 +705,8 @@ function ListView({
               <div className="truncate text-sm font-medium text-zinc-950 dark:text-zinc-50">{tool.name}</div>
               <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">{tool.description}</div>
             </div>
-            <span className={`hidden rounded-full px-2 py-0.5 text-xs font-medium md:inline ${intentStyle[tool.intentGroup].badge}`}>{intent?.shortLabel}</span>
-            <div className="hidden max-w-64 shrink-0 overflow-hidden lg:block">
-              <ToolTypePills tool={tool} compact />
-            </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-zinc-400" />
           </Link>
-        );
-      })}
+      ))}
     </div>
   );
 }

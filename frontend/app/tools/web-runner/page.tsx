@@ -952,7 +952,7 @@ function WebPreviewPanel({
   onNewTab?: () => void;
 }) {
   return (
-    <section className="flex h-[40vh] min-h-[300px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[500px] lg:basis-[45%]">
+    <section className="flex h-[55vh] min-h-[420px] flex-1 flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[560px] lg:basis-[45%]">
       <div className="flex items-center justify-between border-b border-zinc-700 bg-zinc-800/50 px-3 py-2 text-sm gap-2">
         <div className="flex min-w-0 items-center gap-1">
           {onBack && (
@@ -1025,7 +1025,7 @@ function WebPreviewPanel({
           )}
         </div>
       </div>
-      <div className="relative min-h-[300px] flex-1 overflow-hidden bg-white lg:min-h-[450px]">
+      <div className="relative min-h-[360px] flex-1 overflow-hidden bg-white lg:min-h-[500px]">
         <iframe
           key={previewKey}
           title="Preview"
@@ -1627,7 +1627,7 @@ function WebRunnerPageContent() {
   );
 
   const editorPane = (
-    <section className="flex h-auto min-h-[300px] flex-1 flex-col overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:min-h-[500px] lg:basis-[55%]">
+    <section className={`flex h-auto min-h-[360px] flex-1 flex-col overflow-auto rounded-2xl border border-zinc-800 bg-zinc-900 shadow-sm lg:h-full lg:basis-[55%] ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : "lg:min-h-[500px]"}`}>
       {mode === "combined" && (
         <>
           {combinedUploadZone}
@@ -1830,25 +1830,25 @@ function WebRunnerPageContent() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-120px)] lg:overflow-hidden">
+      <div className={`mx-auto w-full max-w-7xl flex-1 overflow-auto px-3 py-2 sm:px-6 sm:py-3 lg:h-[calc(100vh-120px)] lg:overflow-hidden ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : ""}`}>
         {layout === "horizontal" && (
-          <div className="flex flex-col gap-2 md:gap-4 lg:h-full lg:min-h-[500px] lg:flex-row">
+          <div className={`flex flex-col gap-2 md:gap-4 lg:h-full lg:flex-row ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : "lg:min-h-[560px]"}`}>
             {editorPane}
             {outputPane}
           </div>
         )}
 
         {layout === "vertical" && (
-          <div className="flex h-auto flex-col gap-2 md:gap-5 lg:h-full">
+          <div className={`flex h-auto flex-col gap-2 md:gap-5 lg:h-full ${mode === "combined" ? "lg:min-h-[calc(100vh-160px)]" : ""}`}>
             <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-[400px]">{editorPane}</div>
-            <div className="min-h-[300px] overflow-hidden lg:h-1/2 lg:min-h-[400px]">{outputPane}</div>
+            <div className="min-h-[420px] overflow-hidden lg:h-1/2 lg:min-h-[500px]">{outputPane}</div>
           </div>
         )}
 
         {layout === "bottom" && (
           <div className="flex h-auto flex-col gap-2 overflow-auto md:gap-5 lg:h-full">
             <div className="min-h-[320px] lg:min-h-[400px]">{editorPane}</div>
-            {hasRun && <div className="min-h-[300px] lg:min-h-[500px]">{outputPane}</div>}
+            {hasRun && <div className="min-h-[420px] lg:min-h-[560px]">{outputPane}</div>}
           </div>
         )}
       </div>
