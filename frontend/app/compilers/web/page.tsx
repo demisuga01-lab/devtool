@@ -190,6 +190,90 @@ const SINGLE_NAMES: Record<Exclude<Mode, "combined">, string> = {
   typescript: "main.ts",
 };
 
+const MAX_PANEL_FILES = 20;
+const MAX_UPLOAD_FILE_SIZE = 500 * 1024;
+
+const CONSOLE_CAPTURE_SCRIPT = `(function() {
+  const orig = {
+    log: console.log,
+    error: console.error,
+    warn: console.warn
+  };
+  ['log', 'error', 'warn'].forEach(function(method) {
+    console[method] = function() {
+      orig[method].apply(console, arguments);
+      const args = Array.from(arguments).map(function(a) {
+        try {
+          return typeof a === 'object' ? JSON.stringify(a) : String(a);
+        } catch (e) {
+          return String(a);
+        }
+      });
+      window.parent.postMessage({
+        type: 'devtools-console',
+        method: method,
+        text: args.join(' ')
+      }, '*');
+    };
+  });
+  window.addEventListener('error', function(e) {
+    window.parent.postMessage({
+      type: 'devtools-console',
+      method: 'error',
+      text: e.message + ' (line ' + e.lineno + ')'
+    }, '*');
+  });
+})();`;
+
+const escapeTagContent = (content: string, tag: "script" | "style") =>
+  content.replace(new RegExp(`</${tag}`, "gi"), `<\\/${tag}`);
+
+const injectIntoTag = (html: string, tag: "head" | "body", snippet: string) => {
+  const closePattern = new RegExp(`</${tag}>`, "i");
+  if (closePattern.test(html)) {
+    return html.replace(closePattern, `${snippet}</${tag}>`);
+  }
+
+  const openPattern = new RegExp(`<${tag}[^>]*>`, "i");
+  if (openPattern.test(html)) {
+    return html.replace(openPattern, (match) => `${match}${snippet}`);
+  }
+
+  if (tag === "head") {
+    const bodyPattern = /<body[^>]*>/i;
+    if (bodyPattern.test(html)) {
+      return html.replace(bodyPattern, (match) => `${snippet}${match}`);
+    }
+  }
+
+  if (tag === "body") {
+    const htmlPattern = /<\/html>/i;
+    if (htmlPattern.test(html)) {
+      return html.replace(htmlPattern, `${snippet}</html>`);
+    }
+  }
+
+  return html;
+};
+
+const buildCombinedPreviewDoc = (htmlFiles: FileEntry[], cssFiles: FileEntry[], jsFiles: FileEntry[]) => {
+  const combinedHtml = htmlFiles.map((file) => file.content).join("\n");
+  const combinedCss = cssFiles.map((file) => file.content).join("\n");
+  const combinedJs = jsFiles.map((file) => file.content).join("\n");
+  const styleBlock = `<style>${escapeTagContent(combinedCss, "style")}</style>`;
+  const consoleBlock = `<script>${CONSOLE_CAPTURE_SCRIPT}</script>`;
+  const scriptBlock = `<script>${escapeTagContent(combinedJs, "script")}</script>`;
+
+  if (/<\!doctype/i.test(combinedHtml)) {
+    let doc = combinedHtml;
+    doc = injectIntoTag(doc, "head", styleBlock);
+    doc = injectIntoTag(doc, "body", `${consoleBlock}${scriptBlock}`);
+    return doc;
+  }
+
+  return `<!DOCTYPE html><html><head>${styleBlock}</head><body>${combinedHtml}${consoleBlock}${scriptBlock}</body></html>`;
+};
+
 export default function WebCompilerPage() {
   const [mode, setMode] = useState<Mode>("combined");
 
@@ -206,6 +290,7 @@ export default function WebCompilerPage() {
   const [responsive, setResponsive] = useState<"mobile" | "tablet" | "desktop">("desktop");
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+  const [previewReloadKey, setPreviewReloadKey] = useState(0);
 
   const [singleFiles, setSingleFiles] = useState<FileEntry[]>([{ name: "index.html", content: HTML_STARTER }]);
   const [activeSingle, setActiveSingle] = useState(0);
@@ -216,6 +301,7 @@ export default function WebCompilerPage() {
   const splitDragStartY = useRef(0);
   const splitDragStartPos = useRef(58);
   const splitContainerRef = useRef<HTMLDivElement>(null);
+  const previewSrcRef = useRef("");
 
   const uploadHtmlRef = useRef<HTMLInputElement>(null);
   const uploadCssRef = useRef<HTMLInputElement>(null);
@@ -257,6 +343,40 @@ export default function WebCompilerPage() {
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDraggingSplit]);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const data = event.data as { type?: string; method?: ConsoleEntry["method"]; text?: string } | null;
+      if (!data || data.type !== "devtools-console") return;
+      if (data.method !== "log" && data.method !== "error" && data.method !== "warn") return;
+      if (typeof data.text !== "string") return;
+      const { method, text } = data;
+      setConsoleEntries((prev) => [...prev, { method, text }]);
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
+  const runCombinedPreview = React.useCallback(() => {
+    const finalDoc = buildCombinedPreviewDoc(htmlFiles, cssFiles, jsFiles);
+    previewSrcRef.current = finalDoc;
+    setConsoleEntries([]);
+    setPreviewSrc(finalDoc);
+    setPreviewReloadKey((value) => value + 1);
+  }, [htmlFiles, cssFiles, jsFiles]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (mode !== "combined") return;
+      if (event.key !== "Enter" || !(event.ctrlKey || event.metaKey)) return;
+      event.preventDefault();
+      runCombinedPreview();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mode, runCombinedPreview]);
 
   const IconBtn = ({
     onClick,
@@ -423,27 +543,66 @@ export default function WebCompilerPage() {
       reader.readAsText(file);
     });
 
-  const uploadToPanel = async (panel: "html" | "css" | "js", file: File | null) => {
-    if (!file) return;
-    const content = await readFile(file);
+  const uploadToPanel = async (panel: "html" | "css" | "js", files: FileList | null) => {
+    const selectedFiles = Array.from(files ?? []);
+    if (selectedFiles.length === 0) return;
+
+    const acceptedFiles: FileEntry[] = [];
+    let skippedLarge = 0;
+
+    for (const file of selectedFiles) {
+      if (file.size > MAX_UPLOAD_FILE_SIZE) {
+        skippedLarge += 1;
+        continue;
+      }
+
+      try {
+        const content = await readFile(file);
+        acceptedFiles.push({ name: file.name, content });
+      } catch {
+        continue;
+      }
+    }
+
+    const panelCount =
+      panel === "html" ? htmlFiles.length : panel === "css" ? cssFiles.length : jsFiles.length;
+    const remainingSlots = MAX_PANEL_FILES - panelCount;
+    const skippedCount = Math.max(0, acceptedFiles.length - Math.max(0, remainingSlots));
+
     if (panel === "html") {
       setHtmlFiles((prev) => {
-        const next = [...prev];
-        next[activeHtml] = { name: file.name, content };
+        const remaining = MAX_PANEL_FILES - prev.length;
+        if (remaining <= 0) return prev;
+        const additions = acceptedFiles.slice(0, remaining);
+        if (additions.length === 0) return prev;
+        const next = [...prev, ...additions];
+        setActiveHtml(prev.length);
         return next;
       });
     } else if (panel === "css") {
       setCssFiles((prev) => {
-        const next = [...prev];
-        next[activeCss] = { name: file.name, content };
+        const remaining = MAX_PANEL_FILES - prev.length;
+        if (remaining <= 0) return prev;
+        const additions = acceptedFiles.slice(0, remaining);
+        if (additions.length === 0) return prev;
+        const next = [...prev, ...additions];
+        setActiveCss(prev.length);
         return next;
       });
     } else {
       setJsFiles((prev) => {
-        const next = [...prev];
-        next[activeJs] = { name: file.name, content };
+        const remaining = MAX_PANEL_FILES - prev.length;
+        if (remaining <= 0) return prev;
+        const additions = acceptedFiles.slice(0, remaining);
+        if (additions.length === 0) return prev;
+        const next = [...prev, ...additions];
+        setActiveJs(prev.length);
         return next;
       });
+    }
+
+    if (skippedLarge > 0 || skippedCount > 0) {
+      window.alert("Some files were skipped. Each panel supports up to 20 files, and files larger than 500KB are ignored.");
     }
   };
 
@@ -505,7 +664,7 @@ export default function WebCompilerPage() {
     });
   };
 
-  const combinedPreviewDoc = previewSrc || PREVIEW_PLACEHOLDER;
+  const combinedPreviewDoc = previewSrc || previewSrcRef.current || PREVIEW_PLACEHOLDER;
   const singlePreviewDoc = singleOutput || PREVIEW_PLACEHOLDER;
   const errorCount = consoleEntries.filter((entry) => entry.method === "error").length;
 
@@ -615,9 +774,10 @@ export default function WebCompilerPage() {
               ref={data.uploadRef}
               type="file"
               accept={data.accept}
+              multiple
               style={{ display: "none" }}
               onChange={async (e) => {
-                await uploadToPanel(panel, e.target.files?.[0] || null);
+                await uploadToPanel(panel, e.target.files);
                 e.target.value = "";
               }}
             />
@@ -725,6 +885,7 @@ export default function WebCompilerPage() {
 
           <button
             type="button"
+            onClick={runCombinedPreview}
             style={{
               display: "flex",
               alignItems: "center",
@@ -784,17 +945,29 @@ export default function WebCompilerPage() {
 
             <div style={{ width: 1, height: 16, backgroundColor: "var(--border)" }} />
 
-            <IconBtn title="Refresh" onClick={() => setPreviewSrc((prev) => prev || "")}>
+            <IconBtn
+              title="Refresh"
+              onClick={() => {
+                const doc = previewSrcRef.current || previewSrc;
+                if (!doc) return;
+                previewSrcRef.current = doc;
+                setPreviewSrc("");
+                window.setTimeout(() => {
+                  setPreviewSrc(doc);
+                  setPreviewReloadKey((value) => value + 1);
+                }, 0);
+              }}
+            >
               <RefreshCw size={14} />
             </IconBtn>
             <IconBtn
               title="Open in new tab"
               onClick={() => {
-                const doc = previewSrc || PREVIEW_PLACEHOLDER;
+                const doc = previewSrcRef.current || previewSrc || PREVIEW_PLACEHOLDER;
                 const blob = new Blob([doc], { type: "text/html" });
                 const url = URL.createObjectURL(blob);
                 window.open(url, "_blank", "noopener");
-                setTimeout(() => URL.revokeObjectURL(url), 30000);
+                window.setTimeout(() => URL.revokeObjectURL(url), 5000);
               }}
             >
               <ExternalLink size={14} />
@@ -823,6 +996,7 @@ export default function WebCompilerPage() {
             }}
           >
             <iframe
+              key={previewReloadKey}
               srcDoc={combinedPreviewDoc}
               title="preview"
               sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
@@ -1328,6 +1502,7 @@ export default function WebCompilerPage() {
           <iframe
             title="preview-fullscreen"
             sandbox="allow-scripts allow-same-origin allow-forms allow-modals"
+            key={mode === "combined" ? previewReloadKey : "fullscreen-preview"}
             srcDoc={mode === "combined" ? combinedPreviewDoc : singlePreviewDoc}
             style={{ width: "100vw", height: "100vh", border: "none" }}
           />
