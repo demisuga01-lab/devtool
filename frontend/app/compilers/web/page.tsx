@@ -492,6 +492,10 @@ export default function WebCompilerPage() {
   };
 
   useEffect(() => {
+    document.title = "Web Compiler — DevTools";
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const m = params.get("mode");
     if (m === "combine") {

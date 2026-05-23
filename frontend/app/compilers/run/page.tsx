@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
   Check,
@@ -182,6 +182,7 @@ function editorPlaceholder(language: { language: string; name: string }) {
 }
 
 export default function RunPage() {
+  const [fatalError, setFatalError] = useState<string | null>(null);
   const [selectedLangId, setSelectedLangId] = useState(71);
   const [code, setCode] = useState(() => STARTER_CODE[71] || "// Start coding here...");
   const [stdin, setStdin] = useState("");
@@ -223,6 +224,14 @@ export default function RunPage() {
   const placeholderText = editorPlaceholder(selectedLang);
   const isNarrowLayout = viewportWidth <= 768;
   const isMobileLayout = viewportWidth <= 480;
+  const groupedLanguages = useMemo(() => {
+    const groups: Record<string, typeof LANGUAGES[number][]> = {};
+    LANGUAGES.forEach((language) => {
+      if (!groups[language.category]) groups[language.category] = [];
+      groups[language.category].push(language);
+    });
+    return groups;
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -231,6 +240,10 @@ export default function RunPage() {
       setSelectedLangId(langId);
     }
   }, []);
+
+  useEffect(() => {
+    document.title = `${selectedLang.name} — Compilers`;
+  }, [selectedLang.name]);
 
   useEffect(() => {
     const updateTheme = () => setIsDark(document.documentElement.classList.contains("dark"));
@@ -688,7 +701,31 @@ export default function RunPage() {
     );
   };
 
-  return (
+  const renderFatalError = (message = fatalError) => (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-background p-4 text-foreground">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 text-red-500">
+          <AlertCircle size={22} />
+        </div>
+        <h1 className="text-lg font-semibold">Something went wrong</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {message || "The compiler page hit an unexpected error."}
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-5 inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+        >
+          Reload page
+        </button>
+      </div>
+    </div>
+  );
+
+  if (fatalError) return renderFatalError();
+
+  try {
+    return (
     <div
       style={{
         height: "100vh",
@@ -753,7 +790,7 @@ export default function RunPage() {
             className="h-[28px] w-[220px] max-w-[48vw] cursor-pointer rounded-md border border-border bg-background px-2 text-[12px] font-medium text-foreground focus:border-emerald-500 focus:outline-none"
           >
             {CATEGORIES.map((cat) => {
-              const langs = LANGUAGES.filter((l) => l.category === cat);
+              const langs = groupedLanguages[cat] || [];
               if (!langs.length) return null;
               return (
                 <optgroup key={cat} label={cat.charAt(0).toUpperCase() + cat.slice(1)}>
@@ -1078,4 +1115,9 @@ export default function RunPage() {
 
     </div>
   );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unexpected compiler error.";
+    setFatalError(message);
+    return renderFatalError(message);
+  }
 }
