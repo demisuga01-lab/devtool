@@ -158,6 +158,47 @@ const STARTER_CODE: Record<number, string> = {
   45: "section .data\n    msg db 'Hello, World!', 0xa\n    len equ $ - msg\nsection .text\n    global _start\n_start:\n    mov eax, 4\n    mov ebx, 1\n    mov ecx, msg\n    mov edx, len\n    int 0x80\n    mov eax, 1\n    xor ebx, ebx\n    int 0x80",
 };
 
+const LANGUAGE_ICONS: Record<number, string> = {
+  71: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
+  70: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
+  62: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg",
+  50: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  49: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  48: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  75: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  54: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  53: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  52: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  76: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  51: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/csharp/csharp-original.svg",
+  73: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-plain.svg",
+  60: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg",
+  78: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg",
+  68: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg",
+  72: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ruby/ruby-original.svg",
+  83: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swift/swift-original.svg",
+  63: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg",
+  74: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg",
+  46: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bash/bash-original.svg",
+  85: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/perl/perl-original.svg",
+  64: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/lua/lua-original.svg",
+  80: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/r/r-original.svg",
+  82: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/sqlite/sqlite-original.svg",
+  81: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/scala/scala-original.svg",
+  86: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/clojure/clojure-original.svg",
+  88: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/groovy/groovy-original.svg",
+  87: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fsharp/fsharp-original.svg",
+  61: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/haskell/haskell-original.svg",
+  57: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/elixir/elixir-original.svg",
+  58: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/erlang/erlang-original.svg",
+  65: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ocaml/ocaml-original.svg",
+  56: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/d/d-original.svg",
+  67: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pascal/pascal-original.svg",
+  79: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/objectivec/objectivec-plain.svg",
+  84: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dot-net/dot-net-original.svg",
+  47: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dot-net/dot-net-plain.svg",
+};
+
 type OutputTab = "stdout" | "stderr" | "info";
 type RunInfo = {
   cpuTime: number;
@@ -173,6 +214,98 @@ const OUTPUT_TABS: OutputTab[] = ["stdout", "stderr", "info"];
 const iconButtonClass =
   "flex items-center justify-center w-7 h-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border-0 bg-transparent cursor-pointer";
 
+type LanguageIconVariant = "toolbar" | "dropdown" | "card";
+
+function LanguageIconBadge({
+  id,
+  name,
+  variant,
+  dark = false,
+}: {
+  id: number;
+  name: string;
+  variant: LanguageIconVariant;
+  dark?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const badge = BADGE_MAP[id];
+  const iconUrl = LANGUAGE_ICONS[id];
+  const config =
+    variant === "card"
+      ? {
+          size: 56,
+          iconSize: 40,
+          radius: 14,
+          fallbackSize: 11,
+          background: dark ? "rgba(255,255,255,0.05)" : "#f8f8f8",
+        }
+      : variant === "toolbar"
+        ? {
+            size: 24,
+            iconSize: 18,
+            radius: 6,
+            fallbackSize: 8,
+            background: "rgba(255,255,255,0.08)",
+          }
+        : {
+            size: 22,
+            iconSize: 16,
+            radius: 4,
+            fallbackSize: 9,
+            background: "rgba(255,255,255,0.08)",
+          };
+
+  const showImage = Boolean(iconUrl) && !failed;
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: config.size,
+        height: config.size,
+        borderRadius: config.radius,
+        backgroundColor: config.background,
+        border: "1px solid var(--border)",
+        overflow: "hidden",
+        flexShrink: 0,
+      }}
+      aria-label={name}
+      title={name}
+    >
+      {showImage ? (
+        <img
+          src={iconUrl}
+          alt={name}
+          width={config.iconSize}
+          height={config.iconSize}
+          style={{ objectFit: "contain" }}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            borderRadius: Math.max(2, config.radius - 1),
+            backgroundColor: badge?.bg || "#555",
+            color: badge?.color || "#fff",
+            fontSize: config.fallbackSize,
+            fontWeight: 700,
+            fontFamily: "monospace",
+          }}
+        >
+          {badge?.abbr || "??"}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function editorPlaceholder(language: { language: string; name: string }) {
   if (language.language === "python") return "# Write Python code here...";
   if (language.language === "java") return "// Write Java code here...";
@@ -184,6 +317,8 @@ function editorPlaceholder(language: { language: string; name: string }) {
 export default function RunPage() {
   const [fatalError, setFatalError] = useState<string | null>(null);
   const [selectedLangId, setSelectedLangId] = useState(71);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [langSearch, setLangSearch] = useState("");
   const [code, setCode] = useState(() => STARTER_CODE[71] || "// Start coding here...");
   const [stdin, setStdin] = useState("");
   const [stdinOpen, setStdinOpen] = useState(false);
@@ -211,11 +346,12 @@ export default function RunPage() {
   const lineNumRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
+  const langSearchRef = useRef<HTMLInputElement>(null);
   const dragStartX = useRef(0);
   const dragStartWidth = useRef(55);
 
   const selectedLang = LANGUAGES.find((l) => l.id === selectedLangId) || LANGUAGES[0];
-  const badge = BADGE_MAP[selectedLangId];
   const editorBackground = isDark ? "#1e1e1e" : "#ffffff";
   const editorText = isDark ? "#d4d4d4" : "#1e1e1e";
   const outputBackground = isDark ? "#161616" : "#f5f5f5";
@@ -232,6 +368,16 @@ export default function RunPage() {
     });
     return groups;
   }, []);
+  const filteredGroupedLanguages = useMemo(() => {
+    const query = langSearch.trim().toLowerCase();
+    return CATEGORIES.map((category) => ({
+      category,
+      languages: (groupedLanguages[category] || []).filter((language) => {
+        if (!query) return true;
+        return language.name.toLowerCase().includes(query);
+      }),
+    })).filter((group) => group.languages.length > 0);
+  }, [groupedLanguages, langSearch]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -244,6 +390,33 @@ export default function RunPage() {
   useEffect(() => {
     document.title = `${selectedLang.name} — Compilers`;
   }, [selectedLang.name]);
+
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    setLangSearch("");
+    requestAnimationFrame(() => langSearchRef.current?.focus());
+  }, [langMenuOpen]);
+
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    const handleMouseDown = (event: MouseEvent) => {
+      if (!langMenuRef.current?.contains(event.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setLangMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [langMenuOpen]);
 
   useEffect(() => {
     const updateTheme = () => setIsDark(document.documentElement.classList.contains("dark"));
@@ -450,25 +623,8 @@ export default function RunPage() {
     [code],
   );
 
-  const renderBadge = () => (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 22,
-        height: 22,
-        borderRadius: 4,
-        backgroundColor: badge?.bg || "#555",
-        color: badge?.color || "#fff",
-        fontSize: 10,
-        fontWeight: 700,
-        fontFamily: "monospace",
-        flexShrink: 0,
-      }}
-    >
-      {badge?.abbr || "??"}
-    </span>
+  const renderBadge = (variant: LanguageIconVariant = "toolbar") => (
+    <LanguageIconBadge id={selectedLangId} name={selectedLang.name} variant={variant} dark={isDark} />
   );
 
   const renderEmptyState = () => {
@@ -736,6 +892,10 @@ export default function RunPage() {
       className="fixed inset-0 z-[1000] bg-background text-foreground"
     >
       <style>{`
+        .run-lang-menu::-webkit-scrollbar { width: 4px; }
+        .run-lang-menu::-webkit-scrollbar-track { background: transparent; }
+        .run-lang-menu::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 999px; }
+        .run-lang-menu::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.4); }
         @media (max-width: 768px) {
           .run-compiler-main { flex-direction: column !important; }
           .run-compiler-editor {
@@ -784,25 +944,82 @@ export default function RunPage() {
         </div>
 
         <div className="flex min-w-0 items-center gap-2">
-          <select
-            value={selectedLangId}
-            onChange={(e) => setSelectedLangId(Number(e.target.value))}
-            className="h-[28px] w-[220px] max-w-[48vw] cursor-pointer rounded-md border border-border bg-background px-2 text-[12px] font-medium text-foreground focus:border-emerald-500 focus:outline-none"
-          >
-            {CATEGORIES.map((cat) => {
-              const langs = groupedLanguages[cat] || [];
-              if (!langs.length) return null;
-              return (
-                <optgroup key={cat} label={cat.charAt(0).toUpperCase() + cat.slice(1)}>
-                  {langs.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.name}
-                    </option>
+          <div ref={langMenuRef} className="relative flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setLangMenuOpen((value) => !value)}
+              className="flex h-8 w-[260px] items-center gap-2 rounded-lg border border-border bg-background px-[10px] text-left text-foreground transition-colors hover:bg-muted/40"
+            >
+              <LanguageIconBadge id={selectedLangId} name={selectedLang.name} variant="toolbar" dark={isDark} />
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{selectedLang.name}</span>
+              <ChevronDown size={14} className="shrink-0 text-muted-foreground" />
+            </button>
+
+            {langMenuOpen && (
+              <div
+                className="run-lang-menu absolute left-0 top-[calc(100%+8px)] z-50 overflow-hidden"
+                style={{
+                  width: 280,
+                  maxWidth: "calc(100vw - 24px)",
+                  maxHeight: 360,
+                  borderRadius: 12,
+                  border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(0,0,0,0.1)",
+                  boxShadow:
+                    "0 4px 6px -1px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.1), 0 20px 25px -5px rgba(0,0,0,0.05)",
+                  backgroundColor: "var(--background)",
+                  scrollbarColor: "rgb(var(--border)) transparent",
+                  scrollbarWidth: "thin",
+                }}
+              >
+                <input
+                  ref={langSearchRef}
+                  type="text"
+                  value={langSearch}
+                  onChange={(event) => setLangSearch(event.target.value)}
+                  placeholder="Search language..."
+                  className="w-full border-0 border-b border-border bg-muted/20 px-3 py-2 text-[12px] text-foreground outline-none placeholder:text-muted-foreground"
+                />
+
+                <div style={{ maxHeight: 324, overflowY: "auto", padding: "4px 0 6px" }}>
+                  {filteredGroupedLanguages.map((group, groupIndex) => (
+                    <div key={group.category} style={{ marginTop: groupIndex === 0 ? 0 : 4 }}>
+                      <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/60">
+                        {group.category}
+                      </div>
+                      <div className="px-1.5">
+                        {group.languages.map((language) => {
+                          const active = language.id === selectedLangId;
+                          return (
+                            <button
+                              key={language.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedLangId(language.id as number);
+                                setLangMenuOpen(false);
+                              }}
+                              className={`flex h-9 w-[calc(100%-12px)] items-center gap-2 rounded-lg px-2 text-left text-[12px] font-medium transition-colors ${
+                                active
+                                  ? "bg-emerald-500/15 text-emerald-600"
+                                  : "text-foreground hover:bg-muted/60"
+                              }`}
+                              style={{ margin: "1px 6px" }}
+                            >
+                              <LanguageIconBadge id={language.id as number} name={language.name} variant="dropdown" dark={isDark} />
+                              <span className="min-w-0 flex-1 truncate">{language.name}</span>
+                              {active && <Check size={12} className="shrink-0 text-emerald-600" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
-                </optgroup>
-              );
-            })}
-          </select>
+                  {filteredGroupedLanguages.length === 0 && (
+                    <div className="px-3 py-6 text-center text-[12px] text-muted-foreground">No languages found</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="mx-1 h-5 w-px bg-border" />
 

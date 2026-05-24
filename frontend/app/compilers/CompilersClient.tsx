@@ -72,6 +72,109 @@ const icons = {
   rscript: <svg viewBox="0 0 48 48" className="h-10 w-10"><rect width="48" height="48" rx="4" fill="#276DC3"/><path d="M14 12h12c4 0 8 2 8 7 0 3.5-2 6-5 7l6 10h-5l-5.5-9.5H19V36h-5V12zm5 5v9.5h6c2.5 0 4-1.5 4-4.5 0-3-1.5-5-4-5h-6z" fill="white"/><circle cx="36" cy="34" r="5" fill="#8CC4E5"/></svg>,
 } satisfies Record<string, JSX.Element>;
 
+const LANGUAGE_ICONS: Record<string, string> = {
+  html: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg",
+  css: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg",
+  71: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
+  70: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg",
+  62: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg",
+  50: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  49: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  48: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  75: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg",
+  54: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  53: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  52: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  76: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg",
+  51: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/csharp/csharp-original.svg",
+  73: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/rust/rust-plain.svg",
+  60: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg",
+  78: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kotlin/kotlin-original.svg",
+  68: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/php/php-original.svg",
+  72: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ruby/ruby-original.svg",
+  83: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/swift/swift-original.svg",
+  63: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg",
+  74: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg",
+  46: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bash/bash-original.svg",
+  85: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/perl/perl-original.svg",
+  64: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/lua/lua-original.svg",
+  80: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/r/r-original.svg",
+  82: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/sqlite/sqlite-original.svg",
+  81: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/scala/scala-original.svg",
+  86: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/clojure/clojure-original.svg",
+  88: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/groovy/groovy-original.svg",
+  87: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fsharp/fsharp-original.svg",
+  61: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/haskell/haskell-original.svg",
+  57: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/elixir/elixir-original.svg",
+  58: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/erlang/erlang-original.svg",
+  65: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ocaml/ocaml-original.svg",
+  56: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/d/d-original.svg",
+  67: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pascal/pascal-original.svg",
+  79: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/objectivec/objectivec-plain.svg",
+  84: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dot-net/dot-net-original.svg",
+  47: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/dot-net/dot-net-plain.svg",
+};
+
+const LANGUAGE_FALLBACK_BADGES: Record<string, { abbr: string; bg: string; color: string }> = {
+  45: { abbr: "ASM", bg: "#6e4a7e", color: "#fff" },
+  47: { abbr: "BAS", bg: "#6e4a7e", color: "#fff" },
+  55: { abbr: "LISP", bg: "#3fb68b", color: "#fff" },
+  59: { abbr: "F", bg: "#4d41b1", color: "#fff" },
+  66: { abbr: "OCT", bg: "#0790C0", color: "#fff" },
+  69: { abbr: "PRO", bg: "#74283c", color: "#fff" },
+  77: { abbr: "COB", bg: "#005A9C", color: "#fff" },
+  84: { abbr: "VB", bg: "#945db7", color: "#fff" },
+  88: { abbr: "GRV", bg: "#4298b8", color: "#fff" },
+};
+
+function LanguageCardIcon({ id, name }: { id: number | string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const key = String(id);
+  const iconUrl = LANGUAGE_ICONS[key];
+  const fallback =
+    LANGUAGE_FALLBACK_BADGES[key] || {
+      abbr:
+        name.includes("++") || name.includes("#")
+          ? name.replace(/\s+/g, "").toUpperCase().slice(0, 3)
+          : name.split(/[\s-]+/)[0].slice(0, 3).toUpperCase(),
+      bg: "#555555",
+      color: "#fff",
+    };
+
+  return (
+    <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-[14px] border border-border bg-[#f8f8f8] dark:bg-white/5">
+      {iconUrl && !failed ? (
+        <img
+          src={iconUrl}
+          alt={name}
+          width={40}
+          height={40}
+          style={{ objectFit: "contain" }}
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: fallback.bg,
+            color: fallback.color,
+            fontSize: 11,
+            fontWeight: 700,
+            fontFamily: "monospace",
+          }}
+        >
+          {fallback.abbr}
+        </span>
+      )}
+    </span>
+  );
+}
+
 const languages: Language[] = [
   { id: "html", name: "HTML", version: "Web preview", categories: ["popular", "web"], icon: icons.html },
   { id: "css", name: "CSS", version: "Web preview", categories: ["popular", "web"], icon: icons.css },
@@ -236,9 +339,7 @@ export default function CompilersPage() {
               href={compilerHref(lang)}
               className="group flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-5 text-center transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] dark:border-zinc-800 dark:bg-zinc-900"
             >
-              <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl bg-zinc-100 p-2 dark:bg-zinc-800 [&>svg]:h-9 [&>svg]:w-9">
-                {lang.icon}
-              </div>
+              <LanguageCardIcon id={lang.id} name={lang.name} />
               <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 {lang.name}
               </span>

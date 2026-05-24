@@ -461,11 +461,11 @@ export default function WebCompilerPage() {
   const [singlePreviewKey, setSinglePreviewKey] = useState(0);
   const [isSingleRunning, setIsSingleRunning] = useState(false);
   const [typeScriptRunResult, setTypeScriptRunResult] = useState<TypeScriptRunResult | null>(null);
-  const [splitPos, setSplitPos] = useState(58);
+  const [splitPos, setSplitPos] = useState(55);
   const [isDraggingSplit, setIsDraggingSplit] = useState(false);
 
-  const splitDragStartY = useRef(0);
-  const splitDragStartPos = useRef(58);
+  const splitDragStartX = useRef(0);
+  const splitDragStartPos = useRef(55);
   const splitContainerRef = useRef<HTMLDivElement>(null);
   const previewSrcRef = useRef("");
   const singleRunnerFrameRef = useRef<HTMLIFrameElement>(null);
@@ -543,9 +543,9 @@ export default function WebCompilerPage() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingSplit || !splitContainerRef.current) return;
       const rect = splitContainerRef.current.getBoundingClientRect();
-      const delta = e.clientY - splitDragStartY.current;
-      const pctDelta = (delta / rect.height) * 100;
-      setSplitPos(Math.min(75, Math.max(25, splitDragStartPos.current + pctDelta)));
+      const delta = e.clientX - splitDragStartX.current;
+      const pctDelta = (delta / rect.width) * 100;
+      setSplitPos(Math.min(70, Math.max(30, splitDragStartPos.current + pctDelta)));
     };
     const handleMouseUp = () => setIsDraggingSplit(false);
     if (isDraggingSplit) {
@@ -975,13 +975,13 @@ export default function WebCompilerPage() {
   const startSplitDrag = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingSplit(true);
-    splitDragStartY.current = e.clientY;
+    splitDragStartX.current = e.clientX;
     splitDragStartPos.current = splitPos;
   };
 
   const setModeButtonHover = (e: React.MouseEvent<HTMLButtonElement>, active: boolean) => {
     if (active) return;
-    e.currentTarget.style.backgroundColor = "color-mix(in srgb, var(--muted) 60%, transparent)";
+    e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
     e.currentTarget.style.color = "var(--foreground)";
   };
 
@@ -1510,16 +1510,19 @@ export default function WebCompilerPage() {
         key="single-mode"
         className="web-compiler-single-main"
         ref={splitContainerRef}
-        style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}
+        style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden", position: "relative" }}
       >
         <div
           className="web-compiler-single-editor"
           style={{
-            height: isMobileLayout ? "50vh" : `${splitPos}%`,
+            width: `${splitPos}%`,
+            minWidth: "30%",
+            maxWidth: "70%",
+            height: "100%",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            minHeight: isMobileLayout ? "50vh" : "25%",
+            minHeight: 0,
           }}
         >
           <div
@@ -1619,12 +1622,12 @@ export default function WebCompilerPage() {
           className="web-compiler-single-splitter"
           onMouseDown={startSplitDrag}
           style={{
-            height: 4,
+            width: 4,
             flexShrink: 0,
-            cursor: "row-resize",
+            cursor: "col-resize",
             backgroundColor: isDraggingSplit ? "#10b981" : "var(--border)",
             transition: "background-color 150ms",
-            display: isMobileLayout ? "none" : "block",
+            alignSelf: "stretch",
           }}
           onMouseEnter={(e) => {
             if (!isDraggingSplit) e.currentTarget.style.backgroundColor = "#10b981";
@@ -1637,12 +1640,13 @@ export default function WebCompilerPage() {
         <div
           className="web-compiler-single-output"
           style={{
-            flex: isMobileLayout ? "none" : 1,
-            height: isMobileLayout ? "40vh" : undefined,
+            flex: 1,
+            width: `${100 - splitPos}%`,
+            height: "100%",
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
-            minHeight: isMobileLayout ? "40vh" : "25%",
+            minHeight: 0,
           }}
         >
           <div
@@ -1868,7 +1872,6 @@ export default function WebCompilerPage() {
     >
       <style>{`
         .web-compiler-tab-scroll::-webkit-scrollbar { display: none; }
-        .web-compiler-single-main { flex-direction: column !important; }
         @media (max-width: 768px) {
           .web-compiler-combined-main { flex-direction: column !important; }
           .web-compiler-combined-editors {
@@ -1883,19 +1886,14 @@ export default function WebCompilerPage() {
           }
         }
         @media (max-width: 480px) {
-          .web-compiler-combined-editors,
-          .web-compiler-single-editor {
+          .web-compiler-combined-editors {
             height: 50vh !important;
             min-height: 50vh !important;
           }
-          .web-compiler-combined-preview,
-          .web-compiler-single-output {
+          .web-compiler-combined-preview {
             flex: none !important;
             height: 40vh !important;
             min-height: 40vh !important;
-          }
-          .web-compiler-single-splitter {
-            display: none !important;
           }
         }
       `}</style>
@@ -1928,7 +1926,7 @@ export default function WebCompilerPage() {
           gap: 4,
           overflowX: "auto",
           overflowY: "hidden",
-          backgroundColor: "var(--card)",
+          backgroundColor: isDark ? "#1a1a1a" : "#f3f4f6",
           borderBottom: "1px solid var(--border)",
         }}
         className="web-compiler-tab-scroll"
@@ -1944,15 +1942,15 @@ export default function WebCompilerPage() {
                 height: 28,
                 padding: "0 12px",
                 borderRadius: 6,
-                border: "none",
+                border: "1px solid transparent",
                 fontSize: 12,
-                fontWeight: 500,
+                fontWeight: active ? 600 : 500,
                 flexShrink: 0,
                 cursor: "pointer",
-                transition: "background-color 150ms, color 150ms, box-shadow 150ms ease",
+                transition: "background-color 150ms, color 150ms, box-shadow 150ms ease, border-color 150ms",
                 backgroundColor: active ? "#10b981" : "transparent",
                 color: active ? "white" : "var(--muted-foreground)",
-                boxShadow: active ? "0 1px 3px rgba(16,185,129,0.3)" : "none",
+                boxShadow: active ? "0 1px 4px rgba(16,185,129,0.4)" : "none",
               }}
               onMouseEnter={(e) => setModeButtonHover(e, active)}
               onMouseLeave={(e) => clearModeButtonHover(e, active)}
